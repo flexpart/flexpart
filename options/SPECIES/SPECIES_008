@@ -1,0 +1,54 @@
+****************************************************************************
+*                                                                          *
+*     Input file for the Lagrangian particle dispersion model FLEXPART     *
+*               Definition file of chemical species/radionuclides          *
+*                                                                          *
+****************************************************************************
+SO2                Tracer name
+-999.9             Species half life
+-9.9E-09           Wet deposition - A
+0.62               Wet deposition - B
+ 2.0               Dry deposition (gases) - D
+1.0e+05            Dry deposition (gases) - Henrys const.
+0.0                Dry deposition (gases) - f0 (reactivity)
+-9.9E09            Dry deposition (particles) - rho
+                   Dry deposition (particles) - dquer
+                   Dry deposition (particles) - dsig
+-9.99              Alternative: dry deposition velocity
+ 64.00             molweight
+-9.9E-09           OH Reaction rate at 25 deg, [cm^3/sec]
+-9                 number of associated specias (neg. none)
+-99.99             KOA - organic matter air partitioning
+hr_start so2_area  so2_point
+ 0       0.636       0.814      0-1 local time
+ 1       0.571       0.767      1-2 local time
+ 2       0.523       0.743
+ 3       0.495       0.735
+ 4       0.507       0.751
+ 5       0.577       0.798
+ 6       0.732       0.873
+ 7       0.929       0.976
+ 8       1.015       1.037
+ 9       1.077       1.084
+10       1.153       1.126
+11       1.241       1.142
+12       1.315       1.157
+13       1.370       1.163
+14       1.422       1.171
+15       1.463       1.169
+16       1.463       1.162
+17       1.426       1.141
+18       1.326       1.117 
+19       1.225       1.109
+20       1.082       1.095
+21       0.928       1.044
+22       0.804       0.959
+23       0.717       0.869      23-24 local time
+week_day so2_area  so2_point
+1        1.060       1.000      Monday
+2        1.060       1.000      Tuesday
+3        1.060       1.000      Wednesday
+4        1.060       1.000      Thursday
+5        1.060       1.000      Friday
+6        0.900       1.000      Saturday
+7        0.800       1.000      Sunday
