@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine writeheader
+subroutine writeheader_nest_surf
 
   !*****************************************************************************
   !                                                                            *
@@ -58,7 +58,7 @@ subroutine writeheader
   ! Open header output file
   !************************
 
-  open(unitheader,file=path(2)(1:length(2))//'header', &
+  open(unitheader,file=path(2)(1:length(2))//'header_nest_grid_time', &
        form='unformatted',err=998)
 
 
@@ -66,9 +66,9 @@ subroutine writeheader
   !*****************************
 
   if (ldirect.eq.1) then
-    write(unitheader) ibdate,ibtime, trim(flexversion)
+    write(unitheader) ibdate,ibtime,trim(flexversion)
   else
-    write(unitheader) iedate,ietime, trim(flexversion)
+    write(unitheader) iedate,ietime,trim(flexversion)
   endif
 
   ! Write info on output interval, averaging time, sampling time
@@ -79,9 +79,9 @@ subroutine writeheader
   ! Write information on output grid setup
   !***************************************
 
-  write(unitheader) outlon0,outlat0,numxgrid,numygrid, &
-       dxout,dyout
-  write(unitheader) numzgrid,(outheight(i),i=1,numzgrid)
+  write(unitheader) outlon0n,outlat0n,numxgridn,numygridn, &
+       dxoutn,dyoutn
+  write(unitheader) 1,(outheight(1),i=1,1)
 
   call caldate(bdate,jjjjmmdd,ihmmss)
   write(unitheader) jjjjmmdd,ihmmss
@@ -95,7 +95,7 @@ subroutine writeheader
   do i=1,nspec
     write(unitheader) 1,'WD_'//species(i)(1:7)
     write(unitheader) 1,'DD_'//species(i)(1:7)
-    write(unitheader) numzgrid,species(i)
+    write(unitheader) 1,species(i)
   end do
 
   ! Write information on release points: total number, then for each point:
@@ -115,7 +115,7 @@ subroutine writeheader
       write(unitheader) compoint(i)
     else
       write(unitheader) compoint(1001)
-    endif
+   endif
     do j=1,nspec
       write(unitheader) xmass(i,j)
       write(unitheader) xmass(i,j)
@@ -138,8 +138,8 @@ subroutine writeheader
   ! Write topography to output file
   !********************************
 
-  do ix=0,numxgrid-1
-    write(unitheader) (oroout(ix,jy),jy=0,numygrid-1)
+  do ix=0,numxgridn-1
+    write(unitheader) (orooutn(ix,jy),jy=0,numygridn-1)
   end do
   close(unitheader)
 
@@ -153,4 +153,4 @@ subroutine writeheader
   write(*,*) ' #### THE PROGRAM AGAIN.                       #### '
   stop
 
-end subroutine writeheader
+end subroutine writeheader_nest_surf

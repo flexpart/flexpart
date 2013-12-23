@@ -76,13 +76,8 @@ subroutine readpartpositions
   end do
 
   read(unitpartin) numpointin
-  if (numpointin.ne.numpoint) then
-     write(*,*) ' ####              WARNING                     #### '
-     write(*,*) ' #### NUMBER OF RELEASE LOCATIONS DOES NOT     #### '
-     write(*,*) ' #### AGREE WITH CURRENT SETTINGS!             #### '
-     write(*,*) ' #### THIS IS JUST A CHECK TO SEE IF YOU READ  #### '
-     write(*,*) ' #### THE CORRECT PARTICLE DUMP FILE.          #### '
-  endif
+  if (numpointin.ne.numpoint) goto 995
+999 continue 
   do i=1,numpointin
     read(unitpartin)
     read(unitpartin)
@@ -151,6 +146,12 @@ subroutine readpartpositions
   write(*,*) 'bdate: ',bdate,id2,it2
   stop
 
+!995   write(*,*) ' #### FLEXPART MODEL ERROR IN READPARTPOSITIONS#### '
+995   write(*,*) ' #### FLEXPART MODEL WARNING IN READPARTPOSITIONS#### '
+  write(*,*) ' #### NUMBER OF RELEASE LOCATIONS DOES NOT     #### '
+  write(*,*) ' #### AGREE WITH CURRENT SETTINGS!             #### '
+!  stop
+  goto 999 
 
 996   write(*,*) ' #### FLEXPART MODEL ERROR IN READPARTPOSITIONS#### '
   write(*,*) ' #### SPECIES NAMES TO BE READ IN DO NOT       #### '

@@ -6,7 +6,7 @@
 !                                                                              *
 !        June 1996                                                             *
 !                                                                              *
-!        Last update: 9 August 2000                                            *
+!        Last update:15 August 2013 IP                                         *
 !                                                                              *
 !*******************************************************************************
 
@@ -24,10 +24,13 @@ module com_mod
 
   character :: path(numpath+2*maxnests)*120
   integer :: length(numpath+2*maxnests)
-
+  character(len=256) :: pathfile, flexversion, arg1, arg2
+  
   ! path                    path names needed for trajectory model
   ! length                  length of path names needed for trajectory model
-
+  ! pathfile                file where pathnames are stored
+  ! flexversion             version of flexpart
+  ! arg                     input arguments from launch at command line
 
   !********************************************************
   ! Variables defining the general model run specifications
@@ -64,7 +67,7 @@ module com_mod
   real :: ctl,fine
   integer :: ifine,iout,ipout,ipin,iflux,mdomainfill
   integer :: mquasilag,nested_output,ind_source,ind_receptor
-  integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond
+  integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond,surf_only
   logical :: turbswitch
 
   ! ctl      factor, by which time step must be smaller than Lagrangian time scale
@@ -90,6 +93,8 @@ module com_mod
   !     0=no, 1=mass unit, 2=mass mixing ratio unit
   ! mquasilag 0: normal run
   !      1: Particle position output is produced in a condensed format and particles are numbered
+  ! surf_only   switch output in grid_time files for surface only or full vertical resolution
+  !      0=no (full vertical resolution), 1=yes (surface only)
   ! nested_output: 0 no, 1 yes
   ! turbswitch              determines how the Markov chain is formulated
 
@@ -138,6 +143,8 @@ module com_mod
   !real xmass(maxpoint,maxspec)
   real :: decay(maxspec)
   real :: weta(maxspec),wetb(maxspec)
+! NIK: 31.01.2013- parameters for in-cloud scavening
+  real :: weta_in(maxspec), wetb_in(maxspec), wetc_in(maxspec), wetd_in(maxspec)
   real :: reldiff(maxspec),henry(maxspec),f0(maxspec)
   real :: density(maxspec),dquer(maxspec),dsigma(maxspec)
   real :: vsetaver(maxspec),cunningham(maxspec),weightmolar(maxspec)
@@ -171,7 +178,9 @@ module com_mod
   ! decay                   decay constant of radionuclide
 
   ! WET DEPOSITION
-  ! weta, wetb              parameters for determining wet scavenging coefficients
+  ! weta, wetb              parameters for determining below-cloud wet scavenging coefficients
+  ! weta_in, wetb_in       parameters for determining in-cloud wet scavenging coefficients
+  ! wetc_in, wetd_in       parameters for determining in-cloud wet scavenging coefficients
 
   ! GAS DEPOSITION
   ! reldiff                 diffusivitiy of species relative to diff. of H2O
@@ -330,8 +339,12 @@ module com_mod
   real :: tth(0:nxmax-1,0:nymax-1,nuvzmax,2)
   real :: qvh(0:nxmax-1,0:nymax-1,nuvzmax,2)
   real :: pplev(0:nxmax-1,0:nymax-1,nuvzmax,2)
+  !scavenging NIK, PS
   integer(kind=1) :: clouds(0:nxmax-1,0:nymax-1,nzmax,2)
   integer :: cloudsh(0:nxmax-1,0:nymax-1,2)
+      integer icloudbot(0:nxmax-1,0:nymax-1,2)
+      integer icloudthck(0:nxmax-1,0:nymax-1,2)
+
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
   ! uupol,vvpol [m/s]    wind components in polar stereographic projection
@@ -345,6 +358,10 @@ module com_mod
   !      cloud, no precipitation      1
   !      rainout  conv/lsp dominated  2/3
   !      washout  conv/lsp dominated  4/5
+! PS 2013
+!c icloudbot (m)        cloud bottom height
+!c icloudthck (m)       cloud thickness     
+
   ! pplev for the GFS version
 
   ! 2d fields
@@ -661,7 +678,6 @@ module com_mod
   ! ohreact             OH reaction rate
 
 
-
   !********************
   ! Random number field
   !********************
@@ -670,5 +686,12 @@ module com_mod
 
   ! rannumb                 field of normally distributed random numbers
 
+  !********************
+  ! Verbosity, testing flags
+  !********************   
+  integer :: verbosity=0
+  integer :: info_flag=0
+  INTEGER :: count_clock, count_clock0,  count_rate, count_max
+   
 
 end module com_mod

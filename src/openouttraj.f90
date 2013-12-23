@@ -53,9 +53,9 @@ subroutine openouttraj
        form='formatted',err=998)
 
   if (ldirect.eq.1) then
-  write(unitouttraj,'(i8,1x,i6,1x,a)') ibdate,ibtime,'FLEXPART V8.2'
+  write(unitouttraj,'(i8,1x,i6,1x,a)') ibdate,ibtime, trim(flexversion)
   else
-  write(unitouttraj,'(i8,1x,i6,1x,a)') iedate,ietime,'FLEXPART V8.2'
+  write(unitouttraj,'(i8,1x,i6,1x,a)') iedate,ietime, trim(flexversion)
   endif
   write(unitouttraj,*) method,lsubgrid,lconvection
   write(unitouttraj,*) numpoint

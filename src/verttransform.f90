@@ -48,6 +48,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !*****************************************************************************
   ! Sabine Eckhardt, March 2007
   ! added the variable cloud for use with scavenging - descr. in com_mod
+  ! Petra Seibert, 2011/2012: Fixing some deficiencies in this modification
+  ! note that also other subroutines are affected by the fix
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -69,20 +71,24 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   implicit none
 
   integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp,ixm,jym
-  integer :: rain_cloud_above,kz_inv
+ integer :: rain_cloud_above,kz_inv !SE
+  integer icloudtop !PS
   real :: f_qvsat,pressure
-  real :: rh,lsp,convp
+ !real :: rh,lsp,convp
+  real :: rh,lsp,convp,prec,rhmin  
   real :: uvzlev(nuvzmax),rhoh(nuvzmax),pinmconv(nzmax)
   real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi
   real :: xlon,ylat,xlonr,dzdx,dzdy
-  real :: dzdx1,dzdx2,dzdy1,dzdy2
+  real :: dzdx1,dzdx2,dzdy1,dzdy2, precmin
   real :: uuaux,vvaux,uupolaux,vvpolaux,ddpol,ffpol,wdummy
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: pvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
   real :: wzlev(nwzmax),uvwzlev(0:nxmax-1,0:nymax-1,nzmax)
+  logical lconvectprec
   real,parameter :: const=r_air/ga
+  parameter (precmin = 0.002) ! minimum prec in mm/h for cloud diagnostics
 
   logical :: init = .true.
 
@@ -544,40 +550,110 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !write (*,*) 'initializing clouds, n:',n,nymin1,nxmin1,nz
   !   create a cloud and rainout/washout field, clouds occur where rh>80%
   !   total cloudheight is stored at level 0
+
+
+
   do jy=0,nymin1
     do ix=0,nxmin1
-      rain_cloud_above=0
-      lsp=lsprec(ix,jy,1,n)
-      convp=convprec(ix,jy,1,n)
-      cloudsh(ix,jy,n)=0
-      do kz_inv=1,nz-1
-         kz=nz-kz_inv+1
-         pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
-         rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
-         clouds(ix,jy,kz,n)=0
-         if (rh.gt.0.8) then ! in cloud
-            if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
-               rain_cloud_above=1
-               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+ &
-                    height(kz)-height(kz-1)
-               if (lsp.ge.convp) then
-                  clouds(ix,jy,kz,n)=3 ! lsp dominated rainout
-               else
-                  clouds(ix,jy,kz,n)=2 ! convp dominated rainout
-               endif
-            else ! no precipitation
-                  clouds(ix,jy,kz,n)=1 ! cloud
+
+
+
+  !    rain_cloud_above=0
+  !    lsp=lsprec(ix,jy,1,n)
+  !    convp=convprec(ix,jy,1,n)
+  !    cloudsh(ix,jy,n)=0
+  !    do kz_inv=1,nz-1
+  !       kz=nz-kz_inv+1
+  !       pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
+  !       rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
+  !       clouds(ix,jy,kz,n)=0
+  !       if (rh.gt.0.8) then ! in cloud
+  !          if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
+  !             rain_cloud_above=1
+  !             cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+ &
+  !                  height(kz)-height(kz-1)
+  !             if (lsp.ge.convp) then
+  !                clouds(ix,jy,kz,n)=3 ! lsp dominated rainout
+  !             else
+  !                clouds(ix,jy,kz,n)=2 ! convp dominated rainout
+  !             endif
+  !          else ! no precipitation
+  !                clouds(ix,jy,kz,n)=1 ! cloud
+  !          endif
+  !       else ! no cloud
+  !          if (rain_cloud_above.eq.1) then ! scavenging
+  !             if (lsp.ge.convp) then
+  !                clouds(ix,jy,kz,n)=5 ! lsp dominated washout
+  !             else
+  !                clouds(ix,jy,kz,n)=4 ! convp dominated washout
+  !             endif
+  !          endif
+  !       endif
+  !    end do
+
+
+   ! PS 3012
+
+             lsp=lsprec(ix,jy,1,n)
+          convp=convprec(ix,jy,1,n)
+          prec=lsp+convp
+          if (lsp.gt.convp) then !  prectype='lsp'
+            lconvectprec = .false.
+          else ! prectype='cp '
+            lconvectprec = .true.
+          endif
+          rhmin = 0.90 ! standard condition for presence of clouds
+!PS       note that original by Sabine Eckhart was 80%
+!PS       however, for T<-20 C we consider saturation over ice
+!PS       so I think 90% should be enough          
+          icloudbot(ix,jy,n)=icmv
+          icloudtop=icmv ! this is just a local variable
+98        do kz=1,nz
+            pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
+            rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
+!ps            if (prec.gt.0.01) print*,'relhum',prec,kz,rh,height(kz)
+            if (rh .gt. rhmin) then
+              if (icloudbot(ix,jy,n) .eq. icmv) then
+                icloudbot(ix,jy,n)=nint(height(kz))
+              endif
+              icloudtop=nint(height(kz)) ! use int to save memory
             endif
-         else ! no cloud
-            if (rain_cloud_above.eq.1) then ! scavenging
-               if (lsp.ge.convp) then
-                  clouds(ix,jy,kz,n)=5 ! lsp dominated washout
-               else
-                  clouds(ix,jy,kz,n)=4 ! convp dominated washout
-               endif
+          enddo
+
+!PS try to get a cloud thicker than 50 m 
+!PS if there is at least .01 mm/h  - changed to 0.002 and put into
+!PS parameter precpmin        
+          if ((icloudbot(ix,jy,n) .eq. icmv .or. &
+              icloudtop-icloudbot(ix,jy,n) .lt. 50) .and. &
+              prec .gt. precmin) then
+            rhmin = rhmin - 0.05
+            if (rhmin .ge. 0.30) goto 98 ! give up for <= 25% rel.hum.
+          endif
+!PS implement a rough fix for badly represented convection
+!PS is based on looking at a limited set of comparison data
+          if (lconvectprec .and. icloudtop .lt. 6000 .and. &
+             prec .gt. precmin) then 
+
+            if (convp .lt. 0.1) then
+              icloudbot(ix,jy,n) = 500
+              icloudtop =         8000
+            else
+              icloudbot(ix,jy,n) = 0
+              icloudtop =      10000
             endif
-         endif
-      end do
+          endif
+          if (icloudtop .ne. icmv) then
+            icloudthck(ix,jy,n) = icloudtop-icloudbot(ix,jy,n)
+          else
+            icloudthck(ix,jy,n) = icmv
+          endif
+!PS  get rid of too thin clouds      
+          if (icloudthck(ix,jy,n) .lt. 50) then
+            icloudbot(ix,jy,n)=icmv
+            icloudthck(ix,jy,n)=icmv
+          endif
+
+
     end do
   end do
 
@@ -604,4 +680,6 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !+       (r_air*tt(ix,jy,1,n)*rho(ix,jy,1,n),ix=1,nxmin1)
   !104   continue
   ! close(4)
+
+
 end subroutine verttransform

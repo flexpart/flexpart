@@ -79,87 +79,173 @@ subroutine readcommand
   real(kind=dp) :: juldate
   character(len=50) :: line
   logical :: old
+  logical :: nmlout=.true. !.false.
+  integer :: readerror
 
+  namelist /command/ &
+    ldirect, &
+    ibdate,ibtime, &
+    iedate,ietime, &
+    loutstep, &
+    loutaver, &
+    loutsample, &
+    itsplit, &
+    lsynctime, &
+    ctl, &
+    ifine, &
+    iout, &
+    ipout, &
+    lsubgrid, &
+    lconvection, &
+    lagespectra, &
+    ipin, &
+    ioutputforeachrelease, &
+    iflux, &
+    mdomainfill, &
+    ind_source, &
+    ind_receptor, &
+    mquasilag, &
+    nested_output, &
+    linit_cond, &
+    surf_only    
+
+  ! Presetting namelist command
+  ldirect=1
+  ibdate=20000101
+  ibtime=0
+  iedate=20000102
+  ietime=0
+  loutstep=10800
+  loutaver=10800
+  loutsample=900
+  itsplit=999999999
+  lsynctime=900
+  ctl=-5.0
+  ifine=4
+  iout=3
+  ipout=0
+  lsubgrid=1
+  lconvection=1
+  lagespectra=0
+  ipin=1
+  ioutputforeachrelease=1
+  iflux=1
+  mdomainfill=0
+  ind_source=1
+  ind_receptor=1
+  mquasilag=0
+  nested_output=0
+  linit_cond=0
+  surf_only=0 
 
   ! Open the command file and read user options
-  !********************************************
-
-
-  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
-       err=999)
-
-  ! Check the format of the COMMAND file (either in free format,
-  ! or using formatted mask)
-  ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
+  ! Namelist input first: try to read as namelist file
   !**************************************************************************
+  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
+         form='formatted',iostat=readerror)
+  ! If fail, check if file does not exist
+  if (readerror.ne.0) then
+    
+    print*,'***ERROR: file COMMAND not found in ' 
+    print*, path(1)(1:length(1))//'COMMAND'
+    print*, 'Check your pathnames file.'
+    stop
 
-  call skplin(9,unitcommand)
-  read (unitcommand,901) line
-901   format (a)
-  if (index(line,'LDIRECT') .eq. 0) then
-    old = .false.
-  else
-    old = .true.
   endif
-  rewind(unitcommand)
 
-  ! Read parameters
-  !****************
-
-  call skplin(7,unitcommand)
-  if (old) call skplin(1,unitcommand)
-
-  read(unitcommand,*) ldirect
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ibdate,ibtime
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) iedate,ietime
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) loutstep
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) loutaver
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) loutsample
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) itsplit
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) lsynctime
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ctl
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ifine
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) iout
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ipout
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) lsubgrid
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) lconvection
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) lagespectra
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ipin
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ioutputforeachrelease
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) iflux
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) mdomainfill
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ind_source
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) ind_receptor
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) mquasilag
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) nested_output
-  if (old) call skplin(3,unitcommand)
-  read(unitcommand,*) linit_cond
+  read(unitcommand,command,iostat=readerror)
   close(unitcommand)
 
-  ifine=max(ifine,1)
+  ! If error in namelist format, try to open with old input code
+  if (readerror.ne.0) then
 
+    open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
+         err=999)
+
+    ! Check the format of the COMMAND file (either in free format,
+    ! or using formatted mask)
+    ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
+    !**************************************************************************
+
+    call skplin(9,unitcommand)
+    read (unitcommand,901) line
+  901   format (a)
+    if (index(line,'LDIRECT') .eq. 0) then
+      old = .false.
+    else
+      old = .true.
+    endif
+    rewind(unitcommand)
+
+    ! Read parameters
+    !****************
+
+    call skplin(7,unitcommand)
+    if (old) call skplin(1,unitcommand)
+
+    read(unitcommand,*) ldirect
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ibdate,ibtime
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) iedate,ietime
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) loutstep
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) loutaver
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) loutsample
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) itsplit
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) lsynctime
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ctl
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ifine
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) iout
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ipout
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) lsubgrid
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) lconvection
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) lagespectra
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ipin
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ioutputforeachrelease
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) iflux
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) mdomainfill
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ind_source
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) ind_receptor
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) mquasilag
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) nested_output
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) linit_cond
+    close(unitcommand)
+
+  endif ! input format
+
+  ! write command file in namelist format to output directory if requested
+  if (nmlout.eqv..true.) then
+    !open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist.out',status='new',err=1000)
+    open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=1000)
+    write(unitcommand,nml=command)
+    close(unitcommand)
+     ! open(unitheader,file=path(2)(1:length(2))//'header_nml',status='new',err=999)
+     ! write(unitheader,NML=COMMAND)
+     !close(unitheader) 
+  endif
+
+  ifine=max(ifine,1)
 
   ! Determine how Markov chain is formulated (for w or for w/sigw)
   !***************************************************************
@@ -370,7 +456,7 @@ subroutine readcommand
     stop
   endif
 
-  if(lsubgrid.ne.1) then
+  if(lsubgrid.ne.1.and.verbosity.eq.0) then
     write(*,*) '             ----------------               '
     write(*,*) ' INFORMATION: SUBGRIDSCALE TERRAIN EFFECT IS'
     write(*,*) ' NOT PARAMETERIZED DURING THIS SIMULATION.  '
@@ -504,4 +590,8 @@ subroutine readcommand
   write(*,'(a)') path(1)(1:length(1))
   stop
 
+1000   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"    #### '
+       write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
+        write(*,'(a)') path(2)(1:length(1))
+        stop
 end subroutine readcommand

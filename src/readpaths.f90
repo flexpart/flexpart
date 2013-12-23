@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine readpaths
+subroutine readpaths !(pathfile)
 
   !*****************************************************************************
   !                                                                            *
@@ -29,6 +29,9 @@ subroutine readpaths
   !     Author: A. Stohl                                                       *
   !                                                                            *
   !     1 February 1994                                                        *
+  !     last modified                                                          *
+  !     HS, 7.9.2012                                                           *
+  !     option to give pathnames file as command line option                   *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -46,17 +49,32 @@ subroutine readpaths
 
   implicit none
 
-  integer :: i
+  integer   :: i
+  character(256) :: string_test 
+  character(1) :: character_test 
 
   ! Read the pathname information stored in unitpath
   !*************************************************
 
-
-  open(unitpath,file='pathnames',status='old',err=999)
+  open(unitpath,file=trim(pathfile),status='old',err=999)
 
   do i=1,numpath
     read(unitpath,'(a)',err=998) path(i)
     length(i)=index(path(i),' ')-1
+
+    
+    string_test = path(i)
+    character_test = string_test(length(i):length(i))
+    !print*, 'character_test,  string_test ', character_test,  string_test 
+      if ((character_test .NE. '/') .AND. (i .LT. 4))  then
+         print*, 'WARNING: path not ending in /' 
+         print*, path(i)
+         path(i) = string_test(1:length(i)) // '/'
+         length(i)=length(i)+1
+         print*, 'fix: padded with /' 
+         print*, path(i)
+         print*, 'length(i) increased 1' 
+      endif
   end do
 
   ! Check whether any nested subdomains are to be used
@@ -69,6 +87,7 @@ subroutine readpaths
     length(numpath+2*(i-1)+1)=index(path(numpath+2*(i-1)+1),' ')-1
     length(numpath+2*(i-1)+2)=index(path(numpath+2*(i-1)+2),' ')-1
   end do
+  print*,length(5),length(6)
 
 
   ! Determine number of available nested domains

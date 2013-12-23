@@ -38,6 +38,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
   ! use centred precipitation data for integration                             *
   ! Code may not be correct for decay of deposition!                           *
   !                                                                            *
+  ! Modification by Sabine Eckhart to introduce a new in-/below-cloud
+  ! scheme, not dated
+  ! Petra Seibert, 2011/2012: Fixing some deficiencies in this modification
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -70,11 +73,13 @@ subroutine wetdepo(itime,ltsample,loutnext)
   implicit none
 
   integer :: jpart,itime,ltsample,loutnext,ldeltat,i,j,ix,jy
-  integer :: ngrid,itage,nage,hz,il,interp_time, n, clouds_v
-  integer :: ks, kp
+  integer :: ngrid,itage,nage,hz,il,interp_time, n , clouds_v !NIK scheme
+  integer :: kz !PS scheme
+  integer :: ks, kp, n1,n2, icbot,ictop, indcloud
+  integer :: scheme_number ! NIK==1, PS ==2
   real :: S_i, act_temp, cl, cle ! in cloud scavenging
   real :: clouds_h ! cloud height for the specific grid point
-  real :: xtn,ytn,lsp,convp,cc,grfraction,prec,wetscav
+  real :: xtn,ytn,lsp,convp,cc,grfraction,prec,wetscav, precsub,f
   real :: wetdeposit(maxspec),restmass
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   save lfr,cfr
@@ -145,22 +150,40 @@ subroutine wetdepo(itime,ltsample,loutnext)
   !********************************************************************
     interp_time=nint(itime-0.5*ltsample)
 
-    if (ngrid.eq.0) then
-      call interpol_rain(lsprec,convprec,tcc,nxmax,nymax, &
-           1,nx,ny,memind,real(xtra1(jpart)),real(ytra1(jpart)),1, &
-           memtime(1),memtime(2),interp_time,lsp,convp,cc)
-    else
-      call interpol_rain_nests(lsprecn,convprecn,tccn, &
-           nxmaxn,nymaxn,1,maxnests,ngrid,nxn,nyn,memind,xtn,ytn,1, &
-           memtime(1),memtime(2),interp_time,lsp,convp,cc)
-    endif
+!    PS nest case still needs to be implemented!!    
+!    if (ngrid.eq.0) then
+!      call interpol_rain(lsprec,convprec,tcc,nxmax,nymax, &
+!           1,nx,ny,memind,real(xtra1(jpart)),real(ytra1(jpart)),1, &
+!           memtime(1),memtime(2),interp_time,lsp,convp,cc)
+           call interpol_rain(lsprec,convprec,tcc,     &
+            icloudbot,icloudthck,nxmax,nymax,1,nx,ny,         &
+            memind,sngl(xtra1(jpart)),sngl(ytra1(jpart)),1,memtime(1), &
+            memtime(2),interp_time,lsp,convp,cc,icbot,ictop,icmv)  
+!    else
+!      call interpol_rain_nests(lsprecn,convprecn,tccn, &
+!           nxmaxn,nymaxn,1,maxnests,ngrid,nxn,nyn,memind,xtn,ytn,1, &
+!           memtime(1),memtime(2),interp_time,lsp,convp,cc)
+!    endif
 
-    if ((lsp.lt.0.01).and.(convp.lt.0.01)) goto 20
+
+ !   if ((lsp.lt.0.01).and.(convp.lt.0.01)) goto 20
+ !PS 2012: subtract a small value, eg 0.01 mm/h, to remove spurious precip
+        prec = lsp+convp
+        precsub = 0.01
+        if (prec .lt. precsub) then
+          goto 20
+        else
+          f = (prec-precsub)/prec
+          lsp = f*lsp
+          convp = f*convp
+        endif
+
 
   ! get the level were the actual particle is in
       do il=2,nz
         if (height(il).gt.ztra1(jpart)) then
-          hz=il-1
+          !hz=il-1
+          kz=il-1
           goto 26
         endif
       end do
@@ -173,17 +196,33 @@ subroutine wetdepo(itime,ltsample,loutnext)
   ! if there is no precipitation or the particle is above the clouds no
   ! scavenging is done
 
-  if (ngrid.eq.0) then
-     clouds_v=clouds(ix,jy,hz,n)
-     clouds_h=cloudsh(ix,jy,n)
-  else
-     clouds_v=cloudsn(ix,jy,hz,n,ngrid)
-     clouds_h=cloudsnh(ix,jy,n,ngrid)
-  endif
-  !write(*,*) 'there is
-  !    + precipitation',(clouds(ix,jy,ihz,n),ihz=1,20),lsp,convp,hz
-  if (clouds_v.le.1) goto 20
-  !write (*,*) 'there is scavenging'
+!old scheme
+!  if (ngrid.eq.0) then
+!     clouds_v=clouds(ix,jy,hz,n)
+!     clouds_h=cloudsh(ix,jy,n)
+!  else
+!     clouds_v=cloudsn(ix,jy,hz,n,ngrid)
+!     clouds_h=cloudsnh(ix,jy,n,ngrid)
+!  endif
+!  !write(*,*) 'there is
+!  !    + precipitation',(clouds(ix,jy,ihz,n),ihz=1,20),lsp,convp,hz
+!  if (clouds_v.le.1) goto 20
+!  !write (*,*) 'there is scavenging'
+
+  ! PS: part of 2011/2012 fix 
+
+        if (ztra1(jpart) .le. float(ictop)) then
+          if (ztra1(jpart) .gt. float(icbot)) then
+            indcloud = 2 ! in-cloud
+          else
+            indcloud = 1 ! below-cloud
+          endif
+        elseif (ictop .eq. icmv) then
+          indcloud = 0 ! no cloud found, use old scheme
+        else
+          goto 20 ! above cloud
+        endif
+
 
   ! 1) Parameterization of the the area fraction of the grid cell where the
   !    precipitation occurs: the absolute limit is the total cloud cover, but
@@ -227,14 +266,21 @@ subroutine wetdepo(itime,ltsample,loutnext)
   !    Computation of wet deposition
   !**********************************************************
 
-    do ks=1,nspec                                  ! loop over species
+    do ks=1,nspec            ! loop over species
       wetdeposit(ks)=0.
+
+    
+    !conflicting changes to the same routine: 1=NIK 2 =PS
+    scheme_number=2   
+    if (scheme_number.eq.1) then !NIK 
+
       if (weta(ks).gt.0.) then
         if (clouds_v.ge.4) then
   !          BELOW CLOUD SCAVENGING
   !          for aerosols and not highliy soluble substances weta=5E-6
           wetscav=weta(ks)*prec**wetb(ks)                ! scavenging coeff.
   !        write(*,*) 'bel. wetscav: ',wetscav
+
         else ! below_cloud clouds_v is lt 4 and gt 1 -> in cloud scavenging
   !        IN CLOUD SCAVENGING
   ! BUGFIX tt for nested fields should be ttn
@@ -244,14 +290,20 @@ subroutine wetdepo(itime,ltsample,loutnext)
           else
              act_temp=tt(ix,jy,hz,n)
           endif
-          cl=2E-7*prec**0.36
+
+! NIK 31.01.2013: SPECIES defined parameters for the in-cloud scavening 
+! weta_in=2.0E-07 (default)
+! wetb_in=0.36 (default)
+! wetc_in=0.9 (default)
+! wetd_in: Scaling factor for the total in-cloud scavenging (default 1.0-no scaling)
+          cl=weta_in(ks)*prec**wetb_in(ks)
           if (dquer(ks).gt.0) then ! is particle
-            S_i=0.9/cl
+            S_i=wetc_in(ks)/cl
            else ! is gas
             cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
             S_i=1/cle
            endif
-           wetscav=S_i*prec/3.6E6/clouds_h
+           wetscav=S_i*prec/3.6E6/clouds_h/wetd_in(ks)
   !         write(*,*) 'in. wetscav:'
   !    +          ,wetscav,cle,cl,act_temp,prec,clouds_h
         endif
@@ -288,19 +340,97 @@ subroutine wetdepo(itime,ltsample,loutnext)
       else  ! weta(k)
          wetdeposit(ks)=0.
       endif ! weta(k)
+
+     elseif (scheme_number.eq.2) then ! PS
+
+!PS          indcloud=0 ! Use this for FOR TESTING, 
+!PS          will skip the new in/below cloud method !!!             
+
+          if (weta(ks).gt.0.) then
+            if (indcloud .eq. 1) then ! BELOW CLOUD SCAVENGING
+!C               for aerosols and not highliy soluble substances weta=5E-6
+              wetscav=weta(ks)*prec**wetb(ks)                ! scavenging coeff.
+!c             write(*,*) 'bel. wetscav: ',wetscav
+            elseif (indcloud .eq. 2) then !  IN CLOUD SCAVENGING
+              if (ngrid.gt.0) then
+                 act_temp=ttn(ix,jy,kz,n,ngrid)
+              else
+                 act_temp=tt(ix,jy,kz,n)
+              endif
+
+! from NIK              
+! weta_in=2.0E-07 (default)
+! wetb_in=0.36 (default)
+! wetc_in=0.9 (default)
+
+
+              cl=2E-7*prec**0.36
+              if (dquer(ks).gt.0) then ! is particle
+                S_i=0.9/cl
+              else ! is gas
+                cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
+                S_i=1/cle
+              endif
+              wetscav=S_i*prec/3.6E6/(ictop-icbot) ! 3.6e6 converts mm/h to m/s
+            else ! PS: no cloud diagnosed, old scheme, 
+!CPS          using with fixed a,b for simplicity, one may wish to change!!
+              wetscav = 1.e-4*prec**0.62
+            endif
+
+
+            wetdeposit(ks)=xmass1(jpart,ks)*    &
+            ! (1.-exp(-wetscav*abs(ltsample)))*fraction  ! wet deposition
+             (1.-exp(-wetscav*abs(ltsample)))*grfraction  ! fraction = grfraction (PS) 
+            restmass = xmass1(jpart,ks)-wetdeposit(ks)
+            if (ioutputforeachrelease.eq.1) then
+              kp=npoint(jpart)
+            else
+              kp=1
+            endif
+            if (restmass .gt. smallnum) then
+              xmass1(jpart,ks)=restmass
+!cccccccccccccccc depostatistic
+!c            wetdepo_sum(ks,kp)=wetdepo_sum(ks,kp)+wetdeposit(ks)
+!cccccccccccccccc depostatistic
+            else
+              xmass1(jpart,ks)=0.
+            endif
+!C Correct deposited mass to the last time step when radioactive decay of 
+!C gridded deposited mass was calculated
+            if (decay(ks).gt.0.) then
+              wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
+            endif
+          else  ! weta(k)<0
+             wetdeposit(ks)=0.
+          endif 
+
+     endif !on scheme
+
+
+
     end do
 
   ! Sabine Eckhard, June 2008 create deposition runs only for forward runs
   ! Add the wet deposition to accumulated amount on output grid and nested output grid
   !*****************************************************************************
 
-    if (ldirect.eq.1) then
-    call wetdepokernel(nclass(jpart),wetdeposit,real(xtra1(jpart)), &
-         real(ytra1(jpart)),nage,kp)
-    if (nested_output.eq.1) call wetdepokernel_nest(nclass(jpart), &
-         wetdeposit,real(xtra1(jpart)),real(ytra1(jpart)), &
-         nage,kp)
-    endif
+!    if (ldirect.eq.1) then
+!    call wetdepokernel(nclass(jpart),wetdeposit,real(xtra1(jpart)), &
+!         real(ytra1(jpart)),nage,kp)
+!    if (nested_output.eq.1) call wetdepokernel_nest(nclass(jpart), &
+!         wetdeposit,real(xtra1(jpart)),real(ytra1(jpart)), &
+!         nage,kp)
+!    endif
+
+   !PS
+        if (ldirect.eq.1) then
+          call wetdepokernel(nclass(jpart),wetdeposit,     &
+             sngl(xtra1(jpart)),sngl(ytra1(jpart)),nage,kp)
+          if (nested_output.eq.1)                          &
+           call wetdepokernel_nest(nclass(jpart),wetdeposit, &
+             sngl(xtra1(jpart)),sngl(ytra1(jpart)),nage,kp)  
+        endif
+
 
 20  continue
   end do

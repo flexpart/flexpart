@@ -702,7 +702,6 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     end do
   endif
 
-
   if(iumax.ne.nuvz) stop 'READWIND: NUVZ NOT CONSISTENT'
   if(iumax.ne.nwz)    stop 'READWIND: NWZ NOT CONSISTENT'
 

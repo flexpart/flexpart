@@ -42,6 +42,7 @@ module outg_mod
   real,allocatable, dimension (:,:) :: drygridsigma
   real,allocatable, dimension (:,:) :: wetgridsigma
   real,allocatable, dimension (:) :: sparse_dump_r
+  real,allocatable, dimension (:) :: sparse_dump_u
   integer,allocatable, dimension (:) :: sparse_dump_i
 
 end module outg_mod

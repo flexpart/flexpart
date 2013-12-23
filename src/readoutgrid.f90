@@ -90,7 +90,9 @@ subroutine readoutgrid
   yr1=ylat0+real(nymin1)*dy
   if ((outlon0+eps.lt.xlon0).or.(outlat0+eps.lt.ylat0) &
        .or.(xr.gt.xr1+eps).or.(yr.gt.yr1+eps)) then
+    write(*,*) 'outlon0,outlat0:'
     write(*,*) outlon0,outlat0
+    write(*,*) 'xr1,yr1,xlon0,ylat0,xr,yr,dxout,dyout:'
     write(*,*) xr1,yr1,xlon0,ylat0,xr,yr,dxout,dyout
     write(*,*) ' #### FLEXPART MODEL ERROR! PART OF OUTPUT    ####'
     write(*,*) ' #### GRID IS OUTSIDE MODEL DOMAIN. CHANGE    ####'

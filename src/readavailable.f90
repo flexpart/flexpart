@@ -122,6 +122,8 @@ subroutine readavailable
   !*********************************************************************
 
   do k=1,numbnests
+  print*,length(numpath+2*(k-1)+1),length(numpath+2*(k-1)+2),length(4),length(3)
+  print*,path(numpath+2*(k-1)+2)(1:length(numpath+2*(k-1)+2))
     open(unitavailab,file=path(numpath+2*(k-1)+2) &
          (1:length(numpath+2*(k-1)+2)),status='old',err=998)
 
@@ -274,13 +276,13 @@ subroutine readavailable
 
   return
 
-998   write(*,*) ' #### FLEXPART MODEL ERROR! FILE   #### '
+998   write(*,*) ' #### FLEXPART MODEL ERROR! AVAILABLE FILE   #### '
   write(*,'(a)') '     '//path(numpath+2*(k-1)+2) &
        (1:length(numpath+2*(k-1)+2))
   write(*,*) ' #### CANNOT BE OPENED             #### '
   stop
 
-999   write(*,*) ' #### FLEXPART MODEL ERROR! FILE #### '
+999   write(*,*) ' #### FLEXPART MODEL ERROR! AVAILABLE IILE #### '
   write(*,'(a)') '     '//path(4)(1:length(4))
   write(*,*) ' #### CANNOT BE OPENED           #### '
   stop

@@ -56,6 +56,8 @@ subroutine readreleases
   !                     area                                                   *
   ! weta, wetb          parameters to determine the wet scavenging coefficient *
   ! zpoint1,zpoint2     height range, over which release takes place           *
+  ! num_min_discrete    if less, release cannot be randomized and happens at   *
+  !                     time mid-point of release interval                     *
   !                                                                            *
   !*****************************************************************************
 
@@ -67,8 +69,9 @@ subroutine readreleases
   implicit none
 
   integer :: numpartmax,i,j,id1,it1,id2,it2,specnum_rel,idum,stat
+  integer,parameter :: num_min_discrete=100
   real :: vsh(ni),fracth(ni),schmih(ni),releaserate,xdum,cun
-  real(kind=dp) :: jul1,jul2,juldate
+  real(kind=dp) :: jul1,jul2,julm,juldate
   character(len=50) :: line
   logical :: old
 
@@ -375,6 +378,7 @@ subroutine readreleases
 
   jul1=juldate(id1,it1)
   jul2=juldate(id2,it2)
+  julm=(jul1+jul2)/2.
   if (jul1.gt.jul2) then
     write(*,*) 'FLEXPART MODEL ERROR'
     write(*,*) 'Release stops before it begins.'
@@ -390,8 +394,13 @@ subroutine readreleases
         write(*,*) 'Make files COMMAND and RELEASES consistent.'
         stop
       endif
-      ireleasestart(numpoint)=int((jul1-bdate)*86400.)
-      ireleaseend(numpoint)=int((jul2-bdate)*86400.)
+      if (npart(numpoint).gt.num_min_discrete) then
+        ireleasestart(numpoint)=int((jul1-bdate)*86400.)
+        ireleaseend(numpoint)=int((jul2-bdate)*86400.)
+      else
+        ireleasestart(numpoint)=int((julm-bdate)*86400.)
+        ireleaseend(numpoint)=int((julm-bdate)*86400.)
+      endif
     else if (ldirect.eq.-1) then
       if ((jul1.lt.edate).or.(jul2.gt.bdate)) then
         write(*,*) 'FLEXPART MODEL ERROR'
@@ -400,8 +409,13 @@ subroutine readreleases
         write(*,*) 'Make files COMMAND and RELEASES consistent.'
         stop
       endif
-      ireleasestart(numpoint)=int((jul1-bdate)*86400.)
-      ireleaseend(numpoint)=int((jul2-bdate)*86400.)
+      if (npart(numpoint).gt.num_min_discrete) then
+        ireleasestart(numpoint)=int((jul1-bdate)*86400.)
+        ireleaseend(numpoint)=int((jul2-bdate)*86400.)
+      else
+        ireleasestart(numpoint)=int((julm-bdate)*86400.)
+        ireleaseend(numpoint)=int((julm-bdate)*86400.)
+      endif
     endif
   endif
 

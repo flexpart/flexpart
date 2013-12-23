@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine writeheader
+subroutine writeheader_surf
 
   !*****************************************************************************
   !                                                                            *
@@ -58,7 +58,7 @@ subroutine writeheader
   ! Open header output file
   !************************
 
-  open(unitheader,file=path(2)(1:length(2))//'header', &
+  open(unitheader,file=path(2)(1:length(2))//'header_grid_time', &
        form='unformatted',err=998)
 
 
@@ -81,7 +81,7 @@ subroutine writeheader
 
   write(unitheader) outlon0,outlat0,numxgrid,numygrid, &
        dxout,dyout
-  write(unitheader) numzgrid,(outheight(i),i=1,numzgrid)
+  write(unitheader) 1,(outheight(1),i=1,1)
 
   call caldate(bdate,jjjjmmdd,ihmmss)
   write(unitheader) jjjjmmdd,ihmmss
@@ -95,7 +95,7 @@ subroutine writeheader
   do i=1,nspec
     write(unitheader) 1,'WD_'//species(i)(1:7)
     write(unitheader) 1,'DD_'//species(i)(1:7)
-    write(unitheader) numzgrid,species(i)
+    write(unitheader) 1,species(i)
   end do
 
   ! Write information on release points: total number, then for each point:
@@ -153,4 +153,4 @@ subroutine writeheader
   write(*,*) ' #### THE PROGRAM AGAIN.                       #### '
   stop
 
-end subroutine writeheader
+end subroutine writeheader_surf

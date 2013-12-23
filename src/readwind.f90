@@ -101,6 +101,11 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'readwind'
 
+  !HSO conversion of ECMWF etadot to etadot*dp/deta
+  logical :: etacon=.false.
+  real,parameter :: p00=101325.
+  real :: dak,dbk
+
   hflswitch=.false.
   strswitch=.false.
   levdiff2=nlev_ec-nwz+1
@@ -360,6 +365,22 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     do i=0,nxmin1
       do j=0,nymin1
         wwh(i,j,nlev_ec+1)=0.
+      end do
+    end do
+  endif
+
+  ! convert from ECMWF etadot to etadot*dp/deta as needed by FLEXPART
+  if(etacon.eqv..true.) then
+    do k=1,nwzmax
+      dak=akm(k+1)-akm(k)
+      dbk=bkm(k+1)-bkm(k)
+      do i=0,nxmin1
+        do j=0,nymin1 
+          wwh(i,j,k)=2*wwh(i,j,k)*ps(i,j,1,n)*(dak/ps(i,j,1,n)+dbk)/(dak/p00+dbk)
+          if (k.gt.1) then 
+            wwh(i,j,k)=wwh(i,j,k)-wwh(i,j,k-1)
+          endif
+        end do
       end do
     end do
   endif

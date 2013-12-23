@@ -127,7 +127,15 @@ subroutine timemanager
   ! Loop over the whole modelling period in time steps of mintime seconds
   !**********************************************************************
 
-  !write (*,*) 'starting simulation'
+
+  if (verbosity.gt.0) then
+    write (*,*) 'timemanager> starting simulation'
+    if (verbosity.gt.1) then
+      CALL SYSTEM_CLOCK(count_clock)
+      WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
+    endif     
+  endif
+
   do itime=0,ideltas,lsynctime
 
 
@@ -141,8 +149,12 @@ subroutine timemanager
   ! changed by Petra Seibert 9/02
   !********************************************************************
 
-    if (WETDEP .and. itime .ne. 0 .and. numpart .gt. 0) &
+    if (WETDEP .and. itime .ne. 0 .and. numpart .gt. 0) then
+        if (verbosity.gt.0) then
+           write (*,*) 'timemanager> call wetdepo'
+        endif     
          call wetdepo(itime,lsynctime,loutnext)
+    endif
 
     if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) &
          call ohreaction(itime,lsynctime,loutnext)
@@ -155,25 +167,58 @@ subroutine timemanager
   ! compute convection for backward runs
   !*************************************
 
-      if ((ldirect.eq.-1).and.(lconvection.eq.1).and.(itime.lt.0)) &
-           call convmix(itime)
+   if ((ldirect.eq.-1).and.(lconvection.eq.1).and.(itime.lt.0)) then
+        if (verbosity.gt.0) then
+           write (*,*) 'timemanager> call convmix -- backward'
+        endif         
+      call convmix(itime)
+        if (verbosity.gt.1) then
+          !CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
+          CALL SYSTEM_CLOCK(count_clock)
+          WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
+        endif 
+   endif
 
   ! Get necessary wind fields if not available
   !*******************************************
-
+    if (verbosity.gt.0) then
+           write (*,*) 'timemanager> call getfields'
+    endif 
     call getfields(itime,nstop1)
+        if (verbosity.gt.1) then
+          CALL SYSTEM_CLOCK(count_clock)
+          WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
+        endif 
     if (nstop1.gt.1) stop 'NO METEO FIELDS AVAILABLE'
+
   ! Release particles
   !******************
 
+    if (verbosity.gt.0) then
+           write (*,*) 'timemanager>  Release particles'
+    endif 
+
     if (mdomainfill.ge.1) then
       if (itime.eq.0) then
+        if (verbosity.gt.0) then
+          write (*,*) 'timemanager>  call init_domainfill'
+        endif       
         call init_domainfill
       else
+        if (verbosity.gt.0) then
+          write (*,*) 'timemanager>  call boundcond_domainfill'
+        endif   
         call boundcond_domainfill(itime,loutend)
       endif
     else
+      if (verbosity.gt.0) then
+        print*,'call releaseparticles'  
+      endif
       call releaseparticles(itime)
+      if (verbosity.gt.1) then
+        CALL SYSTEM_CLOCK(count_clock)
+        WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
+      endif 
     endif
 
 
@@ -181,9 +226,12 @@ subroutine timemanager
   ! for backward runs it is done before next windfield is read in
   !**************************************************************
 
-      if ((ldirect.eq.1).and.(lconvection.eq.1)) &
-           call convmix(itime)
-
+   if ((ldirect.eq.1).and.(lconvection.eq.1)) then
+     if (verbosity.gt.0) then
+       write (*,*) 'timemanager> call convmix -- forward'
+     endif    
+     call convmix(itime)
+   endif
 
   ! If middle of averaging period of output fields is reached, accumulated
   ! deposited mass radioactively decays
@@ -298,9 +346,26 @@ subroutine timemanager
 
       if ((itime.eq.loutend).and.(outnum.gt.0.)) then
         if ((iout.le.3.).or.(iout.eq.5)) then
+          if (surf_only.ne.1) then 
           call concoutput(itime,outnum,gridtotalunc, &
                wetgridtotalunc,drygridtotalunc)
-          if (nested_output.eq.1) call concoutput_nest(itime,outnum)
+          else  
+  if (verbosity.eq.1) then
+     print*,'call concoutput_surf '
+     CALL SYSTEM_CLOCK(count_clock)
+     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
+  endif
+          call concoutput_surf(itime,outnum,gridtotalunc, &
+               wetgridtotalunc,drygridtotalunc)
+  if (verbosity.eq.1) then
+     print*,'called concoutput_surf '
+     CALL SYSTEM_CLOCK(count_clock)
+     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
+  endif
+          endif
+
+          if ((nested_output.eq.1).and.(surf_only.ne.1)) call concoutput_nest(itime,outnum)
+          if ((nested_output.eq.1).and.(surf_only.eq.1)) call concoutput_surf_nest(itime,outnum)
           outnum=0.
         endif
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)

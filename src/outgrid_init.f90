@@ -246,6 +246,11 @@ subroutine outgrid_init
   allocate(sparse_dump_r(max(numxgrid,numxgridn)* &
        max(numygrid,numygridn)*numzgrid),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
+
+   allocate(sparse_dump_u(max(numxgrid,numxgridn)* &
+       max(numygrid,numygridn)*numzgrid),stat=stat)
+        if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
+
   allocate(sparse_dump_i(max(numxgrid,numxgridn)* &
        max(numygrid,numygridn)*numzgrid),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'

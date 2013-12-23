@@ -32,6 +32,7 @@ subroutine gridcheck
   !             LAST UPDATE: 1997-10-10                                 *
   !                                                                     *
   !             Update:      1999-02-08, global fields allowed, A. Stohl*
+  !             CHANGE: 17/11/2005, Caroline Forster, GFS data          *
   !             CHANGE: 11/01/2008, Harald Sodemann, GRIB1/2 input with *
   !                                 ECMWF grib_api                      *
   !             CHANGE: 03/12/2008, Harald Sodemann, update to f90 with *
@@ -61,7 +62,7 @@ subroutine gridcheck
   ! sizesouth, sizenorth give the map scale (i.e. number of virtual grid*
   !                      points of the polar stereographic grid):       *
   !                      used to check the CFL criterion                *
-  ! UVHEIGHT(1)-         heights of gridpoints where u and v are        *
+  ! VHEIGHT(1)-         heights of gridpoints where u and v are        *
   ! UVHEIGHT(NUVZ)       given                                          *
   ! WHEIGHT(1)-          heights of gridpoints where w is given         *
   ! WHEIGHT(NWZ)                                                        *
@@ -80,30 +81,37 @@ subroutine gridcheck
   integer :: ifile
   integer :: iret
   integer :: igrib
-  integer :: gotGrid
   real(kind=4) :: xaux1,xaux2,yaux1,yaux2
   real(kind=8) :: xaux1in,xaux2in,yaux1in,yaux2in
   integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl
   !HSO  end
   integer :: ix,jy,i,ifn,ifield,j,k,iumax,iwmax,numskip
   real :: sizesouth,sizenorth,xauxa,pint
+  real :: akm_usort(nwzmax)
+  real,parameter :: eps=0.0001
+
+  ! NCEP GFS
+  real :: pres(nwzmax), help
+
+  integer :: i179,i180,i181
 
   ! VARIABLES AND ARRAYS NEEDED FOR GRIB DECODING
 
-  ! dimension of isec2 at least (22+n), where n is the number of parallels or
-  ! meridians in a quasi-regular (reduced) Gaussian or lat/long grid
-
-  ! dimension of zsec2 at least (10+nn), where nn is the number of vertical
-  ! coordinate parameters
-
-  integer :: isec1(56),isec2(22+nxmax+nymax)
-  !real(kind=4) :: zsec2(60+2*nuvzmax),zsec4(jpunp)
-  real(kind=4) :: zsec2(184),zsec4(jpunp)
+  integer :: isec1(8),isec2(3)
+  real(kind=4) :: zsec4(jpunp)
   character(len=1) :: opt
 
   !HSO  grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
-  character(len=20) :: gribFunction = 'gridcheck'
+  character(len=20) :: gribFunction = 'gridcheckwind_gfs'
+  !
+  if (numbnests.ge.1) then
+  write(*,*) ' ###########################################'
+  write(*,*) ' FLEXPART ERROR SUBROUTINE GRIDCHECK:'
+  write(*,*) ' NO NESTED WINDFIELDAS ALLOWED FOR GFS!      '
+  write(*,*) ' ###########################################'
+  stop
+  endif
 
   iumax=0
   iwmax=0
@@ -122,12 +130,10 @@ subroutine gridcheck
     goto 999   ! ERROR DETECTED
   endif
   !turn on support for multi fields messages
-  !call grib_multi_support_on
+  call grib_multi_support_on
 
-  gotGrid=0
   ifield=0
 10   ifield=ifield+1
-
   !
   ! GET NEXT FIELDS
   !
@@ -144,23 +150,20 @@ subroutine gridcheck
 
   if (gribVer.eq.1) then ! GRIB Edition 1
 
-  !print*,'GRiB Edition 1'
-  !read the grib2 identifiers
+  !read the grib1 identifiers
   call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_int(igrib,'indicatorOfTypeOfLevel',isec1(7),iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'level',isec1(8),iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !change code for etadot to code for omega
-  if (isec1(6).eq.77) then
-    isec1(6)=135
-  endif
+  !get the size and data of the values array
+  call grib_get_real4_array(igrib,'values',zsec4,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !print*,isec1(6),isec1(8)
+  else ! GRIB Edition 2
 
-  else
-
-  !print*,'GRiB Edition 2'
   !read the grib2 identifiers
   call grib_get_int(igrib,'discipline',discipl,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
@@ -170,126 +173,91 @@ subroutine gridcheck
   call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',valSurf,iret)
+  call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
+       valSurf,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
-
-  !print*,discipl,parCat,parNum,typSurf,valSurf
 
   !convert to grib1 identifiers
   isec1(6)=-1
   isec1(7)=-1
   isec1(8)=-1
-  isec1(8)=valSurf     ! level
-  if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! T
-    isec1(6)=130         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.105)) then ! U
-    isec1(6)=131         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.105)) then ! V
-    isec1(6)=132         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
-    isec1(6)=133         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
-    isec1(6)=134         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
-    isec1(6)=135         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
-    isec1(6)=151         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
-    isec1(6)=165         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.103)) then ! 10V
-    isec1(6)=166         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.103)) then ! 2T
-    isec1(6)=167         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.6).and.(typSurf.eq.103)) then ! 2D
-    isec1(6)=168         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
-    isec1(6)=141         ! indicatorOfParameter
-  elseif ((parCat.eq.6).and.(parNum.eq.1)) then ! CC
-    isec1(6)=164         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.9)) then ! LSP
-    isec1(6)=142         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
-    isec1(6)=143         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SHF
-    isec1(6)=146         ! indicatorOfParameter
-  elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
-    isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17)) then ! EWSS
-    isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18)) then ! NSSS
-    isec1(6)=181         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
-    isec1(6)=129         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.7)) then ! SDO
-    isec1(6)=160         ! indicatorOfParameter
-  elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
-       (typSurf.eq.1)) then ! LSM
-    isec1(6)=172         ! indicatorOfParameter
-  else
-    print*,'***ERROR: undefined GRiB2 message found!',discipl, &
-         parCat,parNum,typSurf
+  if ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.100)) then ! U
+    isec1(6)=33          ! indicatorOfParameter
+    isec1(7)=100         ! indicatorOfTypeOfLevel
+    isec1(8)=valSurf/100 ! level, convert to hPa
+  elseif ((parCat.eq.3).and.(parNum.eq.5).and.(typSurf.eq.1)) then ! TOPO
+    isec1(6)=7           ! indicatorOfParameter
+    isec1(7)=1           ! indicatorOfTypeOfLevel
+    isec1(8)=0
+  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.1) &
+       .and.(discipl.eq.2)) then ! LSM
+    isec1(6)=81          ! indicatorOfParameter
+    isec1(7)=1           ! indicatorOfTypeOfLevel
+    isec1(8)=0
   endif
 
-  endif
-
-  !get the size and data of the values array
   if (isec1(6).ne.-1) then
+  !  get the size and data of the values array
     call grib_get_real4_array(igrib,'values',zsec4,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
   endif
 
-  if (ifield.eq.1) then
+  endif ! gribVer
 
-  !HSO  get the required fields from section 2 in a gribex compatible manner
-    call grib_get_int(igrib,'numberOfPointsAlongAParallel', &
-         isec2(2),iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    call grib_get_int(igrib,'numberOfPointsAlongAMeridian', &
-         isec2(3),iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
-         xaux1in,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    call grib_get_int(igrib,'numberOfVerticalCoordinateValues', &
-         isec2(12),iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
+  if(ifield.eq.1) then
 
-  !  get the size and data of the vertical coordinate array
-    call grib_get_real4_array(igrib,'pv',zsec2,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
+  !get the required fields from section 2
+  !store compatible to gribex input
+  call grib_get_int(igrib,'numberOfPointsAlongAParallel', &
+       isec2(2),iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_int(igrib,'numberOfPointsAlongAMeridian', &
+       isec2(3),iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
+       xaux1in,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_real8(igrib,'longitudeOfLastGridPointInDegrees', &
+       xaux2in,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_real8(igrib,'latitudeOfLastGridPointInDegrees', &
+       yaux1in,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_real8(igrib,'latitudeOfFirstGridPointInDegrees', &
+       yaux2in,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
 
-    nxfield=isec2(2)
-    ny=isec2(3)
-    nlev_ec=isec2(12)/2-1
-   endif
+  xaux1=xaux1in
+!  xaux2=xaux2in
+  xaux2=xaux2in+360.    !!! Transform FNL xauu2in from -1 to 359 (Xuekue Fang, 31 Jan 2013)
+  yaux1=yaux1in
+  yaux2=yaux2in
+  write(*,*) 'xaux1,xaux2,yaux1,yaux2',xaux1,xaux2,yaux1,yaux2
+  nxfield=isec2(2)
+  ny=isec2(3)
 
-  !HSO  get the second part of the grid dimensions only from GRiB1 messages
-  if ((gribVer.eq.1).and.(gotGrid.eq.0)) then
-    call grib_get_real8(igrib,'longitudeOfLastGridPointInDegrees', &
-         xaux2in,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    call grib_get_real8(igrib,'latitudeOfLastGridPointInDegrees', &
-         yaux1in,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    call grib_get_real8(igrib,'latitudeOfFirstGridPointInDegrees', &
-         yaux2in,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-    xaux1=xaux1in
-    xaux2=xaux2in
-    yaux1=yaux1in
-    yaux2=yaux2in
-    if (xaux1.gt.180.) xaux1=xaux1-360.0
-    if (xaux2.gt.180.) xaux2=xaux2-360.0
-    if (xaux1.lt.-180.) xaux1=xaux1+360.0
-    if (xaux2.lt.-180.) xaux2=xaux2+360.0
-    if (xaux2.lt.xaux1) xaux2=xaux2+360.0
-    xlon0=xaux1
-    ylat0=yaux1
-    dx=(xaux2-xaux1)/real(nxfield-1)
-    dy=(yaux2-yaux1)/real(ny-1)
-    dxconst=180./(dx*r_earth*pi)
-    dyconst=180./(dy*r_earth*pi)
-    gotGrid=1
+  
+
+  if((abs(xaux1).lt.eps).and.(xaux2.ge.359)) then ! NCEP DATA FROM 0 TO
+    xaux1=-179.0                             ! 359 DEG EAST ->
+    xaux2=-179.0+360.-360./real(nxfield)    ! TRANSFORMED TO -179
+  endif                                      ! TO 180 DEG EAST
+  if (xaux1.gt.180) xaux1=xaux1-360.0
+  if (xaux2.gt.180) xaux2=xaux2-360.0
+  if (xaux1.lt.-180) xaux1=xaux1+360.0
+  if (xaux2.lt.-180) xaux2=xaux2+360.0
+  if (xaux2.lt.xaux1) xaux2=xaux2+360.
+  xlon0=xaux1
+  ylat0=yaux1
+  write(*,*) 'xlon0,ylat0',xlon0,ylat0
+
+  dx=(xaux2-xaux1)/real(nxfield-1)
+  dy=(yaux2-yaux1)/real(ny-1)
+  dxconst=180./(dx*r_earth*pi)
+  dyconst=180./(dy*r_earth*pi)
+  write(*,*) 'dx,dy,dxconst,dyconst',dx,dy,dxconst,dyconst
+  !HSO end edits
+
 
   ! Check whether fields are global
   ! If they contain the poles, specify polar stereographic map
@@ -340,55 +308,78 @@ subroutine gridcheck
       nglobal=.false.
       switchnorthg=999999.
     endif
-    if (nxshift.lt.0) &
-         stop 'nxshift (par_mod) must not be negative'
-    if (nxshift.ge.nxfield) stop 'nxshift (par_mod) too large'
-  endif ! gotGrid
+  endif ! ifield.eq.1
 
-  k=isec1(8)
-  if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
-  if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+  if (nxshift.lt.0) stop 'nxshift (par_mod) must not be negative'
+  if (nxshift.ge.nxfield) stop 'nxshift (par_mod) too large'
 
-  if(isec1(6).eq.129) then
+  ! NCEP ISOBARIC LEVELS
+  !*********************
+
+  if((isec1(6).eq.33).and.(isec1(7).eq.100)) then ! check for U wind
+    iumax=iumax+1
+    pres(iumax)=real(isec1(8))*100.0
+  endif
+
+
+  i179=nint(179./dx)
+  if (dx.lt.0.7) then
+    i180=nint(180./dx)+1    ! 0.5 deg data
+  else
+    i180=nint(179./dx)+1    ! 1 deg data
+  endif
+  i181=i180+1
+
+
+  ! NCEP TERRAIN
+  !*************
+
+  if((isec1(6).eq.007).and.(isec1(7).eq.001)) then
     do jy=0,ny-1
       do ix=0,nxfield-1
-        oro(ix,jy)=zsec4(nxfield*(ny-jy-1)+ix+1)/ga
+        help=zsec4(nxfield*(ny-jy-1)+ix+1)
+        if(ix.le.i180) then
+          oro(i179+ix,jy)=help
+          excessoro(i179+ix,jy)=0.0 ! ISOBARIC SURFACES: SUBGRID TERRAIN DISREGARDED
+        else
+          oro(ix-i181,jy)=help
+          excessoro(ix-i181,jy)=0.0 ! ISOBARIC SURFACES: SUBGRID TERRAIN DISREGARDED
+        endif
       end do
     end do
   endif
-  if(isec1(6).eq.172) then
+
+  ! NCEP LAND SEA MASK
+  !*******************
+
+  if((isec1(6).eq.081).and.(isec1(7).eq.001)) then
     do jy=0,ny-1
       do ix=0,nxfield-1
-        lsm(ix,jy)=zsec4(nxfield*(ny-jy-1)+ix+1)
-      end do
-    end do
-  endif
-  if(isec1(6).eq.160) then
-    do jy=0,ny-1
-      do ix=0,nxfield-1
-        excessoro(ix,jy)=zsec4(nxfield*(ny-jy-1)+ix+1)
+        help=zsec4(nxfield*(ny-jy-1)+ix+1)
+        if(ix.le.i180) then
+          lsm(i179+ix,jy)=help
+        else
+          lsm(ix-i181,jy)=help
+        endif
       end do
     end do
   endif
 
   call grib_release(igrib)
+
   goto 10                      !! READ NEXT LEVEL OR PARAMETER
   !
   ! CLOSING OF INPUT DATA FILE
   !
 
-30   call grib_close_file(ifile)
-
-  !error message if no fields found with correct first longitude in it
-  if (gotGrid.eq.0) then
-    print*,'***ERROR: input file needs to contain GRiB1 formatted'// &
-         'messages'
-    stop
-  endif
+  ! HSO
+30   continue
+  call grib_close_file(ifile)
+  ! HSO end edits
 
   nuvz=iumax
-  nwz =iwmax
-  if(nuvz.eq.nlev_ec) nwz=nlev_ec+1
+  nwz =iumax
+  nlev_ec=iumax
 
   if (nx.gt.nxmax) then
    write(*,*) 'FLEXPART error: Too many grid points in x direction.'
@@ -406,12 +397,12 @@ subroutine gridcheck
     stop
   endif
 
-  if (nuvz+1.gt.nuvzmax) then
+  if (nuvz.gt.nuvzmax) then
     write(*,*) 'FLEXPART error: Too many u,v grid points in z '// &
          'direction.'
     write(*,*) 'Reduce resolution of wind fields.'
     write(*,*) 'Or change parameter settings in file par_mod.'
-    write(*,*) nuvz+1,nuvzmax
+    write(*,*) nuvz,nuvzmax
     stop
   endif
 
@@ -438,10 +429,10 @@ subroutine gridcheck
 
   write(*,*)
   write(*,*)
-  write(*,'(a,2i7)') '# of vertical levels in ECMWF data: ', &
-       nuvz+1,nwz
+  write(*,'(a,2i7)') '# of vertical levels in NCEP data: ', &
+       nuvz,nwz
   write(*,*)
-  write(*,'(a)') 'Mother domain:'
+  write(*,'(a)') 'other domain:'
   write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Longitude range: ', &
        xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
   write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range: ', &
@@ -454,20 +445,23 @@ subroutine gridcheck
 
   numskip=nlev_ec-nuvz  ! number of ecmwf model layers not used
                         ! by trajectory model
-  !do 8940 i=1,244
-  !   write (*,*) 'zsec2:',i,ifield,zsec2(i),numskip
-  !940  continue
-  !   stop
-  ! SEC SEC SEC
-  ! for unknown reason zsec 1 to 10 is filled in this version
-  ! compared to the old one
-  ! SEC SEC SE
   do i=1,nwz
     j=numskip+i
     k=nlev_ec+1+numskip+i
-    akm(nwz-i+1)=zsec2(j)
-    bkm(nwz-i+1)=zsec2(k)
+    akm_usort(nwz-i+1)=pres(nwz-i+1)
+    bkm(nwz-i+1)=0.0
   end do
+
+  !******************************
+  ! change Sabine Eckhardt: akm should always be in descending order ... readwind adapted!
+  !******************************
+      do i=1,nwz
+         if (akm_usort(1).gt.akm_usort(2)) then
+            akm(i)=akm_usort(i)
+         else
+            akm(i)=akm_usort(nwz-i+1)
+         endif
+      end do
 
   !
   ! CALCULATION OF AKZ, BKZ
@@ -478,13 +472,10 @@ subroutine gridcheck
   ! i.e. ground level
   !*****************************************************************************
 
-  akz(1)=0.
-  bkz(1)=1.0
   do i=1,nuvz
-     akz(i+1)=0.5*(akm(i+1)+akm(i))
-     bkz(i+1)=0.5*(bkm(i+1)+bkm(i))
+     akz(i)=akm(i)
+     bkz(i)=bkm(i)
   end do
-  nuvz=nuvz+1
 
   ! NOTE: In FLEXPART versions up to 4.0, the number of model levels was doubled
   ! upon the transformation to z levels. In order to save computer memory, this is
