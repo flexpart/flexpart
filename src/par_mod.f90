@@ -120,7 +120,8 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL
+  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=26,nwzmax=26,nzmax=26
   !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
@@ -153,8 +154,8 @@ module par_mod
   !*********************************************
 
   !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  !integer,parameter :: maxnests=1,nxmaxn=251,nymaxn=151 !ECMWF
-  integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
+  integer,parameter :: maxnests=1,nxmaxn=351,nymaxn=351 !ECMWF
+  !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
   ! maxnests                maximum number of nested grids
   ! nxmaxn,nymaxn           maximum dimension of nested wind fields in
   !                         x and y direction, respectively
@@ -196,9 +197,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  !integer,parameter :: maxpart=4000000
-  integer,parameter :: maxpart=2000
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxpart=15000000
+  integer,parameter :: maxspec=4
 
 
   ! maxpart                 Maximum number of particles

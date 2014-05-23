@@ -60,7 +60,7 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! 
-  flexversion='Version 9.1.8  (2013-12-08)'
+  flexversion='Version 9.2 beta (2014-05-23)'
   !verbosity=0
   ! Read the pathnames where input/output files are stored
   !*******************************************************
@@ -110,7 +110,7 @@ program flexpart
 
   ! Print the GPL License statement
   !*******************************************************
-  print*,'Welcome to FLEXPART', trim(flexversion)
+  print*,'Welcome to FLEXPART ', trim(flexversion)
   print*,'FLEXPART is free software released under the GNU Genera'// &
        'l Public License.'
             

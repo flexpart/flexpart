@@ -79,35 +79,35 @@ subroutine readcommand
   real(kind=dp) :: juldate
   character(len=50) :: line
   logical :: old
-  logical :: nmlout=.true. !.false.
+  logical :: nml_COMMAND=.true. , nmlout=.true.  !.false.
   integer :: readerror
 
   namelist /command/ &
-    ldirect, &
-    ibdate,ibtime, &
-    iedate,ietime, &
-    loutstep, &
-    loutaver, &
-    loutsample, &
-    itsplit, &
-    lsynctime, &
-    ctl, &
-    ifine, &
-    iout, &
-    ipout, &
-    lsubgrid, &
-    lconvection, &
-    lagespectra, &
-    ipin, &
-    ioutputforeachrelease, &
-    iflux, &
-    mdomainfill, &
-    ind_source, &
-    ind_receptor, &
-    mquasilag, &
-    nested_output, &
-    linit_cond, &
-    surf_only    
+  ldirect, &
+  ibdate,ibtime, &
+  iedate,ietime, &
+  loutstep, &
+  loutaver, &
+  loutsample, &
+  itsplit, &
+  lsynctime, &
+  ctl, &
+  ifine, &
+  iout, &
+  ipout, &
+  lsubgrid, &
+  lconvection, &
+  lagespectra, &
+  ipin, &
+  ioutputforeachrelease, &
+  iflux, &
+  mdomainfill, &
+  ind_source, &
+  ind_receptor, &
+  mquasilag, &
+  nested_output, &
+  linit_cond, &
+  surf_only    
 
   ! Presetting namelist command
   ldirect=1
@@ -143,21 +143,41 @@ subroutine readcommand
   !**************************************************************************
   open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
          form='formatted',iostat=readerror)
-  ! If fail, check if file does not exist
-  if (readerror.ne.0) then
-    
-    print*,'***ERROR: file COMMAND not found in ' 
-    print*, path(1)(1:length(1))//'COMMAND'
-    print*, 'Check your pathnames file.'
-    stop
+   ! If fail, check if file does not exist
+   if (readerror.ne.0) then
+     print*,'***ERROR: file COMMAND not found in ' 
+     print*, path(1)(1:length(1))//'COMMAND'
+     print*, 'Check your pathnames file.'
+     stop
+   endif
 
-  endif
+   ! print error code
+   !write(*,*) 'readcommand > readerror open=' , readerror
+   !probe first line  
+   read (unitcommand,901) line
+   !write(*,*) 'index(line,COMMAND) =', index(line,'COMMAND') 
 
-  read(unitcommand,command,iostat=readerror)
+ 
+   !default is namelist input 
+   ! distinguish namelist from fixed text input
+   if (index(line,'COMMAND') .eq. 0) then
+   nml_COMMAND = .false. 
+   !write(*,*) 'COMMAND file does not contain the string COMMAND in the first line'      
+   endif
+   !write(*,*) 'readcommand > read as namelist? ' , nml_COMMAND
+   rewind(unitcommand)
+   read(unitcommand,command,iostat=readerror)
+
   close(unitcommand)
 
+  !write(*,*) 'readcommand > readerror read=' , readerror
   ! If error in namelist format, try to open with old input code
-  if (readerror.ne.0) then
+  ! if (readerror.ne.0) then
+  ! IP 21/5/2014 the previous line cause the old long format 
+  ! to be confused with namelist input
+  
+  ! use text input 
+  if (nml_COMMAND .eqv. .false.) then 
 
     open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
          err=999)
@@ -172,10 +192,13 @@ subroutine readcommand
   901   format (a)
     if (index(line,'LDIRECT') .eq. 0) then
       old = .false.
+    !write(*,*) 'readcommand old short'
     else
       old = .true.
+    !write(*,*) 'readcommand old long'
     endif
     rewind(unitcommand)
+
 
     ! Read parameters
     !****************
@@ -230,13 +253,14 @@ subroutine readcommand
     read(unitcommand,*) nested_output
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) linit_cond
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) surf_only
     close(unitcommand)
 
   endif ! input format
 
   ! write command file in namelist format to output directory if requested
   if (nmlout.eqv..true.) then
-    !open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist.out',status='new',err=1000)
     open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=1000)
     write(unitcommand,nml=command)
     close(unitcommand)

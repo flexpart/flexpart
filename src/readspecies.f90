@@ -30,12 +30,19 @@ subroutine readspecies(id_spec,pos_spec)
   !                                                                            *
   !   11 July 1996                                                             *
   !                                                                            *
+  !   Changes:                                                                 *
+  !   N. Kristiansen, 31.01.2013: Including parameters for in-cloud scavenging *
+  !                                                                            *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
   ! decaytime(maxtable)  half time for radiological decay                      *
   ! specname(maxtable)   names of chemical species, radionuclides              *
-  ! wetscava, wetscavb   Parameters for determining scavenging coefficient     *
+  ! weta, wetb           Parameters for determining below-cloud scavenging     *
+  ! weta_in              Parameter for determining in-cloud scavenging         *
+  ! wetb_in              Parameter for determining in-cloud scavenging         *
+  ! wetc_in              Parameter for determining in-cloud scavenging         *
+  ! wetd_in              Parameter for determining in-cloud scavenging         *
   ! ohreact              OH reaction rate                                      *
   ! id_spec              SPECIES number as referenced in RELEASE file          *
   ! id_pos               position where SPECIES data shall be stored           *
@@ -77,6 +84,17 @@ subroutine readspecies(id_spec,pos_spec)
   !  write(*,*) weta(pos_spec)
     read(unitspecies,'(f18.2)',end=22) wetb(pos_spec)
   !  write(*,*) wetb(pos_spec)
+
+!*** NIK 31.01.2013: including in-cloud scavening parameters
+   read(unitspecies,'(e18.1)',end=22) weta_in(pos_spec)
+  !  write(*,*) weta_in(pos_spec)
+   read(unitspecies,'(f18.2)',end=22) wetb_in(pos_spec)
+  !  write(*,*) wetb_in(pos_spec)
+   read(unitspecies,'(f18.2)',end=22) wetc_in(pos_spec)
+  !  write(*,*) wetc_in(pos_spec)
+   read(unitspecies,'(f18.2)',end=22) wetd_in(pos_spec)
+  !  write(*,*) wetd_in(pos_spec)
+
     read(unitspecies,'(f18.1)',end=22) reldiff(pos_spec)
   !  write(*,*) reldiff(pos_spec)
     read(unitspecies,'(e18.1)',end=22) henry(pos_spec)

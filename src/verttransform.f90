@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine verttransform(n,uuh,vvh,wwh,pvh)
-  !                         i  i   i   i   i
+  !                      i  i   i   i   i
   !*****************************************************************************
   !                                                                            *
   !     This subroutine transforms temperature, dew point temperature and      *
@@ -48,8 +48,6 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !*****************************************************************************
   ! Sabine Eckhardt, March 2007
   ! added the variable cloud for use with scavenging - descr. in com_mod
-  ! Petra Seibert, 2011/2012: Fixing some deficiencies in this modification
-  ! note that also other subroutines are affected by the fix
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -71,24 +69,20 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   implicit none
 
   integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp,ixm,jym
- integer :: rain_cloud_above,kz_inv !SE
-  integer icloudtop !PS
+  integer :: rain_cloud_above,kz_inv
   real :: f_qvsat,pressure
- !real :: rh,lsp,convp
-  real :: rh,lsp,convp,prec,rhmin  
-  real :: uvzlev(nuvzmax),rhoh(nuvzmax),pinmconv(nzmax)
+  real :: rh,lsp,convp
+  real :: rhoh(nuvzmax),pinmconv(nzmax)
   real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi
   real :: xlon,ylat,xlonr,dzdx,dzdy
-  real :: dzdx1,dzdx2,dzdy1,dzdy2, precmin
+  real :: dzdx1,dzdx2,dzdy1,dzdy2,cosf
   real :: uuaux,vvaux,uupolaux,vvpolaux,ddpol,ffpol,wdummy
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: pvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
   real :: wzlev(nwzmax),uvwzlev(0:nxmax-1,0:nymax-1,nzmax)
-  logical lconvectprec
   real,parameter :: const=r_air/ga
-  parameter (precmin = 0.002) ! minimum prec in mm/h for cloud diagnostics
 
   logical :: init = .true.
 
@@ -96,23 +90,14 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !*************************************************************************
   ! If verttransform is called the first time, initialize heights of the   *
   ! z levels in meter. The heights are the heights of model levels, where  *
-  ! u,v,T and qv are given, and of the interfaces, where w is given. So,   *
-  ! the vertical resolution in the z system is doubled. As reference point,*
-  ! the lower left corner of the grid is used.                             *
-  ! Unlike in the eta system, no difference between heights for u,v and    *
-  ! heights for w exists.                                                  *
+  ! u,v,T and qv are given.                                                *
   !*************************************************************************
-
-
-  !      do 897 kz=1,nuvz
-  !       write (*,*) 'akz: ',akz(kz),'bkz',bkz(kz)
-  !897     continue
 
   if (init) then
 
   ! Search for a point with high surface pressure (i.e. not above significant topography)
   ! Then, use this point to construct a reference z profile, to be used at all times
-  !*****************************************************************************
+  !**************************************************************************************
 
     do jy=0,nymin1
       do ix=0,nxmin1
@@ -127,7 +112,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
 
     tvold=tt2(ixm,jym,1,n)*(1.+0.378*ew(td2(ixm,jym,1,n))/ &
-         ps(ixm,jym,1,n))
+    ps(ixm,jym,1,n))
     pold=ps(ixm,jym,1,n)
     height(1)=0.
 
@@ -135,48 +120,16 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       pint=akz(kz)+bkz(kz)*ps(ixm,jym,1,n)
       tv=tth(ixm,jym,kz,n)*(1.+0.608*qvh(ixm,jym,kz,n))
 
-
-  ! NOTE: In FLEXPART versions up to 4.0, the number of model levels was doubled
-  ! upon the transformation to z levels. In order to save computer memory, this is
-  ! not done anymore in the standard version. However, this option can still be
-  ! switched on by replacing the following lines with those below, that are
-  ! currently commented out.
-  ! Note that two more changes are necessary in this subroutine below.
-  ! One change is also necessary in gridcheck.f, and another one in verttransform_nests.
-  !*****************************************************************************
-
       if (abs(tv-tvold).gt.0.2) then
-        height(kz)= &
-             height(kz-1)+const*log(pold/pint)* &
-             (tv-tvold)/log(tv/tvold)
+        height(kz)=height(kz-1)+const*log(pold/pint)* &
+        (tv-tvold)/log(tv/tvold)
       else
-        height(kz)=height(kz-1)+ &
-             const*log(pold/pint)*tv
+        height(kz)=height(kz-1)+const*log(pold/pint)*tv
       endif
-
-  ! Switch on following lines to use doubled vertical resolution
-  !*************************************************************
-  !    if (abs(tv-tvold).gt.0.2) then
-  !      height((kz-1)*2)=
-  !    +      height(max((kz-2)*2,1))+const*log(pold/pint)*
-  !    +      (tv-tvold)/log(tv/tvold)
-  !    else
-  !      height((kz-1)*2)=height(max((kz-2)*2,1))+
-  !    +      const*log(pold/pint)*tv
-  !    endif
-  ! End doubled vertical resolution
 
       tvold=tv
       pold=pint
     end do
-
-
-  ! Switch on following lines to use doubled vertical resolution
-  !*************************************************************
-  !  do 7 kz=3,nz-1,2
-  !    height(kz)=0.5*(height(kz-1)+height(kz+1))
-  !  height(nz)=height(nz-1)+height(nz-1)-height(nz-2)
-  ! End doubled vertical resolution
 
 
   ! Determine highest levels that can be within PBL
@@ -203,10 +156,9 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
   do jy=0,nymin1
     do ix=0,nxmin1
-      tvold=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
-           ps(ix,jy,1,n))
+      tvold=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ps(ix,jy,1,n))
       pold=ps(ix,jy,1,n)
-      uvzlev(1)=0.
+      uvwzlev(ix,jy,1)=0.
       wzlev(1)=0.
       rhoh(1)=pold/(r_air*tvold)
 
@@ -220,10 +172,10 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         rhoh(kz)=pint/(r_air*tv)
 
         if (abs(tv-tvold).gt.0.2) then
-          uvzlev(kz)=uvzlev(kz-1)+const*log(pold/pint)* &
-               (tv-tvold)/log(tv/tvold)
+          uvwzlev(ix,jy,kz)=uvwzlev(ix,jy,kz-1)+const*log(pold/pint)* &
+          (tv-tvold)/log(tv/tvold)
         else
-          uvzlev(kz)=uvzlev(kz-1)+const*log(pold/pint)*tv
+          uvwzlev(ix,jy,kz)=uvwzlev(ix,jy,kz-1)+const*log(pold/pint)*tv
         endif
 
         tvold=tv
@@ -232,37 +184,23 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
 
       do kz=2,nwz-1
-        wzlev(kz)=(uvzlev(kz+1)+uvzlev(kz))/2.
+        wzlev(kz)=(uvwzlev(ix,jy,kz+1)+uvwzlev(ix,jy,kz))/2.
       end do
-      wzlev(nwz)=wzlev(nwz-1)+ &
-           uvzlev(nuvz)-uvzlev(nuvz-1)
-
-      uvwzlev(ix,jy,1)=0.0
-      do kz=2,nuvz
-        uvwzlev(ix,jy,kz)=uvzlev(kz)
-      end do
-
-  ! Switch on following lines to use doubled vertical resolution
-  ! Switch off the three lines above.
-  !*************************************************************
-  !22          uvwzlev(ix,jy,(kz-1)*2)=uvzlev(kz)
-  !     do 23 kz=2,nwz
-  !23          uvwzlev(ix,jy,(kz-1)*2+1)=wzlev(kz)
-  ! End doubled vertical resolution
+      wzlev(nwz)=wzlev(nwz-1)+uvwzlev(ix,jy,nuvz)-uvwzlev(ix,jy,nuvz-1)
 
   ! pinmconv=(h2-h1)/(p2-p1)
 
       pinmconv(1)=(uvwzlev(ix,jy,2)-uvwzlev(ix,jy,1))/ &
-           ((aknew(2)+bknew(2)*ps(ix,jy,1,n))- &
-           (aknew(1)+bknew(1)*ps(ix,jy,1,n)))
+      ((aknew(2)+bknew(2)*ps(ix,jy,1,n))- &
+      (aknew(1)+bknew(1)*ps(ix,jy,1,n)))
       do kz=2,nz-1
         pinmconv(kz)=(uvwzlev(ix,jy,kz+1)-uvwzlev(ix,jy,kz-1))/ &
-             ((aknew(kz+1)+bknew(kz+1)*ps(ix,jy,1,n))- &
-             (aknew(kz-1)+bknew(kz-1)*ps(ix,jy,1,n)))
+        ((aknew(kz+1)+bknew(kz+1)*ps(ix,jy,1,n))- &
+        (aknew(kz-1)+bknew(kz-1)*ps(ix,jy,1,n)))
       end do
       pinmconv(nz)=(uvwzlev(ix,jy,nz)-uvwzlev(ix,jy,nz-1))/ &
-           ((aknew(nz)+bknew(nz)*ps(ix,jy,1,n))- &
-           (aknew(nz-1)+bknew(nz-1)*ps(ix,jy,1,n)))
+      ((aknew(nz)+bknew(nz)*ps(ix,jy,1,n))- &
+      (aknew(nz-1)+bknew(nz-1)*ps(ix,jy,1,n)))
 
   ! Levels, where u,v,t and q are given
   !************************************
@@ -282,7 +220,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       kmin=2
       do iz=2,nz-1
         do kz=kmin,nuvz
-          if(height(iz).gt.uvzlev(nuvz)) then
+          if(height(iz).gt.uvwzlev(ix,jy,nuvz)) then
             uu(ix,jy,iz,n)=uu(ix,jy,nz,n)
             vv(ix,jy,iz,n)=vv(ix,jy,nz,n)
             tt(ix,jy,iz,n)=tt(ix,jy,nz,n)
@@ -291,10 +229,10 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
             rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
             goto 30
           endif
-          if ((height(iz).gt.uvzlev(kz-1)).and. &
-               (height(iz).le.uvzlev(kz))) then
-           dz1=height(iz)-uvzlev(kz-1)
-           dz2=uvzlev(kz)-height(iz)
+          if ((height(iz).gt.uvwzlev(ix,jy,kz-1)).and. &
+          (height(iz).le.uvwzlev(ix,jy,kz))) then
+           dz1=height(iz)-uvwzlev(ix,jy,kz-1)
+           dz2=uvwzlev(ix,jy,kz)-height(iz)
            dz=dz1+dz2
            uu(ix,jy,iz,n)=(uuh(ix,jy,kz-1)*dz2+uuh(ix,jy,kz)*dz1)/dz
            vv(ix,jy,iz,n)=(vvh(ix,jy,kz-1)*dz2+vvh(ix,jy,kz)*dz1)/dz
@@ -338,10 +276,10 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !*************************************************
 
       drhodz(ix,jy,1,n)=(rho(ix,jy,2,n)-rho(ix,jy,1,n))/ &
-           (height(2)-height(1))
+      (height(2)-height(1))
       do kz=2,nz-1
         drhodz(ix,jy,kz,n)=(rho(ix,jy,kz+1,n)-rho(ix,jy,kz-1,n))/ &
-             (height(kz+1)-height(kz-1))
+        (height(kz+1)-height(kz-1))
       end do
       drhodz(ix,jy,nz,n)=drhodz(ix,jy,nz-1,n)
 
@@ -355,17 +293,18 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !****************************************************************
 
   do jy=1,ny-2
+    cosf=cos((real(jy)*dy+ylat0)*pi180)
     do ix=1,nx-2
 
       kmin=2
       do iz=2,nz-1
 
-        ui=uu(ix,jy,iz,n)*dxconst/cos((real(jy)*dy+ylat0)*pi180)
+        ui=uu(ix,jy,iz,n)*dxconst/cosf
         vi=vv(ix,jy,iz,n)*dyconst
 
         do kz=kmin,nz
           if ((height(iz).gt.uvwzlev(ix,jy,kz-1)).and. &
-               (height(iz).le.uvwzlev(ix,jy,kz))) then
+          (height(iz).le.uvwzlev(ix,jy,kz))) then
             dz1=height(iz)-uvwzlev(ix,jy,kz-1)
             dz2=uvwzlev(ix,jy,kz)-height(iz)
             dz=dz1+dz2
@@ -408,8 +347,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         xlon=xlon0+real(ix)*dx
         do iz=1,nz
           call cc2gll(northpolemap,ylat,xlon,uu(ix,jy,iz,n), &
-               vv(ix,jy,iz,n),uupol(ix,jy,iz,n), &
-               vvpol(ix,jy,iz,n))
+          vv(ix,jy,iz,n),uupol(ix,jy,iz,n),vvpol(ix,jy,iz,n))
         end do
       end do
     end do
@@ -423,14 +361,12 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
-      ffpol=sqrt(uu(nx/2-1,nymin1,iz,n)**2+ &
-           vv(nx/2-1,nymin1,iz,n)**2)
+      ffpol=sqrt(uu(nx/2-1,nymin1,iz,n)**2+vv(nx/2-1,nymin1,iz,n)**2)
       if (vv(nx/2-1,nymin1,iz,n).lt.0.) then
-        ddpol=atan(uu(nx/2-1,nymin1,iz,n)/ &
-             vv(nx/2-1,nymin1,iz,n))-xlonr
+        ddpol=atan(uu(nx/2-1,nymin1,iz,n)/vv(nx/2-1,nymin1,iz,n))-xlonr
       else if (vv(nx/2-1,nymin1,iz,n).gt.0.) then
         ddpol=pi+atan(uu(nx/2-1,nymin1,iz,n)/ &
-             vv(nx/2-1,nymin1,iz,n))-xlonr
+        vv(nx/2-1,nymin1,iz,n))-xlonr
       else
         ddpol=pi/2-xlonr
       endif
@@ -443,9 +379,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       ylat=90.0
       uuaux=-ffpol*sin(xlonr+ddpol)
       vvaux=-ffpol*cos(xlonr+ddpol)
-      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux, &
-           vvpolaux)
-
+      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux,vvpolaux)
       jy=nymin1
       do ix=0,nxmin1
         uupol(ix,jy,iz,n)=uupolaux
@@ -484,8 +418,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         xlon=xlon0+real(ix)*dx
         do iz=1,nz
           call cc2gll(southpolemap,ylat,xlon,uu(ix,jy,iz,n), &
-               vv(ix,jy,iz,n),uupol(ix,jy,iz,n), &
-               vvpol(ix,jy,iz,n))
+          vv(ix,jy,iz,n),uupol(ix,jy,iz,n),vvpol(ix,jy,iz,n))
         end do
       end do
     end do
@@ -498,14 +431,11 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
-      ffpol=sqrt(uu(nx/2-1,0,iz,n)**2+ &
-           vv(nx/2-1,0,iz,n)**2)
+      ffpol=sqrt(uu(nx/2-1,0,iz,n)**2+vv(nx/2-1,0,iz,n)**2)
       if (vv(nx/2-1,0,iz,n).lt.0.) then
-        ddpol=atan(uu(nx/2-1,0,iz,n)/ &
-             vv(nx/2-1,0,iz,n))+xlonr
+        ddpol=atan(uu(nx/2-1,0,iz,n)/vv(nx/2-1,0,iz,n))+xlonr
       else if (vv(nx/2-1,0,iz,n).gt.0.) then
-        ddpol=pi+atan(uu(nx/2-1,0,iz,n)/ &
-             vv(nx/2-1,0,iz,n))+xlonr
+        ddpol=pi+atan(uu(nx/2-1,0,iz,n)/vv(nx/2-1,0,iz,n))+xlonr
       else
         ddpol=pi/2-xlonr
       endif
@@ -518,8 +448,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       ylat=-90.0
       uuaux=+ffpol*sin(xlonr-ddpol)
       vvaux=-ffpol*cos(xlonr-ddpol)
-      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux, &
-           vvpolaux)
+      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux,vvpolaux)
 
       jy=0
       do ix=0,nxmin1
@@ -550,136 +479,41 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !write (*,*) 'initializing clouds, n:',n,nymin1,nxmin1,nz
   !   create a cloud and rainout/washout field, clouds occur where rh>80%
   !   total cloudheight is stored at level 0
-
-
-
   do jy=0,nymin1
     do ix=0,nxmin1
-
-
-
-  !    rain_cloud_above=0
-  !    lsp=lsprec(ix,jy,1,n)
-  !    convp=convprec(ix,jy,1,n)
-  !    cloudsh(ix,jy,n)=0
-  !    do kz_inv=1,nz-1
-  !       kz=nz-kz_inv+1
-  !       pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
-  !       rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
-  !       clouds(ix,jy,kz,n)=0
-  !       if (rh.gt.0.8) then ! in cloud
-  !          if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
-  !             rain_cloud_above=1
-  !             cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+ &
-  !                  height(kz)-height(kz-1)
-  !             if (lsp.ge.convp) then
-  !                clouds(ix,jy,kz,n)=3 ! lsp dominated rainout
-  !             else
-  !                clouds(ix,jy,kz,n)=2 ! convp dominated rainout
-  !             endif
-  !          else ! no precipitation
-  !                clouds(ix,jy,kz,n)=1 ! cloud
-  !          endif
-  !       else ! no cloud
-  !          if (rain_cloud_above.eq.1) then ! scavenging
-  !             if (lsp.ge.convp) then
-  !                clouds(ix,jy,kz,n)=5 ! lsp dominated washout
-  !             else
-  !                clouds(ix,jy,kz,n)=4 ! convp dominated washout
-  !             endif
-  !          endif
-  !       endif
-  !    end do
-
-
-   ! PS 3012
-
-             lsp=lsprec(ix,jy,1,n)
-          convp=convprec(ix,jy,1,n)
-          prec=lsp+convp
-          if (lsp.gt.convp) then !  prectype='lsp'
-            lconvectprec = .false.
-          else ! prectype='cp '
-            lconvectprec = .true.
-          endif
-          rhmin = 0.90 ! standard condition for presence of clouds
-!PS       note that original by Sabine Eckhart was 80%
-!PS       however, for T<-20 C we consider saturation over ice
-!PS       so I think 90% should be enough          
-          icloudbot(ix,jy,n)=icmv
-          icloudtop=icmv ! this is just a local variable
-98        do kz=1,nz
-            pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
-            rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
-!ps            if (prec.gt.0.01) print*,'relhum',prec,kz,rh,height(kz)
-            if (rh .gt. rhmin) then
-              if (icloudbot(ix,jy,n) .eq. icmv) then
-                icloudbot(ix,jy,n)=nint(height(kz))
-              endif
-              icloudtop=nint(height(kz)) ! use int to save memory
+      rain_cloud_above=0
+      lsp=lsprec(ix,jy,1,n)
+      convp=convprec(ix,jy,1,n)
+      cloudsh(ix,jy,n)=0
+      do kz_inv=1,nz-1
+         kz=nz-kz_inv+1
+         pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
+         rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
+         clouds(ix,jy,kz,n)=0
+         if (rh.gt.0.8) then ! in cloud
+            if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
+               rain_cloud_above=1
+               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+ &
+               height(kz)-height(kz-1)
+               if (lsp.ge.convp) then
+                  clouds(ix,jy,kz,n)=3 ! lsp dominated rainout
+               else
+                  clouds(ix,jy,kz,n)=2 ! convp dominated rainout
+               endif
+            else ! no precipitation
+                  clouds(ix,jy,kz,n)=1 ! cloud
             endif
-          enddo
-
-!PS try to get a cloud thicker than 50 m 
-!PS if there is at least .01 mm/h  - changed to 0.002 and put into
-!PS parameter precpmin        
-          if ((icloudbot(ix,jy,n) .eq. icmv .or. &
-              icloudtop-icloudbot(ix,jy,n) .lt. 50) .and. &
-              prec .gt. precmin) then
-            rhmin = rhmin - 0.05
-            if (rhmin .ge. 0.30) goto 98 ! give up for <= 25% rel.hum.
-          endif
-!PS implement a rough fix for badly represented convection
-!PS is based on looking at a limited set of comparison data
-          if (lconvectprec .and. icloudtop .lt. 6000 .and. &
-             prec .gt. precmin) then 
-
-            if (convp .lt. 0.1) then
-              icloudbot(ix,jy,n) = 500
-              icloudtop =         8000
-            else
-              icloudbot(ix,jy,n) = 0
-              icloudtop =      10000
+         else ! no cloud
+            if (rain_cloud_above.eq.1) then ! scavenging
+               if (lsp.ge.convp) then
+                  clouds(ix,jy,kz,n)=5 ! lsp dominated washout
+               else
+                  clouds(ix,jy,kz,n)=4 ! convp dominated washout
+               endif
             endif
-          endif
-          if (icloudtop .ne. icmv) then
-            icloudthck(ix,jy,n) = icloudtop-icloudbot(ix,jy,n)
-          else
-            icloudthck(ix,jy,n) = icmv
-          endif
-!PS  get rid of too thin clouds      
-          if (icloudthck(ix,jy,n) .lt. 50) then
-            icloudbot(ix,jy,n)=icmv
-            icloudthck(ix,jy,n)=icmv
-          endif
-
-
+         endif
+      end do
     end do
   end do
-
-  !do 102 kz=1,nuvz
-  !write(an,'(i02)') kz+10
-  !write(*,*) nuvz,nymin1,nxmin1,'--',an,'--'
-  !open(4,file='/nilu_wrk2/sec/cloudtest/cloud'//an,form='formatted')
-  !do 101 jy=0,nymin1
-  !    write(4,*) (clouds(ix,jy,kz,n),ix=1,nxmin1)
-  !101   continue
-  ! close(4)
-  !102   continue
-
-  ! open(4,file='/nilu_wrk2/sec/cloudtest/height',form='formatted')
-  ! do 103 jy=0,nymin1
-  !     write (4,*)
-  !+       (height(kz),kz=1,nuvz)
-  !103   continue
-  ! close(4)
-
-  !open(4,file='/nilu_wrk2/sec/cloudtest/p',form='formatted')
-  ! do 104 jy=0,nymin1
-  !     write (4,*)
-  !+       (r_air*tt(ix,jy,1,n)*rho(ix,jy,1,n),ix=1,nxmin1)
-  !104   continue
-  ! close(4)
-
 
 end subroutine verttransform

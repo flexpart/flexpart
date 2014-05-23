@@ -70,7 +70,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   integer :: ifile
   integer :: iret
   integer :: igrib
-  integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl
+  integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl,parId
   integer :: gotGrid
   !HSO  end
 
@@ -89,22 +89,17 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 
   integer :: isec1(56),isec2(22+nxmax+nymax)
   real(kind=4) :: zsec4(jpunp)
-  real(kind=4) :: xaux,yaux,xaux0,yaux0
+  real(kind=4) :: xaux,yaux
   real(kind=8) :: xauxin,yauxin
   real,parameter :: eps=1.e-4
   real(kind=4) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
-  real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1
+  real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
 
   logical :: hflswitch,strswitch
 
   !HSO  grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'readwind'
-
-  !HSO conversion of ECMWF etadot to etadot*dp/deta
-  logical :: etacon=.false.
-  real,parameter :: p00=101325.
-  real :: dak,dbk
 
   hflswitch=.false.
   strswitch=.false.
@@ -154,6 +149,8 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     isec1(6)=135
   endif
 
+  conversion_factor=1.
+
   else
 
   !print*,'GRiB Edition 2'
@@ -168,6 +165,8 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'level',valSurf,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_int(igrib,'paramId',parId,iret)
+  call grib_check(iret,gribFunction,gribErrorMsg)
 
   !print*,discipl,parCat,parNum,typSurf,valSurf
 
@@ -176,6 +175,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   isec1(7)=-1
   isec1(8)=-1
   isec1(8)=valSurf     ! level
+  conversion_factor=1.
   if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! T
     isec1(6)=130         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.105)) then ! U
@@ -187,6 +187,8 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
+    isec1(6)=135         ! indicatorOfParameter
+  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot
     isec1(6)=135         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
     isec1(6)=151         ! indicatorOfParameter
@@ -200,30 +202,36 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     isec1(6)=168         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
     isec1(6)=141         ! indicatorOfParameter
-  elseif ((parCat.eq.6).and.(parNum.eq.1)) then ! CC
+    conversion_factor=1000.
+  elseif ((parCat.eq.6).and.(parNum.eq.1) .or. parId .eq. 164) then ! CC
     isec1(6)=164         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.9)) then ! LSP
+  elseif ((parCat.eq.1).and.(parNum.eq.9) .or. parId .eq. 142) then ! LSP
     isec1(6)=142         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
     isec1(6)=143         ! indicatorOfParameter
+    conversion_factor=1000.
   elseif ((parCat.eq.0).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SHF
     isec1(6)=146         ! indicatorOfParameter
   elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
     isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17)) then ! EWSS
+  elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS
     isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18)) then ! NSSS
+  elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS
     isec1(6)=181         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
     isec1(6)=129         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.7)) then ! SDO
+  elseif ((parCat.eq.3).and.(parNum.eq.7) .or. parId .eq. 160) then ! SDO
     isec1(6)=160         ! indicatorOfParameter
   elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
        (typSurf.eq.1)) then ! LSM
     isec1(6)=172         ! indicatorOfParameter
   else
-    print*,'***ERROR: undefined GRiB2 message found!',discipl, &
+    print*,'***WARNING: undefined GRiB2 message found!',discipl, &
          parCat,parNum,typSurf
+  endif
+  if(parId .ne. isec1(6) .and. parId .ne. 77) then
+    write(*,*) 'parId',parId, 'isec1(6)',isec1(6)
+!    stop
   endif
 
   endif
@@ -236,42 +244,37 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 
   !HSO  get the required fields from section 2 in a gribex compatible manner
   if (ifield.eq.1) then
-  call grib_get_int(igrib,'numberOfPointsAlongAParallel', &
-       isec2(2),iret)
+  call grib_get_int(igrib,'numberOfPointsAlongAParallel',isec2(2),iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'numberOfPointsAlongAMeridian', &
-       isec2(3),iret)
+  call grib_get_int(igrib,'numberOfPointsAlongAMeridian',isec2(3),iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'numberOfVerticalCoordinateValues', &
-       isec2(12))
+  call grib_get_int(igrib,'numberOfVerticalCoordinateValues',isec2(12))
   call grib_check(iret,gribFunction,gribErrorMsg)
   ! CHECK GRID SPECIFICATIONS
   if(isec2(2).ne.nxfield) stop 'READWIND: NX NOT CONSISTENT'
   if(isec2(3).ne.ny) stop 'READWIND: NY NOT CONSISTENT'
   if(isec2(12)/2-1.ne.nlev_ec) &
-       stop 'READWIND: VERTICAL DISCRETIZATION NOT CONSISTENT'
+  stop 'READWIND: VERTICAL DISCRETIZATION NOT CONSISTENT'
   endif ! ifield
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
-  if ((gribVer.eq.1).and.(gotGrid.eq.0)) then
+  if (isec1(6) .eq. 167 .and. (gotGrid.eq.0)) then
     call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
          xauxin,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
     call grib_get_real8(igrib,'latitudeOfLastGridPointInDegrees', &
          yauxin,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
+    if (xauxin.gt.180.) xauxin=xauxin-360.0
+    if (xauxin.lt.-180.) xauxin=xauxin+360.0
+
     xaux=xauxin+real(nxshift)*dx
     yaux=yauxin
-    xaux0=xlon0
-    yaux0=ylat0
-    if(xaux.lt.0.) xaux=xaux+360.
-    if(yaux.lt.0.) yaux=yaux+360.
-    if(xaux0.lt.0.) xaux0=xaux0+360.
-    if(yaux0.lt.0.) yaux0=yaux0+360.
-    if(abs(xaux-xaux0).gt.eps) &
-         stop 'READWIND: LOWER LEFT LONGITUDE NOT CONSISTENT'
-    if(abs(yaux-yaux0).gt.eps) &
-         stop 'READWIND: LOWER LEFT LATITUDE NOT CONSISTENT'
+    if (xaux.gt.180.) xaux=xaux-360.0
+    if(abs(xaux-xlon0).gt.eps) &
+    stop 'READWIND: LOWER LEFT LONGITUDE NOT CONSISTENT'
+    if(abs(yaux-ylat0).gt.eps) &
+    stop 'READWIND: LOWER LEFT LATITUDE NOT CONSISTENT'
     gotGrid=1
   endif ! gotGrid
 
@@ -297,7 +300,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       if(isec1(6).eq.135) wwh(i,j,nlev_ec-k+1)= &!! W VELOCITY
            zsec4(nxfield*(ny-j-1)+i+1)
       if(isec1(6).eq.141) sd(i,j,1,n)= &!! SNOW DEPTH
-           zsec4(nxfield*(ny-j-1)+i+1)
+           zsec4(nxfield*(ny-j-1)+i+1)/conversion_factor
       if(isec1(6).eq.151) msl(i,j,1,n)= &!! SEA LEVEL PRESS.
            zsec4(nxfield*(ny-j-1)+i+1)
       if(isec1(6).eq.164) tcc(i,j,1,n)= &!! CLOUD COVER
@@ -315,7 +318,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
         if (lsprec(i,j,1,n).lt.0.) lsprec(i,j,1,n)=0.
       endif
       if(isec1(6).eq.143) then                      !! CONVECTIVE PREC.
-        convprec(i,j,1,n)=zsec4(nxfield*(ny-j-1)+i+1)
+        convprec(i,j,1,n)=zsec4(nxfield*(ny-j-1)+i+1)/conversion_factor
         if (convprec(i,j,1,n).lt.0.) convprec(i,j,1,n)=0.
       endif
       if(isec1(6).eq.146) sshf(i,j,1,n)= &!! SENS. HEAT FLUX
@@ -365,22 +368,6 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     do i=0,nxmin1
       do j=0,nymin1
         wwh(i,j,nlev_ec+1)=0.
-      end do
-    end do
-  endif
-
-  ! convert from ECMWF etadot to etadot*dp/deta as needed by FLEXPART
-  if(etacon.eqv..true.) then
-    do k=1,nwzmax
-      dak=akm(k+1)-akm(k)
-      dbk=bkm(k+1)-bkm(k)
-      do i=0,nxmin1
-        do j=0,nymin1 
-          wwh(i,j,k)=2*wwh(i,j,k)*ps(i,j,1,n)*(dak/ps(i,j,1,n)+dbk)/(dak/p00+dbk)
-          if (k.gt.1) then 
-            wwh(i,j,k)=wwh(i,j,k)-wwh(i,j,k-1)
-          endif
-        end do
       end do
     end do
   endif
@@ -478,3 +465,4 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   stop 'Execution terminated'
 
 end subroutine readwind
+

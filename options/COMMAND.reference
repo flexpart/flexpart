@@ -10,11 +10,11 @@
    LDIRECT           1 FOR FORWARD SIMULATION, -1 FOR BACKWARD SIMULATION
 
 2. ________ ______   3X, I8, 1X, I6
-   20040720 000000
+   20110310 000000
    YYYYMMDD HHMISS   BEGINNING DATE OF SIMULATION
 
 3. ________ ______   3X, I8, 1X, I6
-   20040721 120000
+   20110310 120000
    YYYYMMDD HHMISS   ENDING DATE OF SIMULATION
 
 4. _____             3X, I5
@@ -100,6 +100,10 @@
 24. _                4X, I1
     2
     LINIT_COND       INITIAL COND. FOR BW RUNS: 0=NO,1=MASS UNIT,2=MASS MIXING RATIO UNIT
+
+25. _                4X, I1
+    0
+    SURF_ONLY        IF THIS IS SET TO 1, OUTPUT IS WRITTEN ONLY OUT FOR LOWEST LAYER
 
 
 1. Simulation direction, 1 for forward, -1 for backward in time 
@@ -188,3 +192,7 @@
 24. LINIT_COND determines whether, for backward runs only, the sensitivity to initial
     conditions shall be calculated and written to output files
     0=no output, 1 or 2 determines in which units the initial conditions are provided.
+
+25. SURF_ONLY: When set to 1, concentration/emission sensitivity is written out only
+    for the surface layer; useful for instance when only footprint emission sensitivity is needed
+    but initial conditions are needed on a full 3-D grid

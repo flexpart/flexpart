@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
-  !                        i i  i    i    o
+  !                     i i  i    i    o
   !*****************************************************************************
   !                                                                            *
   !  Calculation of potential vorticity on 3-d nested grid                     *
@@ -47,8 +47,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
   integer :: jyvp,jyvm,ixvp,ixvm,jumpx,jumpy,jux,juy,ivrm,ivrp,ivr
   integer :: nlck,l
   real :: vx(2),uy(2),phi,tanphi,cosphi,dvdx,dudy,f
-  real :: theta,thetap,thetam,dthetadp,dt1,dt2,dt,ppmk
-  real :: ppml(nuvzmax)
+  real :: theta,thetap,thetam,dthetadp,dt1,dt2,dt
+  real :: ppml(0:nxmaxn-1,0:nymaxn-1,nuvzmax),ppmk(0:nxmaxn-1,0:nymaxn-1,nuvzmax)
   real :: thup,thdn
   real,parameter :: eps=1.e-5,p0=101325
   real :: uuhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,maxnests)
@@ -60,6 +60,15 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
   !
   ! Loop over entire grid
   !**********************
+  do kl=1,nuvz
+    do jy=0,nyn(l)-1
+      do ix=0,nxn(l)-1
+         ppml(ix,jy,kl)=akz(kl)+bkz(kl)*psn(ix,jy,1,n,l)
+      enddo
+    enddo
+  enddo
+  ppmk=(100000./ppml)**kappa
+
   do jy=0,nyn(l)-1
     phi = (ylat0n(l) + jy * dyn(l)) * pi / 180.
     f = 0.00014585 * sin(phi)
@@ -87,17 +96,12 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
   ! Define absolute gap length
       if (ix.eq.0.or.ix.eq.nxn(l)-1) jumpx=1
       jux=jumpx
-  ! Precalculate pressure values for efficiency
-      do kl=1,nuvz
-        ppml(kl)=akz(kl)+bkz(kl)*psn(ix,jy,1,n,l)
-      end do
   !
   ! Loop over the vertical
   !***********************
 
       do kl=1,nuvz
-        ppmk=akz(kl)+bkz(kl)*psn(ix,jy,1,n,l)
-        theta=tthn(ix,jy,kl,n,l)*(100000./ppmk)**kappa
+        theta=tthn(ix,jy,kl,n,l)*ppmk(ix,jy,kl)
         klvrp=kl+1
         klvrm=kl-1
         klpt=kl
@@ -106,11 +110,9 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
   !
         if (klvrp.gt.nuvz) klvrp=nuvz
         if (klvrm.lt.1) klvrm=1
-        ppmk=akz(klvrp)+bkz(klvrp)*psn(ix,jy,1,n,l)
-        thetap=tthn(ix,jy,klvrp,n,l)*(100000./ppmk)**kappa
-        ppmk=akz(klvrm)+bkz(klvrm)*psn(ix,jy,1,n,l)
-        thetam=tthn(ix,jy,klvrm,n,l)*(100000./ppmk)**kappa
-        dthetadp=(thetap-thetam)/(ppml(klvrp)-ppml(klvrm))
+        thetap=tthn(ix,jy,klvrp,n,l)*ppmk(ix,jy,klvrp)
+        thetam=tthn(ix,jy,klvrm,n,l)*ppmk(ix,jy,klvrm)
+        dthetadp=(thetap-thetam)/(ppml(ix,jy,klvrp)-ppml(ix,jy,klvrm))
 
   ! Compute vertical position at pot. temperature surface on subgrid
   ! and the wind at that position
@@ -133,10 +135,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
           if (kup.ge.nuvz) goto 41
           kch=kch+1
           k=kup
-          ppmk=akz(k)+bkz(k)*psn(ivr,jy,1,n,l)
-          thdn=tthn(ivr,jy,k,n,l)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*psn(ivr,jy,1,n,l)
-          thup=tthn(ivr,jy,k+1,n,l)*(100000./ppmk)**kappa
+          thdn=tthn(ivr,jy,k,n,l)*ppmk(ivr,jy,k)
+          thup=tthn(ivr,jy,k+1,n,l)*ppmk(ivr,jy,k+1)
 
       if (((thdn.ge.theta).and.(thup.le.theta)).or. &
            ((thdn.le.theta).and.(thup.ge.theta))) then
@@ -157,10 +157,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
           if (kdn.lt.1) goto 40
           kch=kch+1
           k=kdn
-          ppmk=akz(k)+bkz(k)*psn(ivr,jy,1,n,l)
-          thdn=tthn(ivr,jy,k,n,l)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*psn(ivr,jy,1,n,l)
-          thup=tthn(ivr,jy,k+1,n,l)*(100000./ppmk)**kappa
+          thdn=tthn(ivr,jy,k,n,l)*ppmk(ivr,jy,k)
+          thup=tthn(ivr,jy,k+1,n,l)*ppmk(ivr,jy,k+1)
       if (((thdn.ge.theta).and.(thup.le.theta)).or. &
            ((thdn.le.theta).and.(thup.ge.theta))) then
               dt1=abs(theta-thdn)
@@ -211,10 +209,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
           if (kup.ge.nuvz) goto 71
           kch=kch+1
           k=kup
-          ppmk=akz(k)+bkz(k)*psn(ix,j,1,n,l)
-          thdn=tthn(ix,j,k,n,l)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*psn(ix,j,1,n,l)
-          thup=tthn(ix,j,k+1,n,l)*(100000./ppmk)**kappa
+          thdn=tthn(ix,j,k,n,l)*ppmk(ix,j,k)
+          thup=tthn(ix,j,k+1,n,l)*ppmk(ix,j,k+1)
       if (((thdn.ge.theta).and.(thup.le.theta)).or. &
            ((thdn.le.theta).and.(thup.ge.theta))) then
               dt1=abs(theta-thdn)
@@ -234,10 +230,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
           if (kdn.lt.1) goto 70
           kch=kch+1
           k=kdn
-          ppmk=akz(k)+bkz(k)*psn(ix,j,1,n,l)
-          thdn=tthn(ix,j,k,n,l)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*psn(ix,j,1,n,l)
-          thup=tthn(ix,j,k+1,n,l)*(100000./ppmk)**kappa
+          thdn=tthn(ix,j,k,n,l)*ppmk(ix,j,k)
+          thup=tthn(ix,j,k+1,n,l)*ppmk(ix,j,k+1)
       if (((thdn.ge.theta).and.(thup.le.theta)).or. &
            ((thdn.le.theta).and.(thup.ge.theta))) then
               dt1=abs(theta-thdn)

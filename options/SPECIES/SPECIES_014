@@ -8,6 +8,10 @@ I2-131             Tracer name
 691200.0           Species half life
  8.0E-05           Wet deposition - A
 0.62               Wet deposition - B
+2.0E-7             In-cloud scavenging - Ai (cl=Ai*prec**Bi)
+0.36               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
+0.1                In-cloud scavenging - Ci (S_i=Ci/cl)
+1.                 In-cloud scavenging - Di (wetscav=S_i*prec/3.6E6/clouds_h/Di)
  2.7               Dry deposition (gases) - D
 1.0e+05            Dry deposition (gases) - Henrys const.
 0.1                Dry deposition (gases) - f0 (reactivity)

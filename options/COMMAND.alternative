@@ -29,6 +29,7 @@
 0               MQUASILAG         QUASILAGRANGIAN MODE TO TRACK INDIVIDUAL PARTICLES: 1 YES, 0 NO
 0               NESTED_OUTPUT     SHALL NESTED OUTPUT BE USED? YES, 0 NO
 2               LINIT_COND        INITIAL COND. FOR BW RUNS: 0=NO,1=MASS UNIT,2=MASS MIXING RATIO UNIT
+0               SURF_ONLY         IF THIS IS SET TO 1, OUTPUT IS WRITTEN ONLY OUT FOR LOWEST LAYER
 
 
 1. Simulation direction, 1 for forward, -1 for backward in time
@@ -116,3 +117,7 @@
 24. LINIT_COND determines whether, for backward runs only, the sensitivity to initial
     conditions shall be calculated and written to output files
     0=no output, 1 or 2 determines in which units the initial conditions are provided.
+
+25. SURF_ONLY: When set to 1, concentration/emission sensitivity is written out only
+    for the surface layer; useful for instance when only footprint emission sensitivity is needed
+    but initial conditions are needed on a full 3-D grid

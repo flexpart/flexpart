@@ -339,11 +339,8 @@ module com_mod
   real :: tth(0:nxmax-1,0:nymax-1,nuvzmax,2)
   real :: qvh(0:nxmax-1,0:nymax-1,nuvzmax,2)
   real :: pplev(0:nxmax-1,0:nymax-1,nuvzmax,2)
-  !scavenging NIK, PS
   integer(kind=1) :: clouds(0:nxmax-1,0:nymax-1,nzmax,2)
   integer :: cloudsh(0:nxmax-1,0:nymax-1,2)
-      integer icloudbot(0:nxmax-1,0:nymax-1,2)
-      integer icloudthck(0:nxmax-1,0:nymax-1,2)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
@@ -358,9 +355,6 @@ module com_mod
   !      cloud, no precipitation      1
   !      rainout  conv/lsp dominated  2/3
   !      washout  conv/lsp dominated  4/5
-! PS 2013
-!c icloudbot (m)        cloud bottom height
-!c icloudthck (m)       cloud thickness     
 
   ! pplev for the GFS version
 

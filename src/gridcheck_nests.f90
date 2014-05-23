@@ -47,6 +47,7 @@ subroutine gridcheck_nests
   integer :: iret
   integer :: igrib
   integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl
+  integer :: parID !added by mc for making it consistent with new gridcheck.f90
   integer :: gotGrib
   !HSO  end
   integer :: i,j,k,l,ifn,ifield,iumax,iwmax,numskip,nlev_ecn
@@ -54,6 +55,7 @@ subroutine gridcheck_nests
   real :: akmn(nwzmax),bkmn(nwzmax),akzn(nuvzmax),bkzn(nuvzmax)
   real(kind=4) :: xaux1,xaux2,yaux1,yaux2
   real(kind=8) :: xaux1in,xaux2in,yaux1in,yaux2in
+  real :: conversion_factor !added by mc to make it consistent with new gridchek.f90
 
   ! VARIABLES AND ARRAYS NEEDED FOR GRIB DECODING
 
@@ -149,6 +151,8 @@ subroutine gridcheck_nests
   call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'level',valSurf,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_int(igrib,'paramId',parId,iret) !added by mc to make it consisitent with new grid_check.f90
+  call grib_check(iret,gribFunction,gribErrorMsg) !added by mc to make it consisitent with new  grid_check.f90
 
   !print*,discipl,parCat,parNum,typSurf,valSurf
 
@@ -169,6 +173,8 @@ subroutine gridcheck_nests
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
     isec1(6)=135         ! indicatorOfParameter
+  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added bymc to make it consistent with new gridchek.f90
+    isec1(6)=135         ! indicatorOfParameter    !                     ! " " " " " " " " " " " " " " " " " " " " " " " "  " " " 
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
     isec1(6)=151         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
@@ -181,9 +187,9 @@ subroutine gridcheck_nests
     isec1(6)=168         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
     isec1(6)=141         ! indicatorOfParameter
-  elseif ((parCat.eq.6).and.(parNum.eq.1)) then ! CC
+  elseif ((parCat.eq.6).and.(parNum.eq.1) .or. parId .eq. 164) then ! CC !added by mc to make it consistent with new gridchek.f90
     isec1(6)=164         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.9)) then ! LSP
+ elseif ((parCat.eq.1).and.(parNum.eq.9) .or. parId .eq. 142) then ! LSP !added by mc to make it consistent with new gridchek.f90
     isec1(6)=142         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
     isec1(6)=143         ! indicatorOfParameter
@@ -191,13 +197,13 @@ subroutine gridcheck_nests
     isec1(6)=146         ! indicatorOfParameter
   elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
     isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17)) then ! EWSS
+  elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS !added by mc to make it consistent with new gridchek.f90
     isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18)) then ! NSSS
+  elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS !added by mc to make it consistent with new gridchek.f90
     isec1(6)=181         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
     isec1(6)=129         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.7)) then ! SDO
+  elseif ((parCat.eq.3).and.(parNum.eq.7) .or. parId .eq. 160) then ! SDO !added by mc to make it consistent with new gridchek.f90
     isec1(6)=160         ! indicatorOfParameter
   elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
        (typSurf.eq.1)) then ! LSM
@@ -205,6 +211,10 @@ subroutine gridcheck_nests
   else
     print*,'***ERROR: undefined GRiB2 message found!',discipl, &
          parCat,parNum,typSurf
+  endif
+  if(parId .ne. isec1(6) .and. parId .ne. 77) then !added by mc to make it consistent with new gridchek.f90
+    write(*,*) 'parId',parId, 'isec1(6)',isec1(6)
+!    stop
   endif
 
   endif
@@ -236,8 +246,8 @@ subroutine gridcheck_nests
   endif ! ifield
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
-  if ((gribVer.eq.1).and.(gotGrib.eq.0)) then
-    call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
+  if (isec1(6) .eq. 167 .and. (gotGrib.eq.0)) then !added by mc to make it consistent with new gridchek.f90 note that gotGrid must be changed in gotGrib!!
+    call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', & !comment by mc: note that this was in the (if (ifield.eq.1) ..end above in gridchek.f90 see line 257
          xaux1in,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
     call grib_get_real8(igrib,'longitudeOfLastGridPointInDegrees', &
@@ -253,16 +263,16 @@ subroutine gridcheck_nests
     xaux2=xaux2in
     yaux1=yaux1in
     yaux2=yaux2in
-    if(xaux1.gt.180) xaux1=xaux1-360.0
-    if(xaux2.gt.180) xaux2=xaux2-360.0
-    if(xaux1.lt.-180) xaux1=xaux1+360.0
-    if(xaux2.lt.-180) xaux2=xaux2+360.0
-    if (xaux2.lt.xaux1) xaux2=xaux2+360.
+    if(xaux1.gt.180.) xaux1=xaux1-360.0
+    if(xaux2.gt.180.) xaux2=xaux2-360.0
+    if(xaux1.lt.-180.) xaux1=xaux1+360.0
+    if(xaux2.lt.-180.) xaux2=xaux2+360.0
+    if (xaux2.lt.xaux1) xaux2=xaux2+360.0
     xlon0n(l)=xaux1
     ylat0n(l)=yaux1
     dxn(l)=(xaux2-xaux1)/real(nxn(l)-1)
     dyn(l)=(yaux2-yaux1)/real(nyn(l)-1)
-    gotGrib=1
+    gotGrib=1 !commetn by mc note tahthere gotGRIB is used instead of gotGrid!!!
   endif ! ifield.eq.1
 
   k=isec1(8)
@@ -340,10 +350,10 @@ subroutine gridcheck_nests
   !********************
 
   write(*,'(a,i2)') 'Nested domain #: ',l
-  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Longitude range: ', &
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
        xlon0n(l),' to ',xlon0n(l)+(nxn(l)-1)*dxn(l), &
        '   Grid distance: ',dxn(l)
-  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range: ', &
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range: ', &
        ylat0n(l),' to ',ylat0n(l)+(nyn(l)-1)*dyn(l), &
        '   Grid distance: ',dyn(l)
   write(*,*)

@@ -54,7 +54,9 @@ subroutine readreleases
   !                     area                                                   *
   ! xpoint2,ypoint2     geograf. coordinates of upper right corner of release  *
   !                     area                                                   *
-  ! weta, wetb          parameters to determine the wet scavenging coefficient *
+  ! weta, wetb          parameters to determine the below-cloud scavenging     *
+  ! weta_in, wetb_in    parameters to determine the in-cloud scavenging        *
+  ! wetc_in, wetd_in    parameters to determine the in-cloud scavenging        *
   ! zpoint1,zpoint2     height range, over which release takes place           *
   ! num_min_discrete    if less, release cannot be randomized and happens at   *
   !                     time mid-point of release interval                     *
@@ -271,7 +273,7 @@ subroutine readreleases
         cunningham(i)=cunningham(i)+cun*fract(i,j)
         vsetaver(i)=vsetaver(i)-vset(i,j)*fract(i,j)
       end do
-      write(*,*) 'Average setting velocity: ',i,vsetaver(i)
+      write(*,*) 'Average settling velocity: ',i,vsetaver(i)
     endif
 
   ! Dry deposition for constant deposition velocity
@@ -283,8 +285,21 @@ subroutine readreleases
   !***********************************************************
     if (weta(i).gt.0.)  then
       WETDEP=.true.
-      write (*,*) 'Wetdeposition switched on: ',weta(i),i
+      write (*,*) 'Below-cloud scavenging is switched on'
+      write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
+    else
+      write (*,*) 'Below-cloud scavenging is switched OFF'
     endif
+    
+! NIK 31.01.2013 + 10.12.2013
+    if (weta_in(i).gt.0.)  then
+      WETDEP=.true.
+      write (*,*) 'In-cloud scavenging is switched on'
+      write (*,*) 'In-cloud scavenging coefficients: ',weta_in(i),wetb_in(i), wetc_in(i), wetd_in(i),i
+    else
+      write (*,*) 'In-cloud scavenging is switched OFF' 
+    endif
+
     if (ohreact(i).gt.0) then
       OHREA=.true.
       write (*,*) 'OHreaction switched on: ',ohreact(i),i

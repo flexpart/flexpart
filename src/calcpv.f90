@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine calcpv(n,uuh,vvh,pvh)
-  !                  i  i   i   o
+  !               i  i   i   o
   !*****************************************************************************
   !                                                                            *
   !  Calculation of potential vorticity on 3-d grid.                           *
@@ -48,8 +48,8 @@ subroutine calcpv(n,uuh,vvh,pvh)
   integer :: jyvp,jyvm,ixvp,ixvm,jumpx,jumpy,jux,juy,ivrm,ivrp,ivr
   integer :: nlck
   real :: vx(2),uy(2),phi,tanphi,cosphi,dvdx,dudy,f
-  real :: theta,thetap,thetam,dthetadp,dt1,dt2,dt,ppmk
-  real :: pvavr,ppml(nuvzmax)
+  real :: theta,thetap,thetam,dthetadp,dt1,dt2,dt
+  real :: pvavr,ppml(0:nxmax-1,0:nymax-1,nuvzmax),ppmk(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: thup,thdn
   real,parameter :: eps=1.e-5, p0=101325
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
@@ -61,6 +61,15 @@ subroutine calcpv(n,uuh,vvh,pvh)
   !
   ! Loop over entire grid
   !**********************
+  do kl=1,nuvz
+    do jy=0,nymin1
+      do ix=0,nxmin1
+         ppml(ix,jy,kl)=akz(kl)+bkz(kl)*ps(ix,jy,1,n)
+      enddo
+    enddo
+  enddo
+  ppmk=(100000./ppml)**kappa
+
   do jy=0,nymin1
     if (sglobal.and.jy.eq.0) goto 10
     if (nglobal.and.jy.eq.nymin1) goto 10
@@ -105,17 +114,12 @@ subroutine calcpv(n,uuh,vvh,pvh)
         if (ix.eq.0.or.ix.eq.nxmin1) jumpx=1
       end if
       jux=jumpx
-  ! Precalculate pressure values for efficiency
-      do kl=1,nuvz
-        ppml(kl)=akz(kl)+bkz(kl)*ps(ix,jy,1,n)
-      end do
   !
   ! Loop over the vertical
   !***********************
 
       do kl=1,nuvz
-        ppmk=akz(kl)+bkz(kl)*ps(ix,jy,1,n)
-        theta=tth(ix,jy,kl,n)*(100000./ppmk)**kappa
+        theta=tth(ix,jy,kl,n)*ppmk(ix,jy,kl)
         klvrp=kl+1
         klvrm=kl-1
         klpt=kl
@@ -124,11 +128,9 @@ subroutine calcpv(n,uuh,vvh,pvh)
   !
         if (klvrp.gt.nuvz) klvrp=nuvz
         if (klvrm.lt.1) klvrm=1
-        ppmk=akz(klvrp)+bkz(klvrp)*ps(ix,jy,1,n)
-        thetap=tth(ix,jy,klvrp,n)*(100000./ppmk)**kappa
-        ppmk=akz(klvrm)+bkz(klvrm)*ps(ix,jy,1,n)
-        thetam=tth(ix,jy,klvrm,n)*(100000./ppmk)**kappa
-        dthetadp=(thetap-thetam)/(ppml(klvrp)-ppml(klvrm))
+        thetap=tth(ix,jy,klvrp,n)*ppmk(ix,jy,klvrp)
+        thetam=tth(ix,jy,klvrm,n)*ppmk(ix,jy,klvrm)
+        dthetadp=(thetap-thetam)/(ppml(ix,jy,klvrp)-ppml(ix,jy,klvrm))
 
   ! Compute vertical position at pot. temperature surface on subgrid
   ! and the wind at that position
@@ -155,50 +157,46 @@ subroutine calcpv(n,uuh,vvh,pvh)
           if (kup.ge.nuvz) goto 41
           kch=kch+1
           k=kup
-          ppmk=akz(k)+bkz(k)*ps(ivr,jy,1,n)
-          thdn=tth(ivr,jy,k,n)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*ps(ivr,jy,1,n)
-          thup=tth(ivr,jy,k+1,n)*(100000./ppmk)**kappa
+          thdn=tth(ivr,jy,k,n)*ppmk(ivr,jy,k)
+          thup=tth(ivr,jy,k+1,n)*ppmk(ivr,jy,k+1)
 
 
-      if (((thdn.ge.theta).and.(thup.le.theta)).or. &
-           ((thdn.le.theta).and.(thup.ge.theta))) then
-              dt1=abs(theta-thdn)
-              dt2=abs(theta-thup)
-              dt=dt1+dt2
-              if (dt.lt.eps) then   ! Avoid division by zero error
-                dt1=0.5             ! G.W., 10.4.1996
-                dt2=0.5
-                dt=1.0
-              endif
-          vx(ii)=(vvh(ivr,jy,k)*dt2+vvh(ivr,jy,k+1)*dt1)/dt
-              goto 20
+          if (((thdn.ge.theta).and.(thup.le.theta)).or. &
+          ((thdn.le.theta).and.(thup.ge.theta))) then
+            dt1=abs(theta-thdn)
+            dt2=abs(theta-thup)
+            dt=dt1+dt2
+            if (dt.lt.eps) then   ! Avoid division by zero error
+              dt1=0.5             ! G.W., 10.4.1996
+              dt2=0.5
+              dt=1.0
             endif
+            vx(ii)=(vvh(ivr,jy,k)*dt2+vvh(ivr,jy,k+1)*dt1)/dt
+            goto 20
+          endif
 41        continue
   ! Downward branch
           kdn=kdn-1
           if (kdn.lt.1) goto 40
           kch=kch+1
           k=kdn
-          ppmk=akz(k)+bkz(k)*ps(ivr,jy,1,n)
-          thdn=tth(ivr,jy,k,n)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*ps(ivr,jy,1,n)
-          thup=tth(ivr,jy,k+1,n)*(100000./ppmk)**kappa
+          thdn=tth(ivr,jy,k,n)*ppmk(ivr,jy,k)
+          thup=tth(ivr,jy,k+1,n)*ppmk(ivr,jy,k+1)
 
-      if (((thdn.ge.theta).and.(thup.le.theta)).or. &
-           ((thdn.le.theta).and.(thup.ge.theta))) then
-              dt1=abs(theta-thdn)
-              dt2=abs(theta-thup)
-              dt=dt1+dt2
-              if (dt.lt.eps) then   ! Avoid division by zero error
-                dt1=0.5             ! G.W., 10.4.1996
-                dt2=0.5
-                dt=1.0
-              endif
-          vx(ii)=(vvh(ivr,jy,k)*dt2+vvh(ivr,jy,k+1)*dt1)/dt
-              goto 20
+          if (((thdn.ge.theta).and.(thup.le.theta)).or. &
+          ((thdn.le.theta).and.(thup.ge.theta))) then
+            dt1=abs(theta-thdn)
+            dt2=abs(theta-thup)
+            dt=dt1+dt2
+            if (dt.lt.eps) then   ! Avoid division by zero error
+              dt1=0.5             ! G.W., 10.4.1996
+              dt2=0.5
+              dt=1.0
             endif
-            goto 40
+            vx(ii)=(vvh(ivr,jy,k)*dt2+vvh(ivr,jy,k+1)*dt1)/dt
+            goto 20
+          endif
+          goto 40
   ! This section used when no values were found
 21      continue
   ! Must use vv at current level and long. jux becomes smaller by 1
@@ -235,52 +233,48 @@ subroutine calcpv(n,uuh,vvh,pvh)
           if (kup.ge.nuvz) goto 71
           kch=kch+1
           k=kup
-          ppmk=akz(k)+bkz(k)*ps(ix,j,1,n)
-          thdn=tth(ix,j,k,n)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*ps(ix,j,1,n)
-          thup=tth(ix,j,k+1,n)*(100000./ppmk)**kappa
-      if (((thdn.ge.theta).and.(thup.le.theta)).or. &
-           ((thdn.le.theta).and.(thup.ge.theta))) then
-              dt1=abs(theta-thdn)
-              dt2=abs(theta-thup)
-              dt=dt1+dt2
-              if (dt.lt.eps) then   ! Avoid division by zero error
-                dt1=0.5             ! G.W., 10.4.1996
-                dt2=0.5
-                dt=1.0
-              endif
-              uy(jj)=(uuh(ix,j,k)*dt2+uuh(ix,j,k+1)*dt1)/dt
-              goto 50
+          thdn=tth(ix,j,k,n)*ppmk(ix,j,k)
+          thup=tth(ix,j,k+1,n)*ppmk(ix,j,k+1)
+          if (((thdn.ge.theta).and.(thup.le.theta)).or. &
+          ((thdn.le.theta).and.(thup.ge.theta))) then
+            dt1=abs(theta-thdn)
+            dt2=abs(theta-thup)
+            dt=dt1+dt2
+            if (dt.lt.eps) then   ! Avoid division by zero error
+              dt1=0.5             ! G.W., 10.4.1996
+              dt2=0.5
+              dt=1.0
             endif
+            uy(jj)=(uuh(ix,j,k)*dt2+uuh(ix,j,k+1)*dt1)/dt
+            goto 50
+          endif
 71        continue
   ! Downward branch
           kdn=kdn-1
           if (kdn.lt.1) goto 70
           kch=kch+1
           k=kdn
-          ppmk=akz(k)+bkz(k)*ps(ix,j,1,n)
-          thdn=tth(ix,j,k,n)*(100000./ppmk)**kappa
-          ppmk=akz(k+1)+bkz(k+1)*ps(ix,j,1,n)
-          thup=tth(ix,j,k+1,n)*(100000./ppmk)**kappa
-      if (((thdn.ge.theta).and.(thup.le.theta)).or. &
-           ((thdn.le.theta).and.(thup.ge.theta))) then
-              dt1=abs(theta-thdn)
-              dt2=abs(theta-thup)
-              dt=dt1+dt2
-              if (dt.lt.eps) then   ! Avoid division by zero error
-                dt1=0.5             ! G.W., 10.4.1996
-                dt2=0.5
-                dt=1.0
-              endif
-              uy(jj)=(uuh(ix,j,k)*dt2+uuh(ix,j,k+1)*dt1)/dt
-              goto 50
+          thdn=tth(ix,j,k,n)*ppmk(ix,j,k)
+          thup=tth(ix,j,k+1,n)*ppmk(ix,j,k+1)
+          if (((thdn.ge.theta).and.(thup.le.theta)).or. &
+          ((thdn.le.theta).and.(thup.ge.theta))) then
+            dt1=abs(theta-thdn)
+            dt2=abs(theta-thup)
+            dt=dt1+dt2
+            if (dt.lt.eps) then   ! Avoid division by zero error
+              dt1=0.5             ! G.W., 10.4.1996
+              dt2=0.5
+              dt=1.0
             endif
-            goto 70
+            uy(jj)=(uuh(ix,j,k)*dt2+uuh(ix,j,k+1)*dt1)/dt
+            goto 50
+          endif
+          goto 70
   ! This section used when no values were found
 51      continue
   ! Must use uu at current level and lat. juy becomes smaller by 1
-        uy(jj)=uuh(ix,jy,kl)
-        juy=juy-1
+          uy(jj)=uuh(ix,jy,kl)
+          juy=juy-1
   ! Otherwise OK
 50        continue
         end do

@@ -50,6 +50,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   integer :: iret
   integer :: igrib
   integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl
+  integer :: parId !!added by mc for making it consistent with new readwind.f90
   integer :: gotGrid
   !HSO  end
 
@@ -68,10 +69,12 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
 
   integer :: isec1(56),isec2(22+nxmaxn+nymaxn)
   real(kind=4) :: zsec4(jpunp)
+  real(kind=4) :: xaux,yaux
   real(kind=8) :: xauxin,yauxin
-  real(kind=4) :: xaux,yaux,xaux0,yaux0
+  real,parameter :: eps=1.e-4
   real :: ewss(0:nxmaxn-1,0:nymaxn-1),nsss(0:nxmaxn-1,0:nymaxn-1)
   real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1
+  real :: conversion_factor !added by mc to make it consistent with new gridchek.f90
 
   logical :: hflswitch,strswitch
 
@@ -133,6 +136,9 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     isec1(6)=135
   endif
 
+  conversion_factor=1.
+
+
   else
 
   !print*,'GRiB Edition 2'
@@ -147,6 +153,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'level',valSurf,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
+  call grib_get_int(igrib,'paramId',parId,iret) !added by mc to make it consisitent with new readwind.f90
+  call grib_check(iret,gribFunction,gribErrorMsg) !added by mc to make it consisitent with new readwind.f90
 
   !print*,discipl,parCat,parNum,typSurf,valSurf
 
@@ -155,6 +163,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   isec1(7)=-1
   isec1(8)=-1
   isec1(8)=valSurf     ! level
+   conversion_factor=1.
   if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! T
     isec1(6)=130         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.105)) then ! U
@@ -165,8 +174,10 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     isec1(6)=133         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
+  elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot !
     isec1(6)=135         ! indicatorOfParameter
+  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added by mc to make it consisitent with new readwind.f90
+    isec1(6)=135         ! indicatorOfParameter    !added by mc to make it consisitent with new readwind.f90
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
     isec1(6)=151         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
@@ -179,30 +190,36 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     isec1(6)=168         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
     isec1(6)=141         ! indicatorOfParameter
-  elseif ((parCat.eq.6).and.(parNum.eq.1)) then ! CC
+    conversion_factor=1000. !added by mc to make it consisitent with new readwind.f90
+  elseif ((parCat.eq.6).and.(parNum.eq.1) .or. parId .eq. 164) then ! CC !added by mc to make it consisitent with new readwind.f90
     isec1(6)=164         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.9)) then ! LSP
+  elseif ((parCat.eq.1).and.(parNum.eq.9) .or. parId .eq. 142) then ! LSP !added by mc to make it consisitent with new readwind.f90
     isec1(6)=142         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
     isec1(6)=143         ! indicatorOfParameter
+    conversion_factor=1000. !added by mc to make it consisitent with new readwind.f90
   elseif ((parCat.eq.0).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SHF
     isec1(6)=146         ! indicatorOfParameter
   elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
     isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17)) then ! EWSS
+  elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS !added by mc to make it consisitent with new readwind.f90
     isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18)) then ! NSSS
+  elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS !added by mc to make it consisitent with new readwind.f90
     isec1(6)=181         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
     isec1(6)=129         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.7)) then ! SDO
+   elseif ((parCat.eq.3).and.(parNum.eq.7) .or. parId .eq. 160) then ! SDO !added by mc to make it consisitent with new readwind.f90
     isec1(6)=160         ! indicatorOfParameter
   elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
        (typSurf.eq.1)) then ! LSM
     isec1(6)=172         ! indicatorOfParameter
   else
-    print*,'***ERROR: undefined GRiB2 message found!',discipl, &
+    print*,'***WARNING: undefined GRiB2 message found!',discipl, &
          parCat,parNum,typSurf
+  endif
+  if(parId .ne. isec1(6) .and. parId .ne. 77) then !added by mc to make it consisitent with new readwind.f90
+    write(*,*) 'parId',parId, 'isec1(6)',isec1(6)  !
+!    stop
   endif
 
   endif
@@ -226,35 +243,30 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   call grib_check(iret,gribFunction,gribErrorMsg)
   ! CHECK GRID SPECIFICATIONS
   if(isec2(2).ne.nxn(l)) stop &
-       'READWIND: NX NOT CONSISTENT FOR A NESTING LEVEL'
+  'READWIND: NX NOT CONSISTENT FOR A NESTING LEVEL'
   if(isec2(3).ne.nyn(l)) stop &
-       'READWIND: NY NOT CONSISTENT FOR A NESTING LEVEL'
+  'READWIND: NY NOT CONSISTENT FOR A NESTING LEVEL'
   if(isec2(12)/2-1.ne.nlev_ec) stop 'READWIND: VERTICAL DISCRET&
-       &IZATION NOT CONSISTENT FOR A NESTING LEVEL'
+  IZATION NOT CONSISTENT FOR A NESTING LEVEL'
   endif ! ifield
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
-  if ((gribVer.eq.1).and.(gotGrid.eq.0)) then
+ if (isec1(6) .eq. 167 .and. (gotGrid.eq.0)) then ! !added by mc to make it consisitent with new readwind.f90
     call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
          xauxin,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
     call grib_get_real8(igrib,'latitudeOfLastGridPointInDegrees', &
          yauxin,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
+    if (xauxin.gt.180.) xauxin=xauxin-360.0
+    if (xauxin.lt.-180.) xauxin=xauxin+360.0
+
     xaux=xauxin
     yaux=yauxin
-    xaux0=xlon0n(l)
-    yaux0=ylat0n(l)
-    if(xaux.lt.0.) xaux=xaux+360.
-    if(yaux.lt.0.) yaux=yaux+360.
-    if(xaux0.lt.0.) xaux0=xaux0+360.
-    if(yaux0.lt.0.) yaux0=yaux0+360.
-    if(xaux.ne.xaux0) &
-         stop 'READWIND: LOWER LEFT LONGITUDE NOT CONSISTENT FOR A NES&
-         &TING LEVEL'
-    if(yaux.ne.yaux0) &
-         stop 'READWIND: LOWER LEFT LATITUDE NOT CONSISTENT FOR A NEST&
-         &ING LEVEL'
+    if (abs(xaux-xlon0n(l)).gt.eps) &
+    stop 'READWIND: LOWER LEFT LONGITUDE NOT CONSISTENT FOR A NESTING LEVEL'
+    if (abs(yaux-ylat0n(l)).gt.eps) &
+    stop 'READWIND: LOWER LEFT LATITUDE NOT CONSISTENT FOR A NESTING LEVEL'
     gotGrid=1
   endif
 
@@ -279,7 +291,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
         if(isec1(6).eq.135) wwhn(i,j,nlev_ec-k+1,l)= &!! W VELOCITY
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.141) sdn(i,j,1,n,l)= &!! SNOW DEPTH
-             zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+             zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor !added by mc to make it consisitent with new readwind.f90!
         if(isec1(6).eq.151) msln(i,j,1,n,l)= &!! SEA LEVEL PRESS.
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.164) tccn(i,j,1,n,l)= &!! CLOUD COVER
@@ -297,7 +309,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
           if (lsprecn(i,j,1,n,l).lt.0.) lsprecn(i,j,1,n,l)=0.
         endif
         if(isec1(6).eq.143) then                         !! CONVECTIVE PREC.
-          convprecn(i,j,1,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+          convprecn(i,j,1,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor !added by mc to make it consisitent with new readwind.f90
           if (convprecn(i,j,1,n,l).lt.0.) convprecn(i,j,1,n,l)=0.
         endif
         if(isec1(6).eq.146) sshfn(i,j,1,n,l)= &!! SENS. HEAT FLUX

@@ -66,9 +66,9 @@ subroutine writeheader_nest
   !*****************************
 
   if (ldirect.eq.1) then
-    write(unitheader) ibdate,ibtime,'FLEXPART V8.2'
+    write(unitheader) ibdate,ibtime, trim(flexversion)
   else
-    write(unitheader) iedate,ietime,'FLEXPART V8.2'
+    write(unitheader) iedate,ietime, trim(flexversion)
   endif
 
   ! Write info on output interval, averaging time, sampling time

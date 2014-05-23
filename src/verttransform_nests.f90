@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
-  !                               i   i    i    i   i
+  !                            i   i    i    i   i
   !*****************************************************************************
   !                                                                            *
   !     This subroutine transforms temperature, dew point temperature and      *
@@ -71,9 +71,9 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
   integer :: ix,jy,kz,iz,n,l,kmin,kl,klp,ix1,jy1,ixp,jyp
   integer :: rain_cloud_above,kz_inv
   real :: f_qvsat,pressure,rh,lsp,convp
-  real :: uvzlev(nuvzmax),wzlev(nwzmax),rhoh(nuvzmax),pinmconv(nzmax)
+  real :: wzlev(nwzmax),rhoh(nuvzmax),pinmconv(nzmax)
   real :: uvwzlev(0:nxmaxn-1,0:nymaxn-1,nzmax)
-  real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi
+  real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi,cosf
   real :: dzdx,dzdy
   real :: dzdx1,dzdx2,dzdy1,dzdy2
   real :: uuhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,maxnests)
@@ -95,9 +95,9 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
     do ix=0,nxn(l)-1
 
       tvold=tt2n(ix,jy,1,n,l)*(1.+0.378*ew(td2n(ix,jy,1,n,l))/ &
-           psn(ix,jy,1,n,l))
+      psn(ix,jy,1,n,l))
       pold=psn(ix,jy,1,n,l)
-      uvzlev(1)=0.
+      uvwzlev(ix,jy,1)=0.
       wzlev(1)=0.
       rhoh(1)=pold/(r_air*tvold)
 
@@ -111,10 +111,10 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
         rhoh(kz)=pint/(r_air*tv)
 
         if (abs(tv-tvold).gt.0.2) then
-          uvzlev(kz)=uvzlev(kz-1)+const*log(pold/pint)* &
-               (tv-tvold)/log(tv/tvold)
+          uvwzlev(ix,jy,kz)=uvwzlev(ix,jy,kz-1)+const*log(pold/pint)* &
+          (tv-tvold)/log(tv/tvold)
         else
-          uvzlev(kz)=uvzlev(kz-1)+const*log(pold/pint)*tv
+          uvwzlev(ix,jy,kz)=uvwzlev(ix,jy,kz-1)+const*log(pold/pint)*tv
         endif
 
         tvold=tv
@@ -123,45 +123,23 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
 
 
       do kz=2,nwz-1
-        wzlev(kz)=(uvzlev(kz+1)+uvzlev(kz))/2.
+        wzlev(kz)=(uvwzlev(ix,jy,kz+1)+uvwzlev(ix,jy,kz))/2.
       end do
-      wzlev(nwz)=wzlev(nwz-1)+ &
-           uvzlev(nuvz)-uvzlev(nuvz-1)
-
-  ! NOTE: In FLEXPART versions up to 4.0, the number of model levels was doubled
-  ! upon the transformation to z levels. In order to save computer memory, this is
-  ! not done anymore in the standard version. However, this option can still be
-  ! switched on by replacing the following lines with those below, that are
-  ! currently commented out.
-  ! Note that one change is also necessary in gridcheck.f,
-  ! and three changes in verttransform.f
-  !*****************************************************************************
-      uvwzlev(ix,jy,1)=0.0
-      do kz=2,nuvz
-        uvwzlev(ix,jy,kz)=uvzlev(kz)
-      end do
-
-  ! Switch on following lines to use doubled vertical resolution
-  ! Switch off the three lines above.
-  !*************************************************************
-  !22          uvwzlev(ix,jy,(kz-1)*2)=uvzlev(kz)
-  !     do 23 kz=2,nwz
-  !23          uvwzlev(ix,jy,(kz-1)*2+1)=wzlev(kz)
-  ! End doubled vertical resolution
+      wzlev(nwz)=wzlev(nwz-1)+uvwzlev(ix,jy,nuvz)-uvwzlev(ix,jy,nuvz-1)
 
   ! pinmconv=(h2-h1)/(p2-p1)
 
       pinmconv(1)=(uvwzlev(ix,jy,2)-uvwzlev(ix,jy,1))/ &
-           ((aknew(2)+bknew(2)*psn(ix,jy,1,n,l))- &
-           (aknew(1)+bknew(1)*psn(ix,jy,1,n,l)))
+      ((aknew(2)+bknew(2)*psn(ix,jy,1,n,l))- &
+      (aknew(1)+bknew(1)*psn(ix,jy,1,n,l)))
       do kz=2,nz-1
         pinmconv(kz)=(uvwzlev(ix,jy,kz+1)-uvwzlev(ix,jy,kz-1))/ &
-             ((aknew(kz+1)+bknew(kz+1)*psn(ix,jy,1,n,l))- &
-             (aknew(kz-1)+bknew(kz-1)*psn(ix,jy,1,n,l)))
+        ((aknew(kz+1)+bknew(kz+1)*psn(ix,jy,1,n,l))- &
+        (aknew(kz-1)+bknew(kz-1)*psn(ix,jy,1,n,l)))
       end do
       pinmconv(nz)=(uvwzlev(ix,jy,nz)-uvwzlev(ix,jy,nz-1))/ &
-           ((aknew(nz)+bknew(nz)*psn(ix,jy,1,n,l))- &
-           (aknew(nz-1)+bknew(nz-1)*psn(ix,jy,1,n,l)))
+      ((aknew(nz)+bknew(nz)*psn(ix,jy,1,n,l))- &
+      (aknew(nz-1)+bknew(nz-1)*psn(ix,jy,1,n,l)))
 
 
   ! Levels, where u,v,t and q are given
@@ -182,7 +160,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
       kmin=2
       do iz=2,nz-1
         do kz=kmin,nuvz
-          if(height(iz).gt.uvzlev(nuvz)) then
+          if(height(iz).gt.uvwzlev(ix,jy,nuvz)) then
             uun(ix,jy,iz,n,l)=uun(ix,jy,nz,n,l)
             vvn(ix,jy,iz,n,l)=vvn(ix,jy,nz,n,l)
             ttn(ix,jy,iz,n,l)=ttn(ix,jy,nz,n,l)
@@ -191,21 +169,21 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
             rhon(ix,jy,iz,n,l)=rhon(ix,jy,nz,n,l)
             goto 30
           endif
-          if ((height(iz).gt.uvzlev(kz-1)).and. &
-               (height(iz).le.uvzlev(kz))) then
-           dz1=height(iz)-uvzlev(kz-1)
-           dz2=uvzlev(kz)-height(iz)
+          if ((height(iz).gt.uvwzlev(ix,jy,kz-1)).and. &
+          (height(iz).le.uvwzlev(ix,jy,kz))) then
+           dz1=height(iz)-uvwzlev(ix,jy,kz-1)
+           dz2=uvwzlev(ix,jy,kz)-height(iz)
            dz=dz1+dz2
            uun(ix,jy,iz,n,l)=(uuhn(ix,jy,kz-1,l)*dz2+ &
-                uuhn(ix,jy,kz,l)*dz1)/dz
+           uuhn(ix,jy,kz,l)*dz1)/dz
            vvn(ix,jy,iz,n,l)=(vvhn(ix,jy,kz-1,l)*dz2+ &
-                vvhn(ix,jy,kz,l)*dz1)/dz
+           vvhn(ix,jy,kz,l)*dz1)/dz
            ttn(ix,jy,iz,n,l)=(tthn(ix,jy,kz-1,n,l)*dz2+ &
-                tthn(ix,jy,kz,n,l)*dz1)/dz
+           tthn(ix,jy,kz,n,l)*dz1)/dz
            qvn(ix,jy,iz,n,l)=(qvhn(ix,jy,kz-1,n,l)*dz2+ &
-                qvhn(ix,jy,kz,n,l)*dz1)/dz
+           qvhn(ix,jy,kz,n,l)*dz1)/dz
            pvn(ix,jy,iz,n,l)=(pvhn(ix,jy,kz-1,l)*dz2+ &
-                pvhn(ix,jy,kz,l)*dz1)/dz
+           pvhn(ix,jy,kz,l)*dz1)/dz
            rhon(ix,jy,iz,n,l)=(rhoh(kz-1)*dz2+rhoh(kz)*dz1)/dz
            kmin=kz
            goto 30
@@ -224,14 +202,14 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
       do iz=2,nz
         do kz=kmin,nwz
           if ((height(iz).gt.wzlev(kz-1)).and. &
-               (height(iz).le.wzlev(kz))) then
-           dz1=height(iz)-wzlev(kz-1)
-           dz2=wzlev(kz)-height(iz)
-           dz=dz1+dz2
-           wwn(ix,jy,iz,n,l)=(wwhn(ix,jy,kz-1,l)*pinmconv(kz-1)*dz2 &
-                +wwhn(ix,jy,kz,l)*pinmconv(kz)*dz1)/dz
-           kmin=kz
-           goto 40
+          (height(iz).le.wzlev(kz))) then
+            dz1=height(iz)-wzlev(kz-1)
+            dz2=wzlev(kz)-height(iz)
+            dz=dz1+dz2
+            wwn(ix,jy,iz,n,l)=(wwhn(ix,jy,kz-1,l)*pinmconv(kz-1)*dz2 &
+            +wwhn(ix,jy,kz,l)*pinmconv(kz)*dz1)/dz
+            kmin=kz
+            goto 40
           endif
         end do
 40      continue
@@ -241,10 +219,10 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
   !*************************************************
 
       drhodzn(ix,jy,1,n,l)=(rhon(ix,jy,2,n,l)-rhon(ix,jy,1,n,l))/ &
-           (height(2)-height(1))
+      (height(2)-height(1))
       do kz=2,nz-1
         drhodzn(ix,jy,kz,n,l)=(rhon(ix,jy,kz+1,n,l)- &
-             rhon(ix,jy,kz-1,n,l))/(height(kz+1)-height(kz-1))
+        rhon(ix,jy,kz-1,n,l))/(height(kz+1)-height(kz-1))
       end do
       drhodzn(ix,jy,nz,n,l)=drhodzn(ix,jy,nz-1,n,l)
 
@@ -258,13 +236,13 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
   !****************************************************************
 
   do jy=1,nyn(l)-2
+    cosf=cos((real(jy)*dyn(l)+ylat0n(l))*pi180)
     do ix=1,nxn(l)-2
 
       kmin=2
       do iz=2,nz-1
 
-        ui=uun(ix,jy,iz,n,l)*dxconst*xresoln(l)/ &
-             cos((real(jy)*dyn(l)+ylat0n(l))*pi180)
+        ui=uun(ix,jy,iz,n,l)*dxconst*xresoln(l)/cosf
         vi=vvn(ix,jy,iz,n,l)*dyconst*yresoln(l)
 
         do kz=kmin,nz
@@ -318,7 +296,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
             if ((lsp.gt.0.01).or.(convp.gt.0.01)) then
                rain_cloud_above=1
                cloudsnh(ix,jy,n,l)=cloudsnh(ix,jy,n,l)+ &
-                    height(kz)-height(kz-1)
+               height(kz)-height(kz-1)
                if (lsp.ge.convp) then
                   cloudsn(ix,jy,kz,n,l)=3 ! lsp dominated rainout
                else

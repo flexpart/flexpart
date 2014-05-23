@@ -19,17 +19,10 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-!subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
-!       ny,memind,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3)
-!  !                          i   i   i    i    i     i   i
-!  !i    i    i  i    i     i      i      i     o     o     o
-
-      subroutine interpol_rain(yy1,yy2,yy3,iy1,iy2,nxmax,nymax,nzmax,nx, &
-     ny,memind,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3, &
-     intiy1,intiy2,icmv)
-!                               i   i   i    i    i     i   i 
-!     i    i    i  i    i     i      i      i     o     o     o
-
+subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
+       ny,memind,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3)
+  !                          i   i   i    i    i     i   i
+  !i    i    i  i    i     i      i      i     o     o     o
   !****************************************************************************
   !                                                                           *
   !  Interpolation of meteorological fields on 2-d model layers.              *
@@ -46,10 +39,7 @@
   !     Author: A. Stohl                                                      *
   !                                                                           *
   !     30 August 1996                                                        *
-  !
-  !*  Petra Seibert, 2011/2012:
-  !*  Add interpolation of cloud bottom and cloud thickness
-  !*  for fix to SE's new wet scavenging scheme  *
+  !                                                                           *
   !****************************************************************************
   !                                                                           *
   ! Variables:                                                                *
@@ -79,17 +69,12 @@
   implicit none
 
   integer :: nx,ny,nxmax,nymax,nzmax,memind(2),m,ix,jy,ixp,jyp
-  !integer :: itime,itime1,itime2,level,indexh
-  integer :: itime,itime1,itime2,level,indexh,ip1,ip2,ip3,ip4 
-  integer :: intiy1,intiy2,ipsum,icmv  
+  integer :: itime,itime1,itime2,level,indexh
   real :: yy1(0:nxmax-1,0:nymax-1,nzmax,2)
   real :: yy2(0:nxmax-1,0:nymax-1,nzmax,2)
   real :: yy3(0:nxmax-1,0:nymax-1,nzmax,2)
-  integer iy1(0:nxmax-1,0:nymax-1,2),iy2(0:nxmax-1,0:nymax-1,2)
-  real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2),yi1(2),yi2(2)
-  !real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2)
-  real :: xt,yt,yint1,yint2,yint3,yint4,p1,p2,p3,p4  
-  !real :: xt,yt,yint1,yint2,yint3,p1,p2,p3,p4
+  real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2)
+  real :: xt,yt,yint1,yint2,yint3,p1,p2,p3,p4
 
 
 
@@ -141,58 +126,12 @@
          + p2*yy3(ixp,jy ,level,indexh) &
          + p3*yy3(ix ,jyp,level,indexh) &
          + p4*yy3(ixp,jyp,level,indexh)
-
-!CPS clouds:
-        ip1=1
-        ip2=1
-        ip3=1
-        ip4=1
-        if (iy1(ix ,jy ,indexh) .eq. icmv) ip1=0
-        if (iy1(ixp,jy ,indexh) .eq. icmv) ip2=0
-        if (iy1(ix ,jyp,indexh) .eq. icmv) ip3=0
-        if (iy1(ixp,jyp,indexh) .eq. icmv) ip4=0
-        ipsum= ip1+ip2+ip3+ip4
-        if (ipsum .eq. 0) then
-          yi1(m)=icmv
-        else
-          yi1(m)=(ip1*p1*iy1(ix ,jy ,indexh)    &
-             + ip2*p2*iy1(ixp,jy ,indexh)       &
-             + ip3*p3*iy1(ix ,jyp,indexh)       &
-             + ip4*p4*iy1(ixp,jyp,indexh))/ipsum
-        endif
-        
-        ip1=1
-        ip2=1
-        ip3=1
-        ip4=1
-        if (iy2(ix ,jy ,indexh) .eq. icmv) ip1=0
-        if (iy2(ixp,jy ,indexh) .eq. icmv) ip2=0
-        if (iy2(ix ,jyp,indexh) .eq. icmv) ip3=0
-        if (iy2(ixp,jyp,indexh) .eq. icmv) ip4=0
-        ipsum= ip1+ip2+ip3+ip4
-        if (ipsum .eq. 0) then
-          yi2(m)=icmv
-        else
-          yi2(m)=(ip1*p1*iy2(ix ,jy ,indexh)  &
-             + ip2*p2*iy2(ixp,jy ,indexh)     &
-             + ip3*p3*iy2(ix ,jyp,indexh)     &
-             + ip4*p4*iy2(ixp,jyp,indexh))/ipsum
-        endif
-!CPS end clouds
-
   end do
 
 
   !************************************
   ! 2.) Temporal interpolation (linear)
   !************************************
-
-      if (abs(itime) .lt. abs(itime1)) then
-        print*,'interpol_rain.f90'
-        print*,itime,itime1,itime2
-        stop 'ITIME PROBLEM'
-      endif
-
 
   dt1=real(itime-itime1)
   dt2=real(itime2-itime)
@@ -202,22 +141,5 @@
   yint2=(y2(1)*dt2+y2(2)*dt1)/dt
   yint3=(y3(1)*dt2+y3(2)*dt1)/dt
 
-
-!PS clouds:
-      intiy1=(yi1(1)*dt2 + yi1(2)*dt1)/dt
-      if (yi1(1) .eq. float(icmv)) intiy1=yi1(2) 
-      if (yi1(2) .eq. float(icmv)) intiy1=yi1(1) 
-
-      intiy2=(yi2(1)*dt2 + yi2(2)*dt1)/dt
-      if (yi2(1) .eq. float(icmv)) intiy2=yi2(2)  
-      if (yi2(2) .eq. float(icmv)) intiy2=yi2(1) 
-      
-      if (intiy1 .ne. icmv .and. intiy2 .ne. icmv) then
-        intiy2 = intiy1 + intiy2 ! convert cloud thickness to cloud top
-      else
-        intiy1=icmv
-        intiy2=icmv
-      endif
-!PS end clouds
 
 end subroutine interpol_rain
