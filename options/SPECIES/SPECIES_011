@@ -6,11 +6,11 @@
 ****************************************************************************
 NH3                Tracer name
 -999.9             Species half life
- 9.9E-05           Wet deposition - A
-0.62               Wet deposition - B
+ 9.9E-05           Below cloud scavenging - A
+0.62               Below cloud scavenging - B
 2.0E-7             In-cloud scavenging - Ai (cl=Ai*prec**Bi)
 0.36               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
-0.1                In-cloud scavenging - Ci (S_i=Ci/cl)
+0.9                In-cloud scavenging - Ci (S_i=Ci/cl)
 1.                 In-cloud scavenging - Di (wetscav=S_i*prec/3.6E6/clouds_h/Di)
  1.1               Dry deposition (gases) - D
 2.0e+14            Dry deposition (gases) - Henrys const.

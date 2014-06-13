@@ -6,8 +6,8 @@
 ****************************************************************************
 Kr-85              Tracer name
 -999.9             Species half life
--9.9E-09           Wet deposition - A
-                   Wet deposition - B
+-9.9E-09           Below cloud scavenging - A
+                   Below cloud scavenging - B
 -9.9E-09           In-cloud scavenging - Ai (cl=Ai*prec**Bi)
 -9.9               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
 -9.9               In-cloud scavenging - Ci (S_i=Ci/cl)
