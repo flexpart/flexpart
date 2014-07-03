@@ -32,6 +32,8 @@ subroutine readreleases
   !                                                                            *
   !     Update: 29 January 2001                                                *
   !     Release altitude can be either in magl or masl                         *
+  !     HSO, 12 August 2013
+  !     Added optional namelist input
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -70,128 +72,196 @@ subroutine readreleases
 
   implicit none
 
-  integer :: numpartmax,i,j,id1,it1,id2,it2,specnum_rel,idum,stat
+  integer :: numpartmax,i,j,id1,it1,id2,it2,idum,stat
   integer,parameter :: num_min_discrete=100
   real :: vsh(ni),fracth(ni),schmih(ni),releaserate,xdum,cun
   real(kind=dp) :: jul1,jul2,julm,juldate
   character(len=50) :: line
   logical :: old
 
-  !sec, read release to find how many releasepoints should be allocated
+  ! help variables for namelist reading
+  integer :: numpoints, parts, readerror
+  integer*2 :: zkind
+  integer :: idate1, itime1, idate2, itime2
+  real :: lon1,lon2,lat1,lat2,z1,z2
+  character*40 :: comment
+  integer,parameter :: unitreleasesout=2
+  real,allocatable, dimension (:) :: mass
+  integer,allocatable, dimension (:) :: specnum_rel,specnum_rel2
 
-  open(unitreleases,file=path(1)(1:length(1))//'RELEASES',status='old', &
-       err=999)
+  ! declare namelists
+  namelist /releases_ctrl/ &
+    nspec, &
+    specnum_rel
 
-  ! Check the format of the RELEASES file (either in free format,
-  ! or using a formatted mask)
-  ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
-  !**************************************************************************
-
-  call skplin(12,unitreleases)
-  read (unitreleases,901) line
-901   format (a)
-  if (index(line,'Total') .eq. 0) then
-    old = .false.
-  else
-    old = .true.
-  endif
-  rewind(unitreleases)
-
-
-  ! Skip first 11 lines (file header)
-  !**********************************
-
-  call skplin(11,unitreleases)
-
-
-  read(unitreleases,*,err=998) nspec
-  if (old) call skplin(2,unitreleases)
-  do i=1,nspec
-    read(unitreleases,*,err=998) specnum_rel
-    if (old) call skplin(2,unitreleases)
-  end do
+  namelist /release/ &
+    idate1, itime1, &
+    idate2, itime2, &
+    lon1, lon2, &
+    lat1, lat2, &
+    z1, z2, &
+    zkind, &
+    mass, &
+    parts, &
+    comment
 
   numpoint=0
-100   numpoint=numpoint+1
-  read(unitreleases,*,end=25)
-  read(unitreleases,*,err=998,end=25) idum,idum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) idum,idum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) idum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xdum
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) idum
-  if (old) call skplin(2,unitreleases)
-  do i=1,nspec
+
+  ! allocate with maxspec for first input loop
+  allocate(mass(maxspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate mass'
+  allocate(specnum_rel(maxspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel'
+
+  ! presetting namelist releases_ctrl
+  nspec = -1  ! use negative value to determine failed namelist input
+  specnum_rel = 0
+
+  !sec, read release to find how many releasepoints should be allocated
+  open(unitreleases,file=path(1)(1:length(1))//'RELEASES',status='old',form='formatted',err=999)
+
+  ! check if namelist input provided
+  read(unitreleases,releases_ctrl,iostat=readerror)
+
+  ! prepare namelist output if requested
+  if (nmlout.eqv..true.) then
+    open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',access='append',status='new',err=1000)
+  endif
+
+  if ((readerror.ne.0).or.(nspec.lt.0)) then
+
+    ! no namelist format, close file and allow reopening in old format
+    close(unitreleases)
+    open(unitreleases,file=path(1)(1:length(1))//'RELEASES',status='old',err=999)
+
+    readerror=1 ! indicates old format
+
+    ! Check the format of the RELEASES file (either in free format,
+    ! or using a formatted mask)
+    ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
+    !**************************************************************************
+
+    call skplin(12,unitreleases)
+    read (unitreleases,901) line
+901 format (a)
+    if (index(line,'Total') .eq. 0) then
+      old = .false.
+    else
+      old = .true.
+    endif
+    rewind(unitreleases)
+
+
+    ! Skip first 11 lines (file header)
+    !**********************************
+
+    call skplin(11,unitreleases)
+
+    read(unitreleases,*,err=998) nspec
+    if (old) call skplin(2,unitreleases)
+    do i=1,nspec
+      read(unitreleases,*,err=998) specnum_rel(i)
+      if (old) call skplin(2,unitreleases)
+    end do
+
+    numpoint=0
+100 numpoint=numpoint+1
+    read(unitreleases,*,end=25)
+    read(unitreleases,*,err=998,end=25) idum,idum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) idum,idum
+    if (old) call skplin(2,unitreleases)
     read(unitreleases,*,err=998) xdum
     if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xdum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xdum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xdum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) idum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xdum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xdum
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) idum
+    if (old) call skplin(2,unitreleases)
+    do i=1,nspec
+      read(unitreleases,*,err=998) xdum
+      if (old) call skplin(2,unitreleases)
+    end do
+    !save compoint only for the first 1000 release points
+    read(unitreleases,'(a40)',err=998) compoint(1)(1:40)
+    if (old) call skplin(1,unitreleases)
+
+    goto 100
+
+25  numpoint=numpoint-1
+
+  else 
+
+    readerror=0
+    do while (readerror.eq.0) 
+      idate1=-1
+      read(unitreleases,release,iostat=readerror)
+      if ((idate1.lt.0).or.(readerror.ne.0)) then
+        readerror=1
+      else
+        numpoint=numpoint+1
+      endif
+    end do
+    readerror=0
+  endif ! if namelist input
+
+  rewind(unitreleases)
+
+  ! allocate arrays of matching size for number of species (namelist output)
+  deallocate(mass)
+  allocate(mass(nspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate mass'
+  allocate(specnum_rel2(nspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel2'
+  specnum_rel2=specnum_rel(1:nspec)
+  deallocate(specnum_rel)
+  allocate(specnum_rel(nspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel'
+  specnum_rel=specnum_rel2
+  deallocate(specnum_rel2)
+
+  !allocate memory for numpoint releaspoints
+  allocate(ireleasestart(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate ireleasestart'
+  allocate(ireleaseend(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate ireleaseend'
+  allocate(xpoint1(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate xpoint1'
+  allocate(xpoint2(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate xpoint2'
+  allocate(ypoint1(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate ypoint1'
+  allocate(ypoint2(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate ypoint2'
+  allocate(zpoint1(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate zpoint1'
+  allocate(zpoint2(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate zpoint2'
+  allocate(kindz(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate kindz'
+  allocate(xmass(numpoint,maxspec),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate xmass'
+  allocate(rho_rel(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate rho_rel'
+  allocate(npart(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate npart'
+  allocate(xmasssave(numpoint),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate xmasssave'
+
+  write (*,*) 'Releasepoints : ', numpoint
+
+  do i=1,numpoint
+    xmasssave(i)=0.
   end do
-  !save compoint only for the first 1000 release points
-  read(unitreleases,'(a40)',err=998) compoint(1)(1:40)
-  if (old) call skplin(1,unitreleases)
-
-  goto 100
-
-25   numpoint=numpoint-1
-
-  !allocate memory for numpoint releaspoint
-    allocate(ireleasestart(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(ireleaseend(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(xpoint1(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(xpoint2(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(ypoint1(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(ypoint2(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(zpoint1(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(zpoint2(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(kindz(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(xmass(numpoint,maxspec) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(rho_rel(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(npart(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-    allocate(xmasssave(numpoint) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate RELEASPOINT'
-
-   write (*,*) ' Releasepoints allocated: ', numpoint
-
-   do i=1,numpoint
-     xmasssave(i)=0.
-   end do
 
   !now save the information
   DEP=.false.
@@ -202,42 +272,49 @@ subroutine readreleases
     DRYDEPSPEC(i)=.false.
   end do
 
-  rewind(unitreleases)
+  if (readerror.ne.0) then
+    ! Skip first 11 lines (file header)
+    !**********************************
 
+    call skplin(11,unitreleases)
 
-  ! Skip first 11 lines (file header)
-  !**********************************
+    ! Assign species-specific parameters needed for physical processes
+    !*************************************************************************
 
-  call skplin(11,unitreleases)
-
-
-  ! Assign species-specific parameters needed for physical processes
-  !*************************************************************************
-
-  read(unitreleases,*,err=998) nspec
-  if (nspec.gt.maxspec) goto 994
-  if (old) call skplin(2,unitreleases)
-  do i=1,nspec
-    read(unitreleases,*,err=998) specnum_rel
+    read(unitreleases,*,err=998) nspec
+    if (nspec.gt.maxspec) goto 994
     if (old) call skplin(2,unitreleases)
-    call readspecies(specnum_rel,i)
+  endif
 
-  ! For backward runs, only 1 species is allowed
-  !*********************************************
+  ! namelist output
+  if (nmlout.eqv..true.) then
+    write(unitreleasesout,nml=releases_ctrl)
+  endif
 
-  !if ((ldirect.lt.0).and.(nspec.gt.1)) then
-  !write(*,*) '#####################################################'
-  !write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
-  !write(*,*) '#### FOR BACKWARD RUNS, ONLY 1 SPECIES IS ALLOWED####'
-  !write(*,*) '#####################################################'
-  !  stop
-  !endif
+  do i=1,nspec
+    if (readerror.ne.0) then
+      read(unitreleases,*,err=998) specnum_rel(i)
+      if (old) call skplin(2,unitreleases)
+      call readspecies(specnum_rel(i),i)
+    else
+      call readspecies(specnum_rel(i),i)
+    endif
 
-  ! Molecular weight
-  !*****************
+    ! For backward runs, only 1 species is allowed
+    !*********************************************
 
-    if (((iout.eq.2).or.(iout.eq.3)).and. &
-         (weightmolar(i).lt.0.)) then
+    !if ((ldirect.lt.0).and.(nspec.gt.1)) then
+    !write(*,*) '#####################################################'
+    !write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
+    !write(*,*) '#### FOR BACKWARD RUNS, ONLY 1 SPECIES IS ALLOWED####'
+    !write(*,*) '#####################################################'
+    !  stop
+    !endif
+
+    ! Molecular weight
+    !*****************
+
+    if (((iout.eq.2).or.(iout.eq.3)).and.(weightmolar(i).lt.0.)) then
       write(*,*) 'For mixing ratio output, valid molar weight'
       write(*,*) 'must be specified for all simulated species.'
       write(*,*) 'Check table SPECIES or choose concentration'
@@ -245,27 +322,25 @@ subroutine readreleases
       stop
     endif
 
-
-  ! Radioactive decay
-  !******************
+    ! Radioactive decay
+    !******************
 
     decay(i)=0.693147/decay(i) !conversion half life to decay constant
 
 
-  ! Dry deposition of gases
-  !************************
+    ! Dry deposition of gases
+    !************************
 
-    if (reldiff(i).gt.0.) &
-         rm(i)=1./(henry(i)/3000.+100.*f0(i))    ! mesophyll resistance
+    if (reldiff(i).gt.0.) rm(i)=1./(henry(i)/3000.+100.*f0(i))    ! mesophyll resistance
 
-  ! Dry deposition of particles
-  !****************************
+    ! Dry deposition of particles
+    !****************************
 
     vsetaver(i)=0.
     cunningham(i)=0.
     dquer(i)=dquer(i)*1000000.         ! Conversion m to um
-    if (density(i).gt.0.) then                  ! Additional parameters
-     call part0(dquer(i),dsigma(i),density(i),fracth,schmih,cun,vsh)
+    if (density(i).gt.0.) then         ! Additional parameters
+      call part0(dquer(i),dsigma(i),density(i),fracth,schmih,cun,vsh)
       do j=1,ni
         fract(i,j)=fracth(j)
         schmi(i,j)=schmih(j)
@@ -276,94 +351,147 @@ subroutine readreleases
       write(*,*) 'Average settling velocity: ',i,vsetaver(i)
     endif
 
-  ! Dry deposition for constant deposition velocity
-  !************************************************
+    ! Dry deposition for constant deposition velocity
+    !************************************************
 
     dryvel(i)=dryvel(i)*0.01         ! conversion to m/s
 
-  ! Check if wet deposition or OH reaction shall be calculated
-  !***********************************************************
+    ! Check if wet deposition or OH reaction shall be calculated
+    !***********************************************************
     if (weta(i).gt.0.)  then
       WETDEP=.true.
-      write (*,*) 'Below-cloud scavenging is switched on'
+      write (*,*) 'Below-cloud scavenging: ON'
       write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
     else
-      write (*,*) 'Below-cloud scavenging is switched OFF'
+      write (*,*) 'Below-cloud scavenging: OFF'
     endif
     
-! NIK 31.01.2013 + 10.12.2013
+    ! NIK 31.01.2013 + 10.12.2013
     if (weta_in(i).gt.0.)  then
       WETDEP=.true.
-      write (*,*) 'In-cloud scavenging is switched on'
+      write (*,*) 'In-cloud scavenging: ON'
       write (*,*) 'In-cloud scavenging coefficients: ',weta_in(i),wetb_in(i), wetc_in(i), wetd_in(i),i
     else
-      write (*,*) 'In-cloud scavenging is switched OFF' 
+      write (*,*) 'In-cloud scavenging: OFF' 
     endif
 
     if (ohreact(i).gt.0) then
       OHREA=.true.
-      write (*,*) 'OHreaction switched on: ',ohreact(i),i
+      write (*,*) 'OHreaction: ON (',ohreact(i),i,')'
     endif
 
-
-    if ((reldiff(i).gt.0.).or.(density(i).gt.0.).or. &
-         (dryvel(i).gt.0.)) then
+    if ((reldiff(i).gt.0.).or.(density(i).gt.0.).or.(dryvel(i).gt.0.)) then
       DRYDEP=.true.
       DRYDEPSPEC(i)=.true.
     endif
 
   end do
 
-    if (WETDEP.or.DRYDEP) DEP=.true.
+  if (WETDEP.or.DRYDEP) DEP=.true.
 
   ! Read specifications for each release point
   !*******************************************
-
+  numpoints=numpoint
   numpoint=0
   numpartmax=0
   releaserate=0.
-1000   numpoint=numpoint+1
-  read(unitreleases,*,end=250)
-  read(unitreleases,*,err=998,end=250) id1,it1
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) id2,it2
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xpoint1(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) ypoint1(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) xpoint2(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) ypoint2(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) kindz(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) zpoint1(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) zpoint2(numpoint)
-  if (old) call skplin(2,unitreleases)
-  read(unitreleases,*,err=998) npart(numpoint)
-  if (old) call skplin(2,unitreleases)
-  do i=1,nspec
-    read(unitreleases,*,err=998) xmass(numpoint,i)
-    if (old) call skplin(2,unitreleases)
-  end do
-  !save compoint only for the first 1000 release points
-  if (numpoint.le.1000) then
-    read(unitreleases,'(a40)',err=998) compoint(numpoint)(1:40)
-  else
-    read(unitreleases,'(a40)',err=998) compoint(1001)(1:40)
-  endif
-  if (old) call skplin(1,unitreleases)
-  if (numpoint.le.1000) then
-    if((xpoint1(numpoint).eq.0.).and.(ypoint1(numpoint).eq.0.).and. &
-         (xpoint2(numpoint).eq.0.).and.(ypoint2(numpoint).eq.0.).and. &
-         (compoint(numpoint)(1:8).eq.'        ')) goto 250
-  else
-    if((xpoint1(numpoint).eq.0.).and.(ypoint1(numpoint).eq.0.).and. &
-         (xpoint2(numpoint).eq.0.).and.(ypoint2(numpoint).eq.0.)) goto 250
-  endif
+101   numpoint=numpoint+1
 
+  if (readerror.lt.1) then ! reading namelist format
+
+    if (numpoint.gt.numpoints) goto 250
+    zkind = 1
+    mass = 0
+    parts = 0
+    comment = ' '
+    read(unitreleases,release,iostat=readerror)
+    id1=idate1
+    it1=itime1
+    id2=idate2
+    it2=itime2
+    xpoint1(numpoint)=lon1
+    xpoint2(numpoint)=lon2
+    ypoint1(numpoint)=lat1
+    ypoint2(numpoint)=lat2
+    zpoint1(numpoint)=z1
+    zpoint2(numpoint)=z2
+    kindz(numpoint)=zkind
+    do i=1,nspec
+      xmass(numpoint,i)=mass(i)
+    end do
+    npart(numpoint)=parts
+    compoint(min(1001,numpoint))=comment
+
+    ! namelist output
+    if (nmlout.eqv..true.) then
+      write(unitreleasesout,nml=release)
+    endif
+
+  else
+
+    read(unitreleases,*,end=250)
+    read(unitreleases,*,err=998,end=250) id1,it1
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) id2,it2
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xpoint1(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) ypoint1(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) xpoint2(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) ypoint2(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) kindz(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) zpoint1(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) zpoint2(numpoint)
+    if (old) call skplin(2,unitreleases)
+    read(unitreleases,*,err=998) npart(numpoint)
+    if (old) call skplin(2,unitreleases)
+    do i=1,nspec
+      read(unitreleases,*,err=998) xmass(numpoint,i)
+      if (old) call skplin(2,unitreleases)
+      mass(i)=xmass(numpoint,i)
+    end do
+    !save compoint only for the first 1000 release points
+    if (numpoint.le.1000) then
+      read(unitreleases,'(a40)',err=998) compoint(numpoint)(1:40)
+      comment=compoint(numpoint)(1:40)
+    else
+      read(unitreleases,'(a40)',err=998) compoint(1001)(1:40)
+      comment=compoint(1001)(1:40)
+    endif
+    if (old) call skplin(1,unitreleases)
+
+    ! namelist output
+    if (nmlout.eqv..true.) then
+      idate1=id1
+      itime1=it1
+      idate2=id2
+      itime2=it2
+      lon1=xpoint1(numpoint)
+      lon2=xpoint2(numpoint)
+      lat1=ypoint1(numpoint)
+      lat2=ypoint2(numpoint)
+      z1=zpoint1(numpoint)
+      z2=zpoint2(numpoint)
+      zkind=kindz(numpoint)
+      parts=npart(numpoint)
+      write(unitreleasesout,nml=release)
+    endif
+
+    if (numpoint.le.1000) then
+      if((xpoint1(numpoint).eq.0.).and.(ypoint1(numpoint).eq.0.).and. &
+           (xpoint2(numpoint).eq.0.).and.(ypoint2(numpoint).eq.0.).and. &
+           (compoint(numpoint)(1:8).eq.'        ')) goto 250
+    else
+      if((xpoint1(numpoint).eq.0.).and.(ypoint1(numpoint).eq.0.).and. &
+           (xpoint2(numpoint).eq.0.).and.(ypoint2(numpoint).eq.0.)) goto 250
+    endif
+
+  endif ! if namelist format
 
   ! If a release point contains no particles, stop and issue error message
   !***********************************************************************
@@ -434,11 +562,6 @@ subroutine readreleases
     endif
   endif
 
-
-  ! Check, whether the total number of particles may exceed totally allowed
-  ! number of particles at some time during the simulation
-  !************************************************************************
-
   ! Determine the release rate (particles per second) and total number
   ! of particles released during the simulation
   !*******************************************************************
@@ -450,12 +573,16 @@ subroutine readreleases
     releaserate=99999999
   endif
   numpartmax=numpartmax+npart(numpoint)
-  goto 1000
-
+  goto 101
 
 250   close(unitreleases)
 
-  write (*,*) ' Particles allocated for this run: ',maxpart, ', released in simulation: ',  numpartmax
+  if (nmlout.eqv..true.) then
+    close(unitreleasesout)
+  endif
+
+  write (*,*) 'Particles allocated (maxpart)  : ',maxpart
+  write (*,*) 'Particles released (numpartmax): ',numpartmax
   numpoint=numpoint-1
 
   if (ioutputforeachrelease.eq.1) then
@@ -463,6 +590,10 @@ subroutine readreleases
   else
     maxpointspec_act=1
   endif
+
+  ! Check, whether the total number of particles may exceed totally allowed
+  ! number of particles at some time during the simulation
+  !************************************************************************
 
   if (releaserate.gt. &
        0.99*real(maxpart)/real(lage(nageclass))) then
@@ -518,6 +649,11 @@ subroutine readreleases
   write(*,*) 'POINTS IS NOT AVAILABLE OR YOU ARE NOT'
   write(*,*) 'PERMITTED FOR ANY ACCESS'
   write(*,*) '#####################################################'
+  stop
+
+1000 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "RELEASES"    #### '
+  write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
+  write(*,'(a)') path(2)(1:length(2))
   stop
 
 end subroutine readreleases

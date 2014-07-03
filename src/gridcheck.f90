@@ -442,15 +442,13 @@ subroutine gridcheck
   ! Output of grid info
   !********************
 
-  write(*,*)
-  write(*,*)
-  write(*,'(a,2i7)') '# of vertical levels in ECMWF data: ', &
+  write(*,'(a,2i7)') ' Vertical levels in ECMWF data: ', &
        nuvz+1,nwz
   write(*,*)
-  write(*,'(a)') 'Mother domain:'
+  write(*,'(a)') ' Mother domain:'
   write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
        xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range: ', &
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range : ', &
        ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
   write(*,*)
 

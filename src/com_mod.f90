@@ -681,11 +681,12 @@ module com_mod
   ! rannumb                 field of normally distributed random numbers
 
   !********************
-  ! Verbosity, testing flags
+  ! Verbosity, testing flags, namelist I/O
   !********************   
   integer :: verbosity=0
   integer :: info_flag=0
-  INTEGER :: count_clock, count_clock0,  count_rate, count_max
+  integer :: count_clock, count_clock0,  count_rate, count_max
+  logical :: nmlout=.true.
    
 
 end module com_mod

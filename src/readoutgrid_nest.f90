@@ -52,44 +52,63 @@ subroutine readoutgrid_nest
   real :: xr,xr1,yr,yr1
   real,parameter :: eps=1.e-4
 
+  integer :: readerror
 
+  ! declare namelist
+  namelist /outgridn/ &
+    outlon0n,outlat0n, &
+    numxgridn,numygridn, &
+    dxoutn,dyoutn
+
+  ! helps identifying failed namelist input
+  dxoutn=-1.0
 
   ! Open the OUTGRID file and read output grid specifications
   !**********************************************************
 
-  open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST', &
-       status='old',err=999)
+  open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',form='formatted',status='old',err=999)
 
+  ! try namelist input
+  read(unitoutgrid,outgridn,iostat=readerror)
+  close(unitoutgrid)
 
-  call skplin(5,unitoutgrid)
+  if ((dxoutn.le.0).or.(readerror.ne.0)) then
 
+    open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',status='old',err=999)
+    call skplin(5,unitoutgrid)
 
-  ! 1.  Read horizontal grid specifications
-  !****************************************
+    ! 1.  Read horizontal grid specifications
+    !****************************************
 
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,f11.4)') outlon0n
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,f11.4)') outlat0n
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,i5)') numxgridn
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,i5)') numygridn
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,f12.5)') dxoutn
-  call skplin(3,unitoutgrid)
-  read(unitoutgrid,'(4x,f12.5)') dyoutn
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,f11.4)') outlon0n
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,f11.4)') outlat0n
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,i5)') numxgridn
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,i5)') numygridn
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,f12.5)') dxoutn
+    call skplin(3,unitoutgrid)
+    read(unitoutgrid,'(4x,f12.5)') dyoutn
 
+    close(unitoutgrid)
+  endif
 
-    allocate(orooutn(0:numxgridn-1,0:numygridn-1) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate outh'
-    allocate(arean(0:numxgridn-1,0:numygridn-1) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate outh'
-    allocate(volumen(0:numxgridn-1,0:numygridn-1,numzgrid) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate outh'
+  ! write outgrid_nest file in namelist format to output directory if requested
+  if (nmlout.eqv..true.) then
+    open(unitoutgrid,file=path(2)(1:length(2))//'OUTGRID_NEST.namelist',err=1000)
+    write(unitoutgrid,nml=outgridn)
+    close(unitoutgrid)
+  endif
+
+  allocate(orooutn(0:numxgridn-1,0:numygridn-1),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate orooutn'
+  allocate(arean(0:numxgridn-1,0:numygridn-1),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate arean'
+  allocate(volumen(0:numxgridn-1,0:numygridn-1,numzgrid),stat=stat)
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate volumen'
 
   ! Check validity of output grid (shall be within model domain)
   !*************************************************************
@@ -109,13 +128,16 @@ subroutine readoutgrid_nest
 
   xoutshiftn=xlon0-outlon0n
   youtshiftn=ylat0-outlat0n
-  close(unitoutgrid)
   return
 
-
-999   write(*,*) ' #### FLEXPART MODEL ERROR! FILE OUTGRID_NEST #### '
+999 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,*) ' #### xxx/flexpart/options                    #### '
+  write(*,'(a)') path(1)(1:length(1))
+  stop
+
+1000 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
+  write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
+  write(*,'(a)') path(2)(1:length(2))
   stop
 
 end subroutine readoutgrid_nest

@@ -224,8 +224,8 @@ subroutine outgrid_init
   !write (*,*) 'Dimensions for fields', numxgrid,numygrid, &
   !     maxspec,maxpointspec_act,nclassunc,maxageclass
 
-  write (*,*) ' Allocating fields for nested and global output (x,y): ', &
-       max(numxgrid,numxgridn),max(numygrid,numygridn) 
+  write (*,*) 'Allocating fields for global output (x,y): ', numxgrid,numygrid
+  write (*,*) 'Allocating fields for nested output (x,y): ', numxgridn,numygridn 
 
   ! allocate fields for concoutput with maximum dimension of outgrid
   ! and outgrid_nest

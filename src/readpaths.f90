@@ -87,7 +87,6 @@ subroutine readpaths !(pathfile)
     length(numpath+2*(i-1)+1)=index(path(numpath+2*(i-1)+1),' ')-1
     length(numpath+2*(i-1)+2)=index(path(numpath+2*(i-1)+2),' ')-1
   end do
-  print*,length(5),length(6)
 
 
   ! Determine number of available nested domains

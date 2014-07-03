@@ -122,8 +122,8 @@ subroutine readavailable
   !*********************************************************************
 
   do k=1,numbnests
-  print*,length(numpath+2*(k-1)+1),length(numpath+2*(k-1)+2),length(4),length(3)
-  print*,path(numpath+2*(k-1)+2)(1:length(numpath+2*(k-1)+2))
+  !print*,length(numpath+2*(k-1)+1),length(numpath+2*(k-1)+2),length(4),length(3)
+  !print*,path(numpath+2*(k-1)+2)(1:length(numpath+2*(k-1)+2))
     open(unitavailab,file=path(numpath+2*(k-1)+2) &
          (1:length(numpath+2*(k-1)+2)),status='old',err=998)
 

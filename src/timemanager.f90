@@ -128,6 +128,8 @@ subroutine timemanager
   !**********************************************************************
 
 
+  !write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
+  write(*,46) float(itime)/3600,itime,numpart
   if (verbosity.gt.0) then
     write (*,*) 'timemanager> starting simulation'
     if (verbosity.gt.1) then
@@ -370,10 +372,10 @@ subroutine timemanager
         endif
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)
         if (iflux.eq.1) call fluxoutput(itime)
-        write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc, &
-             drygridtotalunc
-45      format(i9,' SECONDS SIMULATED: ',i8, &
-             ' PARTICLES:    Uncertainty: ',3f7.3)
+        !write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
+        write(*,46) float(itime)/3600,itime,numpart
+45      format(i9,' SECONDS SIMULATED: ',i8, ' PARTICLES:    Uncertainty: ',3f7.3)
+46      format(' Simulated ',f7.1,' hours (',i9,' s), ',i8, ' particles')
         if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
         loutnext=loutnext+loutstep
         loutstart=loutnext-loutaver/2

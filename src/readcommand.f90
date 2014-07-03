@@ -28,6 +28,8 @@ subroutine readcommand
   !     Author: A. Stohl                                                       *
   !                                                                            *
   !     18 May 1996                                                            *
+  !     HSO, 1 July 2014                                                       *
+  !     Added optional namelist input                                          *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -79,7 +81,6 @@ subroutine readcommand
   real(kind=dp) :: juldate
   character(len=50) :: line
   logical :: old
-  logical :: nml_COMMAND=.true. , nmlout=.true.  !.false.
   integer :: readerror
 
   namelist /command/ &
@@ -110,7 +111,7 @@ subroutine readcommand
   surf_only    
 
   ! Presetting namelist command
-  ldirect=1
+  ldirect=0
   ibdate=20000101
   ibtime=0
   iedate=20000102
@@ -141,46 +142,16 @@ subroutine readcommand
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
   !**************************************************************************
-  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
-         form='formatted',iostat=readerror)
-   ! If fail, check if file does not exist
-   if (readerror.ne.0) then
-     print*,'***ERROR: file COMMAND not found in ' 
-     print*, path(1)(1:length(1))//'COMMAND'
-     print*, 'Check your pathnames file.'
-     stop
-   endif
+  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old',form='formatted',err=999)
 
-   ! print error code
-   !write(*,*) 'readcommand > readerror open=' , readerror
-   !probe first line  
-   read (unitcommand,901) line
-   !write(*,*) 'index(line,COMMAND) =', index(line,'COMMAND') 
-
- 
-   !default is namelist input 
-   ! distinguish namelist from fixed text input
-   if (index(line,'COMMAND') .eq. 0) then
-   nml_COMMAND = .false. 
-   !write(*,*) 'COMMAND file does not contain the string COMMAND in the first line'      
-   endif
-   !write(*,*) 'readcommand > read as namelist? ' , nml_COMMAND
-   rewind(unitcommand)
-   read(unitcommand,command,iostat=readerror)
-
+  ! try namelist input (default)
+  read(unitcommand,command,iostat=readerror)
   close(unitcommand)
 
-  !write(*,*) 'readcommand > readerror read=' , readerror
-  ! If error in namelist format, try to open with old input code
-  ! if (readerror.ne.0) then
-  ! IP 21/5/2014 the previous line cause the old long format 
-  ! to be confused with namelist input
-  
-  ! use text input 
-  if (nml_COMMAND .eqv. .false.) then 
-
-    open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
-         err=999)
+  ! distinguish namelist from fixed text input
+  if ((readerror.ne.0).or.(ldirect.eq.0)) then ! parse as text file format
+ 
+    open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', err=999)
 
     ! Check the format of the COMMAND file (either in free format,
     ! or using formatted mask)
@@ -192,10 +163,10 @@ subroutine readcommand
   901   format (a)
     if (index(line,'LDIRECT') .eq. 0) then
       old = .false.
-    !write(*,*) 'readcommand old short'
+      write(*,*) 'COMMAND in old short format, please update to namelist format'
     else
       old = .true.
-    !write(*,*) 'readcommand old long'
+      write(*,*) 'COMMAND in old long format, please update to namelist format'
     endif
     rewind(unitcommand)
 
@@ -205,7 +176,6 @@ subroutine readcommand
 
     call skplin(7,unitcommand)
     if (old) call skplin(1,unitcommand)
-
     read(unitcommand,*) ldirect
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) ibdate,ibtime
@@ -264,9 +234,6 @@ subroutine readcommand
     open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=1000)
     write(unitcommand,nml=command)
     close(unitcommand)
-     ! open(unitheader,file=path(2)(1:length(2))//'header_nml',status='new',err=999)
-     ! write(unitheader,NML=COMMAND)
-     !close(unitheader) 
   endif
 
   ifine=max(ifine,1)
@@ -615,7 +582,7 @@ subroutine readcommand
   stop
 
 1000   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"    #### '
-       write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-        write(*,'(a)') path(2)(1:length(1))
-        stop
+  write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
+  write(*,'(a)') path(2)(1:length(1))
+  stop
 end subroutine readcommand

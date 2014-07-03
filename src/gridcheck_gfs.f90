@@ -422,13 +422,13 @@ subroutine gridcheck
 
   write(*,*)
   write(*,*)
-  write(*,'(a,2i7)') '# of vertical levels in NCEP data: ', &
+  write(*,'(a,2i7)') 'Vertical levels in NCEP data: ', &
        nuvz,nwz
   write(*,*)
   write(*,'(a)') 'Mother domain:'
   write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Longitude range: ', &
        xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range: ', &
+  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range : ', &
        ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
   write(*,*)
 
