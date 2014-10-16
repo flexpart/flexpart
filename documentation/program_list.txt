@@ -1,0 +1,160 @@
+SHORT DESCRIPTION OF THE SOURCE CODE FILES USED BY THE FLEXPART MODEL
+_____________________________________________________________________
+FLEXPART.f        main program, manages reading of run specifications, etc.;
+                  last call is to timemanager.f, which manages the actual model
+                  integration
+advance.f         advection of the particles by grid-scale and turbulent winds;
+                  solves the Langevin equations
+assignland.f      assigns the fractions of 8 landuse classes to each ECMWF grid
+                  point
+boundcond_domainfill.f  creates particles at the inflowing/destroys particles
+                  at the outflowing boundary, if domain-filling option is used
+calcfluxes.f      calculates the gross N-S, E-W and up-down mass fluxes
+                  resulting from the motion of a single particle
+calcmatrix.f      interface to the convection scheme (convect.f) by K. Emanuel   
+calcpar.f         calculates boundary layer parameters: friction velocity,
+                  convective velocity scale, Obukhov length, PBL height, partly
+                  by calling other routines
+calcpar_nests.f   same as calcpar.f, but for the nested grids
+calcpv.f          calculates potential vorticity for mother domain grid points
+calcpv_nests.f    same as calcpv.f, but for the nested grids
+caldate.f         computes calendar date from Julian date
+centerofmass.f    calculates the center of mass of n points on the Earth
+clustering.f      cluster analysis of particle position
+cmapf1.0.f        Program package for coordinate transformations between
+                  latitude/longitude grid and polar stereographic projection
+conccalc.f        calculates concentrations or residence times and/or
+                  mixing ratios on the output grid and at receptor locations
+concoutput.f      writes out concentrationsor residence times and/or
+                  mixing ratios on the output grid and at receptor locations
+                  (files grid_conc_date, grid_pptv_date, grid_time_date)
+concoutput_nest.f same as concoutput.f, but for the nested output grid
+convect.f         convection scheme written by Kerry Emanuel (slightly modified)
+convmix.f         handles all the calculations related to convective mixing
+coordtrafo.f      transformation of release point coordinates from geografical
+                  to grid coordinates
+distance.f        calculates distance (km) between 2 points on Earth's surface
+                  given their positions in degrees
+distance2.f       calculates distance (km) between 2 points on Earth's surface
+                  given their positions in radians
+drydepokernel.f   calculates gridded dry deposition field using a uniform kernel
+drydepokernel_nest.f same as drydepokernel.f, but for the nested output grid
+erf.f             error function
+ew.f              calculation of saturation water vapor pressure for given
+                  air temperature
+fluxoutput.f      writes out mass fluxes on the output grid (grid_flux_date)
+getfields.f       manages reading of new wind fields if required, and calls all
+                  routines that do calculations on the input grids
+getrb.f           computes quasilaminar sublayer resistance to dry deposition
+                  of gases
+getrc.f           calculates surface resistance to dry deposition of gases
+getvdep.f         calculates dry deposition velocities
+gridcheck.f       determines grid domain, resolution, etc., from GRIB file and
+                  checks whether dimensions comply with settings in includepar
+gridcheck_nests.f same as gridcheck.f, but for the nested grids
+hanna.f           parameterization of the turbulent velocity variance and
+                  the respective timescales; Langevin equation for w'/sigw
+hanna1.f          alternative model to hanna.f: Langevin equation for w'
+                  drift correction velocity after Wilson
+hanna_short.f     same as hanna.f, but only for the vertical wind
+includecom        include file containing important global variables
+includeconv       include file containing variables used in the convection scheme
+includeinterpol   include file containing variables used for interpolation in
+                  routines called from advance.f
+includehanna      include file used for turbulence parameterization
+includepar        include file containing all globally used parameters
+init_domainfill.f distributes particles homogeneously in the computation domain
+initialize.f      initializes the turbulence statistics for a particle
+interpol_all.f    interpolates all data needed in advance.f for two levels
+                  within the PBL and for all surface data
+interpol_all_nests.f  same as interpol_all.f, but for the nested grids
+interpol_misslev.f interpolates for a level in the PBL that was not provided
+                  by interpol_all.f, because particle has moved out of the
+                  two sandwiched layers
+interpol_misslev_nests.f same as interpol_misslev.f, but for the nested grids
+interpol_rain.f   interpolates large-scale and convective precipitation,
+                  and of total cloud cover
+interpol_rain_nests.f same as interpol_rain.f, but for the nested grids
+interpol_vdep.f   interpolates the deposition velocity
+interpol_vdep_nests.f  same as interpol_vdep.f, but for the nested grids
+interpol_wind.f   interpolates winds above the PBL and calculates the wind's
+                  standard deviation for grid points around particle location
+interpol_wind_nests.f   same as interpol_wind.f, but for the nested grids
+interpol_wind_short.f  interpolates winds above the PBL
+interpol_wind_short_nests.f  same as interpol_wind_short.f, but for nested grids
+juldate.f         compute julian date from calendar date
+mean.f            calculates the mean and standard deviation of a field
+obukhov.f         calculates Obukhov length from surface heat flux
+openouttraj.f     opens the output files for the plume trajectory output
+openreceptors.f   opens output files for receptor location output, and writes
+                  out some basic information (location and names of receptors)
+                  (files receptor_conc and receptor_pptv)
+outgrid_init.f    initializes the output grid and calculates volume and area
+                  of output grid cells
+outgrid_init_nest.f same as outgrid_init.f, but for the nested output grid
+part0.f           calculates time-independent factors for the dry deposition
+                  of particles
+partdep.f         calculates dry deposition velocities for particles
+partoutput.f      writes out the particle positions to files partposit_date, or
+                  partposit_end
+partoutput_short.f dumps particle output in a compact format; particles are
+                  uniquely numbered
+pbl_profile.f     calculates surface stress and sensible heat flux using
+                  the profile method
+plumetraj.f       calculates a plume centroid trajectory and manages particle
+                  clustering; writes output to file trajectories.txt
+psih.f            stability correction term for heat
+psim.f            stability correction term for momentum
+qvsat.f           saturation specif. humidity at given pressure and temperature
+raerod.f          calculation of the aerodynamic resistance ra to dry deposition
+random.f          subroutines needed for generation of normally distriubted
+                  random numbers
+readageclasses.f  reads number and time intervals of age classes to be used
+readavailable.f   reads, which wind fields are available during the modelling
+                  period
+readcommand.f     reads basic user commands, e.g. start and end of simulation,
+                  frequency of output, etc.
+readdepo.f        reads parameters needed for dry deposition of gases
+readlanduse.f     reads landuse inventory and the respective roughness lengths
+readoutgrid.f     reads the definition of the output domain
+readoutgrid_nest.f same as readoutgrid.f, but for the nested output grid
+readpartpositions.f reads particle positions from a previous run's
+                  partposit_end file, in order to initialize particle positions
+                  for the new run
+readpaths.f       reads the path names of input/output files and wind fields
+readreceptors.f   reads names and coordinates of receptor points for which the
+                  parabolic kernel shall be applied
+readreleases.f    reads release specifications (start and end of release,
+                  coordinates, number of particles, masses released, etc.)
+readspecies.f     reads physical and chemical properties of gases and aerosols
+readwind.f        reads the ECMWF meteorological data fields; contains the
+                  calls to GRIB decoding routines
+readwind_nests.f  same as readwind.f, but for the nested grids
+redist.f          redistributes particles according to convective fluxes
+releaseparticles.f releases the particles during the simulation; called every
+                  lsynctime seconds
+richardson.f      calculates convective velocity scale and PBL height using
+                  critical Richardson number concept
+scalev.f          computes friction velocity from surface stress
+shift_field.f     shifts global fields by nxshift grid cells, and repeats
+                  westernmost grid points at easternmost domain boundary
+shift_field_0.f   same as shift_field.f, but for some fields with 2 dimensions
+                  only (e.g. topography)
+skplin.f          skips n lines of a given input file
+sort2.f           sorts particles according to their coordinates
+timemanager.f     time management of FLEXPART model simulation: determines when
+                  particles are released and advected, when concentrations
+                  calculations are done and concentrations written out, and
+                  calls all the respective subroutines
+verttransform.f   transforms 3-d fields from eta coordinates to Cartesian
+                  terrain-following coordinates
+verttransform_nests.f  same as verttransform.f, but for the nested grids
+wetdepo.f         calculates the wet deposition
+wetdepokernel.f   assigns the deposition from an individual particle to the
+                  deposition fields using a uniform kernel of bandwidths dx, dy
+wetdepokernel_nest.f same as wetdepokernel.f, but for the nested output grid
+windalign.f       transforms turbulent velocities from along- and cross-wind
+                  components to Cartesian u and v components
+writeheader.f     creates the file header and writes important information about
+                  the model run in it
+writeheader_nest.f same as writeheader.f, but for the nested output grid

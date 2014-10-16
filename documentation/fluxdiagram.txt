@@ -1,0 +1,120 @@
+******************************************************************************
+*                    FLEXPART model basic calling structure                  *
+******************************************************************************
+
+FLEXPART --> gasdev1 --> ran3
+         --> readpaths
+         --> readcommand --> juldate
+                         --> skplin
+         --> readageclasses
+         --> readavailable --> juldate
+         --> gridcheck
+         --> gridcheck_nests
+         --> readoutgrid --> skplin
+         --> readoutgrid_nest --> skplin
+         --> readreceptors
+         --> readspecies
+         --> readlanduse
+         --> assignland
+         --> readreleases --> skplin
+                          --> part0 --> erf
+         --> readdepo
+         --> coordtrafo
+         --> readpartpositions
+         --> writeheader
+         --> writeheader_nest
+         --> openreceptors
+         --> openouttraj
+         --> outgrid_ini
+         --> outgrid_ini_nest
+         --> timemanager --> wetdepo --> interpol_rain
+                                     --> interpol_rain_nests
+                                     --> wetdepokernel
+                                     --> wetdepokernel_nest
+                         --> convmix --> sort2 
+                                     --> calcmatrix --> convect --> tlift
+                                     --> redist
+                                     --> calcfluxes
+                         --> getfields --> see %1
+                         --> init_domainfill
+                         --> boundcond_domainfill
+                         --> releaseparticles --> caldate
+                                              --> ran1 (random.f)
+                         --> convmix --> sort2
+                                     --> calcmatrix --> convect --> tlift
+                                     --> redist
+                                     --> calcfluxes
+                         --> conccalc
+                         --> partoutput_short
+                         --> concoutput --> caldate 
+                                        --> mean
+                         --> concoutput_nest --> caldate 
+                                             --> mean
+                         --> plumetraj --> clustering --> distance2
+                                       --> centerofmass
+                                       --> mean
+                                       --> distance
+                         --> fluxoutput --> caldate
+                         --> partoutput --> caldate
+                         --> conccalc
+                         --> initialize --> same calls as advance
+                         --> advance --> ran3
+                                     --> interpol_all
+                                     --> interpol_all_nests
+                                     --> interpol_misslev
+                                     --> interpol_misslev_nests
+                                     --> hanna or hanna1
+                                     --> hanna_short
+                                     --> interpol_vdep
+                                     --> interpol_vdep_nests
+                                     --> interpol_wind
+                                     --> interpol_wind_nests
+                                     --> windalign
+                                     --> cll2xy (various projection routines in cmapf1.0.f)
+                                     --> cxy2ll
+                                     --> interpol_wind_short
+                                     --> interpol_wind_short_nests
+                         --> calcfluxes
+                         --> drydepokernel
+                         --> drydepokernel_nest
+                         --> partoutput --> caldate
+
+______________________________________________________________________________
+%1
+ --> readwind --> pbopen
+              --> pbgrib
+              (--> swap32)
+              --> gribex
+              --> pbclose
+              --> shift_field_0
+              --> shift_field
+              --> pbl_profile --> psim
+                              --> psih
+ --> readwind_nests --> pbopen
+                    --> pbgrib
+                    --> swap32
+                    --> gribex
+                    --> pbclose
+              --> pbl_profile --> psim
+                              --> psih
+ --> calcpar --> scalev --> ew
+             --> obukhov
+             --> richardson --> qvsat
+             --> getvdep --> caldate
+                         --> getrb
+                         --> raerod --> psih
+                         --> getrc
+                         --> partdep
+             --> calcpv
+ --> calcpar_nests --> scalev --> ew
+             --> obukhov
+             --> richardson --> qvsat
+             --> getvdep --> caldate
+                         --> getrb
+                         --> raerod --> psih
+                         --> getrc
+                         --> partdep
+             --> calcpv_nests
+ --> verttransform --> cc2gll (cmapf1.0.f)
+ --> verttransform_nests --> cc2gll (cmapf1.0.f)
+______________________________________________________________________________
