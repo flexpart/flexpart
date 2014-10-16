@@ -1,0 +1,133 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1138\cocoasubrtf510
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Cambria;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww16320\viewh13780\viewkind0
+\deftab720
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+
+\f0\fs28 \cf0 Release notes for FLEXPART 9.2 \
+\
+VERSION  9.0.2\
+\
+Starting point from ZAMG svn trunk early 2013\
+\
+VERSION  9.0.2.1 (from SEC)\
+\
+Version previously on the svn trunk plus minor changes (bugfixes)\
+\
+VERSION  9.1.0 \
+\
+HSO Changes\
+Called flexpart91_hasod on svn branches \
+(not the parallel version from Stephan Henne)\
+Main addition: namelists for COMMAND input and output \
+\
+VERSION  9.1.1\
+\
+Merge HSO, SEC and svn trunk\
+ - add minor bug fixes to HSO 's version\
+ - changes to releases\
+>   ! num_min_discrete    if less, release cannot be randomized and happens at   *\
+>   !                     time mid-point of release interval                     *\
+\
+> !!!! Modification to decrease scavenging and make it more realistic \
+\
+\
+VERSION  9.1.2 (NIK\'92s changes) \
+\
+Main changes: 	\
+	- deposition scheme: variation of scavenging 				parameters\
+      	- options: changes in SPECIES for parameter input \
+\
+VERSION 9.1.3 (PS's changes ) \
+\
+update to wetdepo.f90 and other routines \
+Prepared by PS for version 8 (F77).\
+Distributed in the tarball newcloudscheme.tgz\
+\
+VERSION 9.1.4 (minor changes - bug fixes - compatibility issues between NIK and PS schemes)\
+\pard\pardeftab720\ri0
+\cf0 \
+ readpartpositions.f90, line 79 (from version 9.0.2)\
+ issues: just a warning on numpointin not being equal to numpoint\
+ test backward compatibility with namelist COMMAND\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+\cf0 VERSION 9.1.5  (XF)\
+\
+Modification to gfs routines to read fnl winds  \
+\pard\pardeftab720\ri0
+\cf0 Modifications to the parameters module \
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+\cf0 VERSION  9.1.6 (RT)\
+\
+changes in input and output\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+
+\fs24 \cf0 writeheader_surf
+\fs28 \
+\pard\pardeftab720\ri0
+\cf0 \
+\
+VERSION  9.1.6.2\
+Add header in text format\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+\cf0 VERSION  9.1.7 \
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+
+\f1\fs24 \cf0 - makefile changes,\
+\pard\pardeftab720\ri0
+\cf0 \
+\pard\pardeftab720\ri380\sa180
+
+\b \cf0 - Ticket #11 
+\b0 - suppress check in read positions \
+
+\b - Ticket #22 
+\b0 - dates on the fly\
+
+\b - Ticket #13 
+\b0 - check path\
+\pard\pardeftab720\ri0
+\cf0 /home/vsinclai/FLEXPART/EXERCISES/HelloWorld/optionsCOMMAND\
+\
+- SYSTEM_CLOCK calls, verbosity\
+print*, 'WARNING: path not ending in /' \
+\pard\pardeftab720\ri0
+
+\f0\fs28 \cf0 \
+FLEXPART 9.1.8 \
+\
+(minor fixes - inclusion of additional tickets from the trac system) \
+\
+revise version numbers:\
+correct for  trim(flexversion) instead of V8.2 V9.0, FLEXPART V9.0\
+on leader, etc.\
+\
+minor modifications to  \
+	openouttraj.f90 \
+	writeheader_nest_surf.f90s\
+\
+messages depending on verbosity level\
+\
+Not included in 9.1.8:\
+\
+- Massimo's new PBL scheme\
+\
+- Paralelization (ES working on this)\
+\
+- NetCDF handling \
+\
+Submitted to developers for testing.\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardeftab720\ri0
+\cf0 VERSION  9.1.9\
+\
+Retraction to Nina's scheme due to changes in naming variables incompatible between NIK and PS.\
+\
+VERSION  9.2 based on AST's FLEXPART_CLEAN\
+\
+}
