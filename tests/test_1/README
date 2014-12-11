@@ -3,6 +3,12 @@ Contains the options directory from relese 9.2
 The pathfile was modified
 The feature tested are the new SPECIES file.
 
+To run the test at NILU type
+
+mkdir output
+ln -s ../../src/FP_ecmwf_gfortran .
+./FP_ecmwf_gfortran
+
 2014-10-16, tested on nordre@nilu (Ubuntu 12.04):
 >arch 
 x86_6
