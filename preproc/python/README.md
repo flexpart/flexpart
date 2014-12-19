@@ -10,7 +10,7 @@ The two main programs are called respectively `getEIdata.py` and `prepareFLEXPAR
 
 To get the usage of these programs, use `-h` option:
 
-`getEIdata.py `-h`
+`getEIdata.py -h`
 
 Optional arguments are mentionned in squared brackets. 
 
@@ -19,7 +19,8 @@ Optional arguments are mentionned in squared brackets.
 This program allows you to download ECMWF ERA-Interim data from ECMWF using [ecmwfapi](https://software.ecmwf.int/wiki/display/WEBAPI/ECMWF+Web+API+Home). 
 It requires `ecmwfapi` python library (see Requirements below). Check with your local IT group as it may be already available.
 
-`
+
+{{{
 Usage: getEIdata.py --start_date=YYYYMMDD [--end_date=YYYYMMDD] [--times=tt1/tt2/tt3] [--levels=nlevels]
                                                   [--area=north/west/south/east]  [--outputdir=output_directory]
 
@@ -34,7 +35,7 @@ Options:
                         90.0/-179.0/-90.0/180.0
   --outputdir=outputdir
                         root directory for storing output files
-`
+}}}
 
 * `prepareFLEXPART.py`
 
