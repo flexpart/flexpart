@@ -117,6 +117,7 @@ class GribTools:
 
 # Create index from a list of files if it does not exist or read it
     def index(self,index_keys=["mars"], index_file = "my.idx"):
+        print "index to be done" 
         self.iid = None
  
         if (os.path.exists(index_file)):

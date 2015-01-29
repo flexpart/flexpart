@@ -91,11 +91,7 @@ def main():
     retrieve="no"
     for date in daterange( start, end ):
 # if new year & month then we create a new directory to store output files
-        er_date = date
-        if date.strftime("%Y%m") != current_ym:
-            current_outputdir =  outputdir + "/"  + date.strftime("%Y") + '/' + date.strftime("%m") + '/' 
-            mkdir_p(current_outputdir)
-            if current_ym != "":
+        if date.strftime("%Y%m") != current_ym and current_ym != "":
                retrieve="yes"
 
         if date == end:
@@ -105,8 +101,14 @@ def main():
                 # we need to retrieve MARS data for this period (maximum one month)
                 flexpart = EIFlexpart()
                 dates= ir_date.strftime("%Y%m%d") + "/to/" + er_date.strftime("%Y%m%d") 
+                current_outputdir =  outputdir + "/"  + ir_date.strftime("%Y") + '/' + ir_date.strftime("%m") + '/' 
+                mkdir_p(current_outputdir)
+                print "retrieve " + dates + " in dir " + current_outputdir
                 flexpart.retrieve(server, dates, options.times, options.area, options.levels, current_outputdir)
-                ir_date = er_date
+                ir_date = date
+                retrieve="no"
+
+        er_date = date
 
         current_ym =  date.strftime("%Y%m")
 
