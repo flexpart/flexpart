@@ -22,7 +22,7 @@ module com_mod
   ! Variables defining where FLEXPART input/output files are stored
   !****************************************************************
 
-  character :: path(numpath+2*maxnests)*120
+  character :: path(numpath+2*maxnests)*256
   integer :: length(numpath+2*maxnests)
   character(len=256) :: pathfile, flexversion, arg1, arg2
   
@@ -685,6 +685,8 @@ module com_mod
   !********************   
   integer :: verbosity=0
   integer :: info_flag=0
+  integer :: time_flag=0
+  integer :: debug_flag=0
   integer :: count_clock, count_clock0,  count_rate, count_max
   logical :: nmlout=.true.
    
