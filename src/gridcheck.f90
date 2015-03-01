@@ -445,10 +445,10 @@ subroutine gridcheck
   write(*,'(a,2i7)') ' Vertical levels in ECMWF data: ', &
        nuvz+1,nwz
   write(*,*)
-  write(*,'(a)') ' Mother domain:'
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
+  write(*,'(a)') 'gridcheck> Mother domain:'
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') 'gridcheck>  Longitude range: ', &
        xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range : ', &
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') 'gridcheck>  Latitude range : ', &
        ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
   write(*,*)
 
@@ -544,17 +544,17 @@ subroutine gridcheck
   write(*,*) ' ###########################################'// &
        '###### '
   write(*,*)
-  write(*,'(a)') '!!! PLEASE INSERT A NEW CD-ROM AND   !!!'
-  write(*,'(a)') '!!! PRESS ANY KEY TO CONTINUE...     !!!'
-  write(*,'(a)') '!!! ...OR TERMINATE FLEXPART PRESSING!!!'
-  write(*,'(a)') '!!! THE "X" KEY...                   !!!'
-  write(*,*)
-  read(*,'(a)') opt
-  if(opt.eq.'X') then
+  !write(*,'(a)') '!!! PLEASE INSERT A NEW CD-ROM AND   !!!'
+  !write(*,'(a)') '!!! PRESS ANY KEY TO CONTINUE...     !!!'
+  !write(*,'(a)') '!!! ...OR TERMINATE FLEXPART PRESSING!!!'
+  !write(*,'(a)') '!!! THE "X" KEY...                   !!!'
+  !write(*,*)
+  !read(*,'(a)') opt
+  !if(opt.eq.'X') then
     stop
-  else
-    goto 5
-  endif
+  !else
+  !  goto 5
+  !endif
 
 end subroutine gridcheck
 
