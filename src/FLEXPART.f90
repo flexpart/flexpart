@@ -49,7 +49,7 @@ program flexpart
   integer :: i,j,ix,jy,inest
   integer :: idummy = -320
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
-
+  integer :: index_v
 
   ! Generate a large number of random numbers
   !******************************************
@@ -60,27 +60,29 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! FLEXPART version string
-  flexversion='Version 9.2 beta (2014-07-01)'
-  verbosity=0
-
+  ! flexversion='Version 9.2 beta (2014-07-01)'
+  flexversion='Version 9.2.0.1 (2015-01-27)'
+  ! default inlide options
+  inline_options='none'
+  !verbosity flags  defined in com_mod.f90
+ 
   ! Read the pathnames where input/output files are stored
   !*******************************************************
 
-  inline_options='none'
   select case (iargc())
-  case (2)
+  case (2) !2 parameters: pathfile and inline options
     call getarg(1,arg1)
     pathfile=arg1
     call getarg(2,arg2)
     inline_options=arg2
-  case (1)
+  case (1) !1 parameter pathfiel or inline options
     call getarg(1,arg1)
     pathfile=arg1
     if (arg1(1:1).eq.'-') then
       write(pathfile,'(a11)') './pathnames'
       inline_options=arg1 
     endif
-  case (0)
+  case (0) !default behavior
     write(pathfile,'(a11)') './pathnames'
   end select
   
@@ -88,42 +90,96 @@ program flexpart
   !*******************************************************
   print*,'Welcome to FLEXPART ', trim(flexversion)
   print*,'FLEXPART is free software released under the GNU General Public License.'
- 
+
+  ! inline options allow to fine tune the verbosity during run time
+  ! e.g.: show compilation parameters or input variables, time execution     
   if (inline_options(1:1).eq.'-') then
-    if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
-       print*, 'Verbose mode 1: display detailed information during run'
+   ! if (index(inline_options,'v').gt.0) then
+   !    print*, 'verbose mode'
+   !    verbosity=1
+   !    index_v=index(inline_options,'v')
+   !    if (inline_options(index_v+1:index_v+1).eq.'2') then
+   !    verbosity=2
+   !    endif         
+   ! endif   
+ 
+    !if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
+    if (index(inline_options,'v').gt.0) then
+       index_v=index(inline_options,'v')
+       print*, 'Verbose mode: display  additional information during run'
        verbosity=1
-    endif
-    if (trim(inline_options).eq.'-v2') then
-       print*, 'Verbose mode 2: display more detailed information during run'
+       if (inline_options(index_v+1:index_v+1).eq.'2') then
        verbosity=2
+       endif
+       print*, 'verbosity level=', verbosity !inline_options(index_v+1:index_v+1)
+              
     endif
-    if (trim(inline_options).eq.'-i') then
-       print*, 'Info mode: provide detailed run specific information and stop'
+    !iif (trim(inline_options).eq.'-v2') then
+    !   print*, 'Verbose mode 2: display more detailed information during run'
+    !   verbosity=2
+    !endif
+
+    if (index(inline_options,'i').gt.0) then   
+    !if (trim(inline_options).eq.'-i') then
+       index_v=index(inline_options,'i')
+       print*, 'Info mode: provide run specific information and stop'
        verbosity=1
        info_flag=1
+       !if (trim(inline_options).eq.'-i2') then
+       if (inline_options(index_v+1:index_v+1).eq.'2') then
+           print*, 'Including input files'
+       !   verbosity=1
+       info_flag=2
+       endif
     endif
-    if (trim(inline_options).eq.'-i2') then
-       print*, 'Info mode: provide more detailed run specific information and stop'
-       verbosity=2
-       info_flag=1
+    !if (trim(inline_options).eq.'-i2') then
+    !   print*, 'Info mode: provide more detailed run specific information and stop'
+    !   verbosity=1
+    !   info_flag=2
+    !endif
+    if (index(inline_options,'t').gt.0) then
+       time_flag=1
+       print*, 'timing execution: not implemented'
+       !stop
     endif
+    if (index(inline_options,'d').gt.0) then
+       debug_flag=1
+       print*, 'debug: not implemented'
+       print*, 'debug_flag=', debug_flag
+       !stop
+    endif 
   endif
            
   if (verbosity.gt.0) then
+    print*, 'FLEXPART>******************************'
+    print*, 'FLEXPART>* verbosity level:', verbosity
+    print*, 'FLEXPART>* info only:      ', info_flag
+    print*, 'FLEXPART>* time execution: ', time_flag
+    print*, 'FLEXPART>******************************'
+    
+    print*, 'FLEXPART> parameters from par_mod'    
+    print*, 'FLEXPART> nxmax=  ', nxmax
+    print*, 'FLEXPART> nymax=  ', nymax
+    print*, 'FLEXPART> nuvzmax=', nuvzmax
+    print*, 'FLEXPART> nwzmax= ', nwzmax
+    print*, 'FLEXPART> nzmax=  ', nzmax
+    print*, 'FLEXPART> nxshift=', nxshift
+    print*, 'FLEXPART> maxpart=', maxpart
+    print*, 'FLEXPART> maxspec=', maxspec 
+
+    if (info_flag.eq.1) stop
     write(*,*) 'call readpaths'
   endif 
   call readpaths(pathfile)
  
-  if (verbosity.gt.1) then !show clock info 
-     !print*,'length(4)',length(4)
+  !if (time_flag.gt.1) then !show clock info 
      !count=0,count_rate=1000
-     CALL SYSTEM_CLOCK(count_clock0, count_rate, count_max)
+  CALL SYSTEM_CLOCK(count_clock0, count_rate, count_max)
      !WRITE(*,*) 'SYSTEM_CLOCK',count, count_rate, count_max
      !WRITE(*,*) 'SYSTEM_CLOCK, count_clock0', count_clock0
      !WRITE(*,*) 'SYSTEM_CLOCK, count_rate', count_rate
      !WRITE(*,*) 'SYSTEM_CLOCK, count_max', count_max
-  endif
+  !endif
 
   ! Read the user specifications for the current model run
   !*******************************************************
@@ -133,14 +189,14 @@ program flexpart
   endif
   call readcommand
   if (verbosity.gt.0) then
-    write(*,*) '    ldirect=', ldirect
-    write(*,*) '    ibdate,ibtime=',ibdate,ibtime
+    write(*,*) '    ldirect      =', ldirect
+    write(*,*) '    ibdate,ibtime=', ibdate,ibtime
     write(*,*) '    iedate,ietime=', iedate,ietime
-    if (verbosity.gt.1) then   
+  endif
+    if (time_flag.gt.0) then   
       CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
       write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
     endif     
-  endif
 
   ! Read the age classes to be used
   !********************************
@@ -149,7 +205,7 @@ program flexpart
   endif
   call readageclasses
 
-  if (verbosity.gt.1) then   
+  if (time_flag.gt.1) then   
     CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
     write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
   endif     
@@ -167,12 +223,11 @@ program flexpart
   !**********************************************
  
   if (verbosity.gt.0) then
-     write(*,*) 'call gridcheck'
+     write(*,*) 'FLEXPART> call gridcheck'
   endif
-
   call gridcheck
 
-  if (verbosity.gt.1) then   
+  if (time_flag.gt.0) then   
     CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
     write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
   endif      
@@ -186,7 +241,7 @@ program flexpart
   !************************************
 
   if (verbosity.gt.0) then
-    write(*,*) 'call readoutgrid'
+    write(*,*) 'FLEXPART> call readoutgrid'
   endif
 
   call readoutgrid
@@ -194,7 +249,7 @@ program flexpart
   if (nested_output.eq.1) then
     call readoutgrid_nest
     if (verbosity.gt.0) then
-      write(*,*) '# readoutgrid_nest'
+      write(*,*) 'FLEXPART>  readoutgrid_nest'
     endif
   endif
 
@@ -202,7 +257,7 @@ program flexpart
   !*****************************************************************************
 
   if (verbosity.eq.1) then
-     print*,'call readreceptors'
+     print*,'FLEXPART> call readreceptors'
   endif
   call readreceptors
 
@@ -216,7 +271,7 @@ program flexpart
   !***************************
 
   if (verbosity.gt.0) then
-    print*,'call readlanduse'
+    print*,'FLEXPART> call readlanduse'
   endif
   call readlanduse
 
@@ -224,7 +279,7 @@ program flexpart
   !********************************************************************
 
   if (verbosity.gt.0) then
-    print*,'call assignland'
+    print*,'FLEXPART> call assignland'
   endif
   call assignland
 
@@ -232,7 +287,7 @@ program flexpart
   !**********************************************
 
   if (verbosity.gt.0) then
-    print*,'call readreleases'
+    print*,'FLEXPART> call readreleases'
   endif
   call readreleases
 
@@ -272,7 +327,7 @@ program flexpart
     call readpartpositions
   else
     if (verbosity.gt.0) then
-      print*,'numpart=0, numparticlecount=0'
+      print*,'set numpart=0, numparticlecount=0'
     endif    
     numpart=0
     numparticlecount=0
@@ -307,7 +362,7 @@ program flexpart
   endif
 
   call writeheader
-  ! FLEXPART 9.2 ticket ?? write header in ASCII format 
+  ! write header in ASCII format 
   call writeheader_txt
   !if (nested_output.eq.1) call writeheader_nest
   if (nested_output.eq.1.and.surf_only.ne.1) call writeheader_nest
@@ -356,15 +411,15 @@ program flexpart
   ! Calculate particle trajectories
   !********************************
 
+  if (time_flag.gt.0) then   
+    CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
+    write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
+  endif
+  if (info_flag.eq.2) then
+    print*, 'info only mode (stop before call timemanager)'
+    stop
+  endif
   if (verbosity.gt.0) then
-     if (verbosity.gt.1) then   
-       CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
-       write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
-     endif
-     if (info_flag.eq.1) then
-       print*, 'info only mode (stop)'    
-       stop
-     endif
      print*,'call timemanager'
   endif
 
