@@ -5,7 +5,7 @@ FC       = gfortran
 INCPATH  = /xnilu_wrk/flex_wrk/bin64/grib_api/include
 LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
 LIBPATH2 =   /usr/lib/x86_64-linux-gnu/
-FFLAGS   =   -O2 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
+FFLAGS   =   -O2           -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
 #FFLAGS   =   -fbounds-check -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH2) -L$(LIBPATH1) -lgrib_api_f90 -lgrib_api -lm -ljasper
 
