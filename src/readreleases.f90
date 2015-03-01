@@ -125,7 +125,8 @@ subroutine readreleases
 
   ! prepare namelist output if requested
   if (nmlout.eqv..true.) then
-    open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',access='append',status='new',err=1000)
+    !open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',access='append',status='new',err=1000)
+    open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',err=1000)
   endif
 
   if ((readerror.ne.0).or.(nspec.lt.0)) then
@@ -257,7 +258,7 @@ subroutine readreleases
   allocate(xmasssave(numpoint),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate xmasssave'
 
-  write (*,*) 'Releasepoints : ', numpoint
+  write (*,*) 'readreleases> Releasepoints : ', numpoint
 
   do i=1,numpoint
     xmasssave(i)=0.
@@ -292,6 +293,10 @@ subroutine readreleases
   endif
 
   do i=1,nspec
+    if (verbosity.gt.0) then
+      print*, 'readreleases> call readspecies', i
+    endif
+ 
     if (readerror.ne.0) then
       read(unitreleases,*,err=998) specnum_rel(i)
       if (old) call skplin(2,unitreleases)
@@ -493,6 +498,27 @@ subroutine readreleases
 
   endif ! if namelist format
 
+
+  if (verbosity.gt.1 .and. numpoint.eq.1) then ! verbosity 2 or larger
+    write(*,*) 'numpoint=', numpoint
+    print*,  id1,it1
+    print*,  id2,it2
+    print*,  xpoint1(numpoint)
+    print*,  ypoint1(numpoint)
+    print*,  xpoint2(numpoint)
+    print*,  ypoint2(numpoint)
+    print*,  'kindz=' , kindz(numpoint)
+    print*,  zpoint1(numpoint)
+    print*,  zpoint2(numpoint)
+    print*,  npart(numpoint)
+    do i=1,nspec
+      !mass(i)=
+      print*, 'xmass=', xmass(numpoint,i)
+    end do
+    print*, compoint(numpoint) 
+  endif
+
+
   ! If a release point contains no particles, stop and issue error message
   !***********************************************************************
 
@@ -535,6 +561,10 @@ subroutine readreleases
         write(*,*) 'Release starts before simulation begins or ends'
         write(*,*) 'after simulation stops.'
         write(*,*) 'Make files COMMAND and RELEASES consistent.'
+        write(*,*) jul1, ' < ' , bdate 
+        write(*,*) ' .or. '
+        write(*,*) jul2 , ' > ', edate
+        
         stop
       endif
       if (npart(numpoint).gt.num_min_discrete) then
@@ -560,6 +590,11 @@ subroutine readreleases
         ireleaseend(numpoint)=int((julm-bdate)*86400.)
       endif
     endif
+  endif
+
+  if (verbosity.gt.1 .and. numpoint.eq.1) then ! verbosity 2 or larger
+    print*, 'ireleasestart(',numpoint,')', ireleasestart(numpoint) 
+    print*, 'ireleaseend(',numpoint,')', ireleaseend(numpoint) 
   endif
 
   ! Determine the release rate (particles per second) and total number
