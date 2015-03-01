@@ -89,7 +89,7 @@ def main():
     for date in daterange( start, end ):
 # data retrieved by year/month
            if cyear != date.year or cmonth != date.month:
-             print 'year : ' + str(date.year) + ' month : ', date.month
+             print 'Prepare year : ' + str(date.year) + ' month : ', date.month
              cyear = date.year
              cmonth = date.month
 
@@ -101,6 +101,7 @@ def main():
                  
              flexpart = EIFlexpart()
              flexpart.create(inputfiles, outputdir)
+             
 
 if __name__ == "__main__":
     main()

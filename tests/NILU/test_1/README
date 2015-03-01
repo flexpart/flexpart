@@ -1,0 +1,15 @@
+To run this test, just execute FLEXPART in the current directory. 
+Contains the options directory from relese 9.2 
+The pathfile was modified
+The feature tested are the new SPECIES file.
+
+2014-10-16, tested on nordre@nilu (Ubuntu 12.04):
+>arch 
+x86_6
+>gfortran --version 
+GNU Fortran (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+
+Ignacio Pisso: ip@nilu.no 
+
+
+
