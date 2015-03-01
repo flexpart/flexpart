@@ -443,7 +443,7 @@ subroutine readcommand
 
   if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IPOUT MUST BE 1, 2 OR 3!                #### '
+    write(*,*) ' #### IPOUT MUST BE 0, 1, or 2!                #### '
     stop
   endif
 
