@@ -129,6 +129,7 @@ subroutine timemanager
 
 
   !write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
+  itime=0 ! initialise to avoid random numbers on output IP 2015-03-02
   write(*,46) float(itime)/3600,itime,numpart
   if (verbosity.gt.0) then
     write (*,*) 'timemanager> starting simulation'
