@@ -142,32 +142,32 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 
   !first see if we read GRIB1 or GRIB2
   call grib_get_int(igrib,'editionNumber',gribVer,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
 
   if (gribVer.eq.1) then ! GRIB Edition 1
 
   !read the grib1 identifiers
   call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'indicatorOfTypeOfLevel',isec1(7),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'level',isec1(8),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
 
   else ! GRIB Edition 2
 
   !read the grib2 identifiers
   call grib_get_int(igrib,'discipline',discipl,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'parameterCategory',parCat,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'parameterNumber',parNum,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
        valSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
 
   !convert to grib1 identifiers
   isec1(6)=-1
@@ -261,7 +261,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   if (isec1(6).ne.-1) then
   !  get the size and data of the values array
     call grib_get_real4_array(igrib,'values',zsec4,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
+!    call grib_check(iret,gribFunction,gribErrorMsg)
   endif
 
   if(ifield.eq.1) then
@@ -270,16 +270,16 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   !store compatible to gribex input
   call grib_get_int(igrib,'numberOfPointsAlongAParallel', &
        isec2(2),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'numberOfPointsAlongAMeridian', &
        isec2(3),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
        xauxin,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_real8(igrib,'latitudeOfLastGridPointInDegrees', &
        yauxin,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+!  call grib_check(iret,gribFunction,gribErrorMsg)
   xaux=xauxin+real(nxshift)*dx
   yaux=yauxin
 

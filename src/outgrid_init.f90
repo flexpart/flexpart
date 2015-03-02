@@ -199,16 +199,6 @@ subroutine outgrid_init
     if (stat.ne.0) write(*,*)'ERROR: could not allocate flux array '
   endif
 
-  !write (*,*) 'allocating: in a sec',OHREA
-  if (OHREA.eqv..TRUE.) then
-  !   write (*,*) 'allocating: ',maxxOH,maxyOH,maxzOH
-    allocate(OH_field(12,0:maxxOH-1,0:maxyOH-1,maxzOH) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate OH array '
-    allocate(OH_field_height(7) &
-         ,stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate OH array '
-  endif
   ! gridunc,griduncn        uncertainty of outputted concentrations
   allocate(gridunc(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
        maxpointspec_act,nclassunc,maxageclass),stat=stat)
@@ -221,11 +211,33 @@ subroutine outgrid_init
        maxpointspec_act,nclassunc,maxageclass),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
   endif
+
+! Extra field for totals at MPI root process
+  if (lroot.and.mpi_mode.gt.0) then
+    ! allocate(gridunc0(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
+    !      maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    ! if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
+    if (ldirect.gt.0) then
+      allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc0'
+      allocate(drygridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc0'
+    endif
+! allocate a dummy to avoid compilator complaints
+  else if (.not.lroot.and.mpi_mode.gt.0) then
+    allocate(wetgridunc0(1,1,1,1,1,1),stat=stat)
+    allocate(drygridunc0(1,1,1,1,1,1),stat=stat)
+  end if
+
   !write (*,*) 'Dimensions for fields', numxgrid,numygrid, &
   !     maxspec,maxpointspec_act,nclassunc,maxageclass
 
-  write (*,*) 'Allocating fields for global output (x,y): ', numxgrid,numygrid
-  write (*,*) 'Allocating fields for nested output (x,y): ', numxgridn,numygridn 
+  if (lroot) then
+    write (*,*) 'Allocating fields for global output (x,y): ', numxgrid,numygrid
+    write (*,*) 'Allocating fields for nested output (x,y): ', numxgridn,numygridn 
+  end if
 
   ! allocate fields for concoutput with maximum dimension of outgrid
   ! and outgrid_nest

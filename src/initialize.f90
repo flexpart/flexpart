@@ -68,13 +68,14 @@ subroutine initialize(itime,ldt,up,vp,wp, &
   use com_mod
   use interpol_mod
   use hanna_mod
+  use random_mod, only: ran3
 
   implicit none
 
   integer :: itime
   integer :: ldt,nrand
   integer(kind=2) :: icbt
-  real :: zt,dz,dz1,dz2,up,vp,wp,usigold,vsigold,wsigold,ran3
+  real :: zt,dz,dz1,dz2,up,vp,wp,usigold,vsigold,wsigold
   real(kind=dp) :: xt,yt
   save idummy
 
@@ -154,7 +155,17 @@ subroutine initialize(itime,ldt,up,vp,wp, &
     up=rannumb(nrand)*sigu
     vp=rannumb(nrand+1)*sigv
     wp=rannumb(nrand+2)
-    if (.not.turbswitch) wp=wp*sigw
+    if (.not.turbswitch) then     ! modified by mc
+        wp=wp*sigw
+    else if (cblflag.eq.1) then   ! modified by mc
+        if(-h/ol.gt.5) then
+        !if (ol.lt.0.) then
+        !if (ol.gt.0.) then !by mc : only for test correct is lt.0
+            call initialize_cbl_vel(idummy,zt,ust,wst,h,sigw,wp,ol)
+        else
+            wp=wp*sigw
+        end if            
+    end if
 
 
   ! Determine time step for next integration

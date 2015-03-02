@@ -65,14 +65,15 @@ subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
   ! zt                   current z coordinate                                 *
   !                                                                           *
   !****************************************************************************
+  use par_mod, only: numwfmem
 
   implicit none
 
-  integer :: nx,ny,nxmax,nymax,nzmax,memind(2),m,ix,jy,ixp,jyp
+  integer :: nx,ny,nxmax,nymax,nzmax,memind(numwfmem),m,ix,jy,ixp,jyp
   integer :: itime,itime1,itime2,level,indexh
-  real :: yy1(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: yy2(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: yy3(0:nxmax-1,0:nymax-1,nzmax,2)
+  real :: yy1(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: yy2(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: yy3(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2)
   real :: xt,yt,yint1,yint2,yint3,p1,p2,p3,p4
 
@@ -113,6 +114,7 @@ subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
 
   do m=1,2
     indexh=memind(m)
+
 
     y1(m)=p1*yy1(ix ,jy ,level,indexh) &
          + p2*yy1(ixp,jy ,level,indexh) &

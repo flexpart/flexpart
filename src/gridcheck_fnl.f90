@@ -199,7 +199,7 @@ subroutine gridcheck
   if (isec1(6).ne.-1) then
   !  get the size and data of the values array
     call grib_get_real4_array(igrib,'values',zsec4,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
+!    call grib_check(iret,gribFunction,gribErrorMsg)
   endif
 
   endif ! gribVer
@@ -229,7 +229,7 @@ subroutine gridcheck
 
   xaux1=xaux1in
 !  xaux2=xaux2in
-  xaux2=xaux2in+360.    !!! Transform FNL xauu2in from -1 to 359 (Xuekue Fang, 31 Jan 2013)
+  xaux2=xaux2in+360.    !!! Transform FNL xaux2in from -1 to 359 (Xuekue Fang, 31 Jan 2013)
   yaux1=yaux1in
   yaux2=yaux2in
   write(*,*) 'xaux1,xaux2,yaux1,yaux2',xaux1,xaux2,yaux1,yaux2

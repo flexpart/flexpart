@@ -98,7 +98,7 @@ subroutine partdep(nc,density,fract,schmi,vset,ra,ustar,nyl,vdep)
           if (alpha.le.log10(eps)) then
             rdp=1./(schmi(ic,j)*ustar)
           else
-           	rdp=1./((schmi(ic,j)+10.**alpha)*ustar)
+            rdp=1./((schmi(ic,j)+10.**alpha)*ustar)
           endif
           vdepj=vset(ic,j)+1./(ra+rdp+ra*rdp*vset(ic,j))
         else

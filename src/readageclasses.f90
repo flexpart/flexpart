@@ -90,7 +90,7 @@ subroutine readageclasses
   endif
 
   ! write ageclasses file in namelist format to output directory if requested
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     open(unitageclasses,file=path(2)(1:length(2))//'AGECLASSES.namelist',err=1000)
     write(unitageclasses,nml=ageclass)
     close(unitageclasses)

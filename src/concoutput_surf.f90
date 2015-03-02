@@ -172,7 +172,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
         xl=outlon0+real(ix)*dxout
         yl=outlat0+real(jy)*dyout
         xl=(xl-xlon0)/dx
-        yl=(yl-ylat0)/dx
+        yl=(yl-ylat0)/dy
         iix=max(min(nint(xl),nxmin1),0)
         jjy=max(min(nint(yl),nymin1),0)
         densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
@@ -310,8 +310,6 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
     end do
 
 
-
-
   !*******************************************************************
   ! Generate output: may be in concentration (ng/m3) or in mixing
   ! ratio (ppt) or both
@@ -319,6 +317,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
   ! 1 or -1, first line is number of values, number of positions
   ! For backward simulations, the unit is seconds, stored in grid_time
   !*******************************************************************
+
   if (verbosity.eq.1) then
      print*,'concoutput_surf 4 (output)'
      CALL SYSTEM_CLOCK(count_clock)
@@ -327,7 +326,9 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
   ! Concentration output
   !*********************
+
   if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+
   if (verbosity.eq.1) then
      print*,'concoutput_surf (Wet deposition)'
      CALL SYSTEM_CLOCK(count_clock)
@@ -342,7 +343,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          if ((ldirect.eq.1).and.(WETDEP)) then
          do jy=0,numygrid-1
             do ix=0,numxgrid-1
-  !oncentraion greater zero
+  ! concentraion greater zero
               if (wetgrid(ix,jy).gt.smallnum) then
                  if (sp_zer.eqv..true.) then ! first non zero value
                     sp_count_i=sp_count_i+1
@@ -368,8 +369,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
   if (verbosity.eq.1) then
      print*,'concoutput_surf (Dry deposition)'
@@ -410,21 +410,18 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
-
-
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
   if (verbosity.eq.1) then
      print*,'concoutput_surf (Concentrations)'
      CALL SYSTEM_CLOCK(count_clock)
      WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
   endif
+
   ! Concentrations
 
-  ! if surf_only write only 1st layer 
+  ! surf_only write only 1st layer 
 
-         if(surf_only.eq.1) then
          sp_count_i=0
          sp_count_r=0
          sp_fact=-1.
@@ -439,7 +436,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
                          ix+jy*numxgrid+kz*numxgrid*numygrid
                     sp_zer=.false.
                     sp_fact=sp_fact*(-1.)
-                   endif
+                  endif
                    sp_count_r=sp_count_r+1
                    sparse_dump_r(sp_count_r)= &
                         sp_fact* &
@@ -450,67 +447,19 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
                    sparse_dump_u(sp_count_r)= &
                         gridsigma(ix,jy,kz)* &
                         factor3d(ix,jy,kz)/tot_mu(ks,kp)
-              else ! concentration is zero
+                else ! concentration is zero
                   sp_zer=.true.
-              endif
-              end do
-            end do
-          end do
+                endif
+             end do
+           end do
+         end do
          write(unitoutgrid) sp_count_i
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
-         else
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
-  ! write full vertical resolution
-  if (verbosity.eq.1) then
-     print*,'concoutput_surf (write full vertical resolution)'
-     CALL SYSTEM_CLOCK(count_clock)
-     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
-  endif
-
-         sp_count_i=0
-         sp_count_r=0
-         sp_fact=-1.
-         sp_zer=.true.
-          do kz=1,numzgrid
-            do jy=0,numygrid-1
-              do ix=0,numxgrid-1
-                if (grid(ix,jy,kz).gt.smallnum) then
-                  if (sp_zer.eqv..true.) then ! first non zero value
-                    sp_count_i=sp_count_i+1
-                    sparse_dump_i(sp_count_i)= &
-                         ix+jy*numxgrid+kz*numxgrid*numygrid
-                    sp_zer=.false.
-                    sp_fact=sp_fact*(-1.)
-                   endif
-                   sp_count_r=sp_count_r+1
-                   sparse_dump_r(sp_count_r)= &
-                        sp_fact* &
-                        grid(ix,jy,kz)* &
-                        factor3d(ix,jy,kz)/tot_mu(ks,kp)
-  !                 if ((factor(ix,jy,kz)/tot_mu(ks,kp)).eq.0)
-  !    +              write (*,*) factor(ix,jy,kz),tot_mu(ks,kp),ks,kp
-                   sparse_dump_u(sp_count_r)= &
-                        gridsigma(ix,jy,kz)* &
-                        factor3d(ix,jy,kz)/tot_mu(ks,kp)
-              else ! concentration is zero
-                  sp_zer=.true.
-              endif
-              end do
-            end do
-          end do
-         write(unitoutgrid) sp_count_i
-         write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)         
-         endif ! surf_only
-
-    endif !  concentration output
+  endif !  concentration output
 
   ! Mixing ratio output
   !********************
@@ -552,8 +501,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Dry deposition
@@ -591,15 +539,13 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Mixing ratios
 
-  ! if surf_only write only 1st layer 
+  ! surf_only write only 1st layer 
 
-         if(surf_only.eq.1) then
          sp_count_i=0
          sp_count_r=0
          sp_fact=-1.
@@ -635,50 +581,7 @@ subroutine concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc, &
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
-         else
-
-  ! write full vertical resolution
-
-         sp_count_i=0
-         sp_count_r=0
-         sp_fact=-1.
-         sp_zer=.true.
-          do kz=1,numzgrid
-            do jy=0,numygrid-1
-              do ix=0,numxgrid-1
-                if (grid(ix,jy,kz).gt.smallnum) then
-                  if (sp_zer.eqv..true.) then ! first non zero value
-                    sp_count_i=sp_count_i+1
-                    sparse_dump_i(sp_count_i)= &
-                         ix+jy*numxgrid+kz*numxgrid*numygrid
-                    sp_zer=.false.
-                    sp_fact=sp_fact*(-1.)
-                 endif
-                 sp_count_r=sp_count_r+1
-                 sparse_dump_r(sp_count_r)= &
-                      sp_fact* &
-                      1.e12*grid(ix,jy,kz) &
-                      /volume(ix,jy,kz)/outnum* &
-                      weightair/weightmolar(ks)/densityoutgrid(ix,jy,kz)
-                 sparse_dump_u(sp_count_r)= &
-                      1.e12*gridsigma(ix,jy,kz)/volume(ix,jy,kz)/ &
-                      outnum*weightair/weightmolar(ks)/ &
-                      densityoutgrid(ix,jy,kz)
-              else ! concentration is zero
-                  sp_zer=.true.
-              endif
-              end do
-            end do
-          end do
-         write(unitoutgridppt) sp_count_i
-         write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-!         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
-         endif ! surf_only
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
       endif ! output for ppt
 

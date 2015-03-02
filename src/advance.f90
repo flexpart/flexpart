@@ -102,12 +102,13 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   use interpol_mod
   use hanna_mod
   use cmapf_mod
+  use random_mod, only: ran3
 
   implicit none
 
   real(kind=dp) :: xt,yt
   real :: zt,xts,yts,weight
-  integer :: itime,itimec,nstop,ldt,i,j,k,nrand,loop,memindnext
+  integer :: itime,itimec,nstop,ldt,i,j,k,nrand,loop,memindnext,mind
   integer :: ngr,nix,njy,ks,nsp,nrelpoint
   real :: dz,dz1,dz2,xlon,ylat,xpol,ypol,gridsize
   real :: ru,rv,rw,dt,ux,vy,cosfact,xtn,ytn,tropop
@@ -118,9 +119,12 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !real uprof(nzmax),vprof(nzmax),wprof(nzmax)
   !real usigprof(nzmax),vsigprof(nzmax),wsigprof(nzmax)
   !real rhoprof(nzmax),rhogradprof(nzmax)
-  real :: rhoa,rhograd,ran3,delz,dtf,rhoaux,dtftlw,uxscale,wpscale
+  real :: rhoa,rhograd,delz,dtf,rhoaux,dtftlw,uxscale,wpscale
   integer(kind=2) :: icbt
   real,parameter :: eps=nxmax/3.e5,eps2=1.e-9
+  real :: ptot_lhh,Q_lhh,phi_lhh,ath,bth !modified by mc 
+  real :: old_wp_buf,dcas,dcas1,del_test !added by mc
+  integer :: i_well,jj,flagrein !test well mixed: modified by mc
 
 
   !!! CHANGE: TEST OF THE WELL-MIXED CRITERION
@@ -224,18 +228,21 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   h=0.
   if (ngrid.le.0) then
     do k=1,2
+! eso: compatibility with 3-field version
+      mind=memind(k)
       do j=jy,jyp
         do i=ix,ixp
-          if (hmix(i,j,1,k).gt.h) h=hmix(i,j,1,k)
+          if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
         end do
       end do
     end do
     tropop=tropopause(nix,njy,1,1)
   else
     do k=1,2
+      mind=memind(k)
       do j=jy,jyp
         do i=ix,ixp
-          if (hmixn(i,j,1,k,ngrid).gt.h) h=hmixn(i,j,1,k,ngrid)
+          if (hmixn(i,j,1,mind,ngrid).gt.h) h=hmixn(i,j,1,mind,ngrid)
         end do
       end do
     end do
@@ -378,14 +385,60 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
 
         if (turbswitch) then
           if (dtftlw.lt..5) then
-            wp=((1.-dtftlw)*wp+rannumb(nrand+i)*sqrt(2.*dtftlw) &
-                 +dtf*(dsigwdz+rhoaux*sigw))*real(icbt)
+  !*************************************************************
+  !************** CBL options added by mc see routine cblf90 ***
+            if (cblflag.eq.1) then  !modified by mc
+              if (-h/ol.gt.5) then  !modified by mc
+              !if (ol.lt.0.) then   !modified by mc  
+              !if (ol.gt.0.) then   !modified by mc : for test
+                  !print  *,zt,wp,ath,bth,tlw,dtf,'prima'
+                  flagrein=0
+                  nrand=nrand+1
+                  old_wp_buf=wp
+                  call cbl(wp,zt,ust,wst,h,rhoa,rhograd,sigw,dsigwdz,tlw,ptot_lhh,Q_lhh,phi_lhh,ath,bth,ol,flagrein) !inside the routine for inverse time
+                  wp=(wp+ath*dtf+bth*rannumb(nrand)*sqrt(dtf))*real(icbt) 
+                  ! wp=(wp+ath*dtf+bth*gasdev2(mydum)*sqrt(dtf))*real(icbt) 
+                  delz=wp*dtf
+                  if (flagrein.eq.1) then
+                      call re_initialize_particle(zt,ust,wst,h,sigw,old_wp_buf,nrand,ol)
+                      wp=old_wp_buf
+                      delz=wp*dtf
+                      nan_count=nan_count+1
+                  end if
+                  !print  *,zt,wp,ath,bth,tlw,dtf,rannumb(nrand+i),icbt
+                  !pause                  
+              else 
+                  nrand=nrand+1
+                  old_wp_buf=wp
+                  ath=-wp/tlw+sigw*dsigwdz+wp*wp/sigw*dsigwdz+sigw*sigw/rhoa*rhograd  !1-note for inverse time should be -wp/tlw*ldirect+... calculated for wp=-wp
+                                                                                      !2-but since ldirect =-1 for inverse time and this must be calculated for (-wp) and
+                                                                                      !3-the gaussian pdf is symmetric (i.e. pdf(w)=pdf(-w) ldirect can be discarded
+                  bth=sigw*rannumb(nrand)*sqrt(2.*dtftlw)
+                  wp=(wp+ath*dtf+bth)*real(icbt)  
+                  delz=wp*dtf
+                  del_test=(1.-wp)/wp !catch infinity value
+                  if (isnan(wp).or.isnan(del_test)) then 
+                      nrand=nrand+1                      
+                      wp=sigw*rannumb(nrand)
+                      delz=wp*dtf
+                      nan_count2=nan_count2+1
+                      !print *,'NaN coutner equal to:', nan_count,'reduce ifine if this number became a non-negligible fraction of the particle number'
+                  end if  
+              end if
+  !******************** END CBL option *******************************            
+  !*******************************************************************            
+            else
+                 wp=((1.-dtftlw)*wp+rannumb(nrand+i)*sqrt(2.*dtftlw) &
+                 +dtf*(dsigwdz+rhoaux*sigw))*real(icbt) 
+                 delz=wp*sigw*dtf
+            end if
           else
             rw=exp(-dtftlw)
             wp=(rw*wp+rannumb(nrand+i)*sqrt(1.-rw**2) &
                  +tlw*(1.-rw)*(dsigwdz+rhoaux*sigw))*real(icbt)
+            delz=wp*sigw*dtf
           endif
-          delz=wp*sigw*dtf
+          
         else
           rw=exp(-dtftlw)
           wp=(rw*wp+rannumb(nrand+i)*sqrt(1.-rw**2)*sigw &
@@ -420,7 +473,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
         endif
 
       end do
-      nrand=nrand+i
+      if (cblflag.ne.1) nrand=nrand+i
 
   ! Determine time step for next integration
   !*****************************************
@@ -463,6 +516,10 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
       dcwsave=dcwsave+vp*dt
       zt=zt+w*dt*real(ldirect)
 
+      ! HSO/AL: Particle managed to go over highest level -> interpolation error in goto 700
+      !          alias interpol_wind (division by zero)
+      if (zt.ge.height(nz)) zt=height(nz)-100.*eps
+
       if (zt.gt.h) then
         if (itimec.eq.itime+lsynctime) goto 99
         goto 700    ! complete the current interval above PBL
@@ -492,8 +549,20 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !endif
   !if (mod(itime,10800).ne.0) dump=.true.
   !!! CHANGE
-
-
+      
+  !!!----- TEST OF THE WELL-MIXED CRITERION: modified by mc,  not to be included in final version mc
+      ! if (zt.lt.h) then
+      !     i_well=int(zt/h*25.)+1
+      !     well_mixed_vector(i_well)=well_mixed_vector(i_well)+dt
+      !     well_mixed_norm=well_mixed_norm+dt
+      !     avg_air_dens(i_well)=avg_air_dens(i_well)+rhoa*dt
+      !     avg_wst=avg_wst+wst*dt
+      !     avg_ol=avg_ol+ol*dt
+      !     avg_h=avg_h+h*dt
+      ! end if
+      ! h_well=h
+  !------- END TEST
+      
   ! Determine probability of deposition
   !************************************
 
@@ -655,23 +724,23 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !*************************************************************
 
   call windalign(dxsave,dysave,dawsave,dcwsave,ux,vy)
-  dxsave=dxsave+ux
+  dxsave=dxsave+ux   ! comment by mc: comment this line to stop the particles horizontally for test reasons 
   dysave=dysave+vy
   if (ngrid.ge.0) then
     cosfact=dxconst/cos((yt*dy+ylat0)*pi180)
     xt=xt+real(dxsave*cosfact*real(ldirect),kind=dp)
     yt=yt+real(dysave*dyconst*real(ldirect),kind=dp)
   else if (ngrid.eq.-1) then      ! around north pole
-    xlon=xlon0+xt*dx
+    xlon=xlon0+xt*dx                                !comment by mc: compute old particle position
     ylat=ylat0+yt*dy
-    call cll2xy(northpolemap,ylat,xlon,xpol,ypol)
-    gridsize=1000.*cgszll(northpolemap,ylat,xlon)
-    dxsave=dxsave/gridsize
+    call cll2xy(northpolemap,ylat,xlon,xpol,ypol)   !convert old particle position in polar stereographic
+    gridsize=1000.*cgszll(northpolemap,ylat,xlon)   !calculate size in m of grid element in polar stereographic coordinate
+    dxsave=dxsave/gridsize                          !increment from meter to grdi unit
     dysave=dysave/gridsize
-    xpol=xpol+dxsave*real(ldirect)
+    xpol=xpol+dxsave*real(ldirect)                  !position in grid unit polar stereographic
     ypol=ypol+dysave*real(ldirect)
-    call cxy2ll(northpolemap,xpol,ypol,ylat,xlon)
-    xt=(xlon-xlon0)/dx
+    call cxy2ll(northpolemap,xpol,ypol,ylat,xlon)  !convert to lat long coordinate
+    xt=(xlon-xlon0)/dx                             !convert to grid units in lat long coordinate, comment by mc
     yt=(ylat-ylat0)/dy
   else if (ngrid.eq.-2) then    ! around south pole
     xlon=xlon0+xt*dx
@@ -698,12 +767,22 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     if (abs(xt-real(nxmin1)).le.eps) xt=real(nxmin1)-eps
   endif
 
+  ! HSO/AL: Prevent particles from disappearing at the pole
+  !******************************************************************
+
+  if ( yt.lt.0. ) then
+    xt=mod(xt+180.,360.)
+    yt=-yt
+  else if ( yt.gt.real(nymin1) ) then
+    xt=mod(xt+180.,360.)
+    yt=2*real(nymin1)-yt
+  endif
 
   ! Check position: If trajectory outside model domain, terminate it
   !*****************************************************************
 
   if ((xt.lt.0.).or.(xt.ge.real(nxmin1)).or.(yt.lt.0.).or. &
-       (yt.ge.real(nymin1))) then
+       (yt.gt.real(nymin1))) then
     nstop=3
     return
   endif
@@ -858,11 +937,22 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     if (abs(xt-real(nxmin1)).le.eps) xt=real(nxmin1)-eps
   endif
 
+  ! HSO/AL: Prevent particles from disappearing at the pole
+  !******************************************************************
+
+  if ( yt.lt.0. ) then
+    xt=mod(xt+180.,360.)
+    yt=-yt
+  else if ( yt.gt.real(nymin1) ) then
+    xt=mod(xt+180.,360.)
+    yt=2*real(nymin1)-yt
+  endif
+
   ! Check position: If trajectory outside model domain, terminate it
   !*****************************************************************
 
   if ((xt.lt.0.).or.(xt.ge.real(nxmin1)).or.(yt.lt.0.).or. &
-       (yt.ge.real(nymin1))) then
+       (yt.gt.real(nymin1))) then
     nstop=3
     return
   endif

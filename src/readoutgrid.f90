@@ -179,7 +179,7 @@ subroutine readoutgrid
   endif
 
   ! write outgrid file in namelist format to output directory if requested
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     ! reallocate outheights with actually required dimension for namelist writing
     deallocate(outheights)
     allocate(outheights(numzgrid),stat=stat)

@@ -62,6 +62,7 @@ subroutine readreleases
   ! zpoint1,zpoint2     height range, over which release takes place           *
   ! num_min_discrete    if less, release cannot be randomized and happens at   *
   !                     time mid-point of release interval                     *
+  ! lroot               true if serial version, or if MPI and root process     *
   !                                                                            *
   !*****************************************************************************
 
@@ -124,9 +125,8 @@ subroutine readreleases
   read(unitreleases,releases_ctrl,iostat=readerror)
 
   ! prepare namelist output if requested
-  if (nmlout.eqv..true.) then
-    !open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',access='append',status='new',err=1000)
-    open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',err=1000)
+  if (nmlout.and.lroot) then
+    open(unitreleasesout,file=path(2)(1:length(2))//'RELEASES.namelist',access='append',status='replace',err=1000)
   endif
 
   if ((readerror.ne.0).or.(nspec.lt.0)) then
@@ -258,9 +258,7 @@ subroutine readreleases
   allocate(xmasssave(numpoint),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate xmasssave'
 
-  if (verbosity.gt.0) then
-    write (*,*) 'readreleases> Releasepoints : ', numpoint
-  endif
+  if (lroot) write (*,*) 'Releasepoints : ', numpoint
 
   do i=1,numpoint
     xmasssave(i)=0.
@@ -290,15 +288,11 @@ subroutine readreleases
   endif
 
   ! namelist output
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     write(unitreleasesout,nml=releases_ctrl)
   endif
 
   do i=1,nspec
-    if (verbosity.gt.0) then
-      print*, 'readreleases> call readspecies', i
-    endif
- 
     if (readerror.ne.0) then
       read(unitreleases,*,err=998) specnum_rel(i)
       if (old) call skplin(2,unitreleases)
@@ -355,7 +349,7 @@ subroutine readreleases
         cunningham(i)=cunningham(i)+cun*fract(i,j)
         vsetaver(i)=vsetaver(i)-vset(i,j)*fract(i,j)
       end do
-      write(*,*) 'Average settling velocity: ',i,vsetaver(i)
+      if (lroot) write(*,*) 'Average settling velocity: ',i,vsetaver(i)
     endif
 
     ! Dry deposition for constant deposition velocity
@@ -363,36 +357,34 @@ subroutine readreleases
 
     dryvel(i)=dryvel(i)*0.01         ! conversion to m/s
 
-    ! Check if wet deposition or OH reaction shall be calculated
-    !***********************************************************
-    if (weta(i).gt.0.)  then
+  ! Check if wet deposition or OH reaction shall be calculated
+  !***********************************************************
+! NIK 15.02.2015, with new wet dep scheme either A or B parameters can be assigned a positive value which switches on wet dep
+    if (weta(i).gt.0. .or. wetb(i).gt.0.)  then
       WETDEP=.true.
-      write (*,*) 'Below-cloud scavenging: ON'
-      if (verbosity.gt.0) then
-      write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
-      endif
+      if (lroot) then
+        write (*,*) 'Below-cloud scavenging: ON'
+      !  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
+      end if
     else
-      if (verbosity.gt.0) then
-      write (*,*) 'Below-cloud scavenging: OFF'
-      endif
+      if (lroot) write (*,*) 'Below-cloud scavenging: OFF'
     endif
     
-    ! NIK 31.01.2013 + 10.12.2013
-    if (weta_in(i).gt.0.)  then
+! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
+    if (weta_in(i).gt.0. .or. wetb_in(i).gt.0.)  then
       WETDEP=.true.
-      write (*,*) 'In-cloud scavenging: ON'
-      if (verbosity.gt.0) then 
-      write (*,*) 'In-cloud scavenging coefficients: ',weta_in(i),wetb_in(i), wetc_in(i), wetd_in(i),i
-      endif  
-  else
-      if (verbosity.gt.0) then
-      write (*,*) 'In-cloud scavenging: OFF'
-      endif 
+      if (lroot) then
+        write (*,*) 'In-cloud scavenging: ON'
+        write (*,*) 'In-cloud scavenging coefficients: ',&
+           &weta_in(i),wetb_in(i),i !,wetc_in(i), wetd_in(i),i
+      end if
+    else
+      if (lroot) write (*,*) 'In-cloud scavenging: OFF' 
     endif
 
-    if (ohreact(i).gt.0) then
+    if (ohcconst(i).gt.0.) then
       OHREA=.true.
-      write (*,*) 'OHreaction: ON (',ohreact(i),i,')'
+      write (*,*) 'OHreaction switched on: ',ohcconst(i),i
     endif
 
     if ((reldiff(i).gt.0.).or.(density(i).gt.0.).or.(dryvel(i).gt.0.)) then
@@ -438,7 +430,7 @@ subroutine readreleases
     compoint(min(1001,numpoint))=comment
 
     ! namelist output
-    if (nmlout.eqv..true.) then
+    if (nmlout.and.lroot) then
       write(unitreleasesout,nml=release)
     endif
 
@@ -481,7 +473,7 @@ subroutine readreleases
     if (old) call skplin(1,unitreleases)
 
     ! namelist output
-    if (nmlout.eqv..true.) then
+    if (nmlout.and.lroot) then
       idate1=id1
       itime1=it1
       idate2=id2
@@ -507,27 +499,6 @@ subroutine readreleases
     endif
 
   endif ! if namelist format
-
-
-  if (verbosity.gt.1 .and. numpoint.eq.1) then ! verbosity 2 or larger
-    write(*,*) 'numpoint=', numpoint
-    print*,  id1,it1
-    print*,  id2,it2
-    print*,  xpoint1(numpoint)
-    print*,  ypoint1(numpoint)
-    print*,  xpoint2(numpoint)
-    print*,  ypoint2(numpoint)
-    print*,  'kindz=' , kindz(numpoint)
-    print*,  zpoint1(numpoint)
-    print*,  zpoint2(numpoint)
-    print*,  npart(numpoint)
-    do i=1,nspec
-      !mass(i)=
-      print*, 'xmass=', xmass(numpoint,i)
-    end do
-    print*, compoint(numpoint) 
-  endif
-
 
   ! If a release point contains no particles, stop and issue error message
   !***********************************************************************
@@ -571,10 +542,6 @@ subroutine readreleases
         write(*,*) 'Release starts before simulation begins or ends'
         write(*,*) 'after simulation stops.'
         write(*,*) 'Make files COMMAND and RELEASES consistent.'
-        write(*,*) jul1, ' < ' , bdate 
-        write(*,*) ' .or. '
-        write(*,*) jul2 , ' > ', edate
-        
         stop
       endif
       if (npart(numpoint).gt.num_min_discrete) then
@@ -602,11 +569,6 @@ subroutine readreleases
     endif
   endif
 
-  if (verbosity.gt.1 .and. numpoint.eq.1) then ! verbosity 2 or larger
-    print*, 'ireleasestart(',numpoint,')', ireleasestart(numpoint) 
-    print*, 'ireleaseend(',numpoint,')', ireleaseend(numpoint) 
-  endif
-
   ! Determine the release rate (particles per second) and total number
   ! of particles released during the simulation
   !*******************************************************************
@@ -622,12 +584,12 @@ subroutine readreleases
 
 250   close(unitreleases)
 
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     close(unitreleasesout)
   endif
 
-  write (*,*) 'Particles allocated (maxpart)  : ',maxpart
-  write (*,*) 'Particles released (numpartmax): ',numpartmax
+  if (lroot) write (*,*) 'Particles allocated (maxpart)  : ',maxpart
+  if (lroot) write (*,*) 'Particles released (numpartmax): ',numpartmax
   numpoint=numpoint-1
 
   if (ioutputforeachrelease.eq.1) then
@@ -642,7 +604,7 @@ subroutine readreleases
 
   if (releaserate.gt. &
        0.99*real(maxpart)/real(lage(nageclass))) then
-    if (numpartmax.gt.maxpart) then
+    if (numpartmax.gt.maxpart.and.lroot) then
   write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
   write(*,*) '####                                             ####'

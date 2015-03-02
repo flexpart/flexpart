@@ -49,11 +49,12 @@ subroutine releaseparticles(itime)
   use xmass_mod
   use par_mod
   use com_mod
+  use random_mod, only: ran1
 
   implicit none
 
   !real xaux,yaux,zaux,ran1,rfraction,xmasssave(maxpoint)
-  real :: xaux,yaux,zaux,ran1,rfraction
+  real :: xaux,yaux,zaux,rfraction
   real :: topo,rhoaux(2),r,t,rhoout,ddx,ddy,rddx,rddy,p1,p2,p3,p4
   real :: dz1,dz2,dz,xtn,ytn,xlonav,timecorrect(maxspec),press,pressold
   real :: presspart,average_timecorrect
@@ -66,6 +67,7 @@ subroutine releaseparticles(itime)
   integer :: idummy = -7
   !save idummy,xmasssave
   !data idummy/-7/,xmasssave/maxpoint*0./
+
 
 
   ! Determine the actual date and time in Greenwich (i.e., UTC + correction for daylight savings time)

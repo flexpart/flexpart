@@ -108,7 +108,9 @@ subroutine readcommand
   mquasilag, &
   nested_output, &
   linit_cond, &
-  surf_only    
+  lnetcdfout, &
+  surf_only, &
+  cblflag
 
   ! Presetting namelist command
   ldirect=0
@@ -137,7 +139,9 @@ subroutine readcommand
   mquasilag=0
   nested_output=0
   linit_cond=0
+  lnetcdfout=0
   surf_only=0 
+  cblflag=0
 
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
@@ -225,12 +229,14 @@ subroutine readcommand
     read(unitcommand,*) linit_cond
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) surf_only
+    if (old) call skplin(3,unitcommand)  !added by mc
+    read(unitcommand,*) cblflag          !added by mc
     close(unitcommand)
 
   endif ! input format
 
   ! write command file in namelist format to output directory if requested
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=1000)
     write(unitcommand,nml=command)
     close(unitcommand)
@@ -240,13 +246,29 @@ subroutine readcommand
 
   ! Determine how Markov chain is formulated (for w or for w/sigw)
   !***************************************************************
-
-  if (ctl.ge.0.1) then
+  if (cblflag.eq.1) then !---- added by mc to properly set parameters for CBL simulations 
     turbswitch=.true.
-  else
-    turbswitch=.false.
-    ifine=1
-  endif
+    if (lsynctime>maxtl) lsynctime=maxtl  !maxtl defined in com_mod.f90
+    if (ctl.lt.5) then
+      print *,'WARNING: CBL flag active the ratio of TLu/dt has been set to 5'
+      ctl=5.
+    end if
+    if (ifine*ctl.lt.50) then
+      ifine=int(50./ctl)+1
+
+      print *,'WARNING: CBL flag active the ratio of TLW/dt was < 50, ifine has been re-set to',ifine
+!pause
+    endif
+    print *,'WARNING: CBL flag active the ratio of TLW/dt is ',ctl*ifine
+    print *,'WARNING: CBL flag active lsynctime is ',lsynctime
+  else                    !added by mc
+    if (ctl.ge.0.1) then
+      turbswitch=.true.
+    else
+      turbswitch=.false.
+      ifine=1
+    endif
+  endif                   !added by mc
   fine=1./real(ifine)
   ctl=1./ctl
 
@@ -343,12 +365,25 @@ subroutine readcommand
     mintime=lsynctime
   endif
 
+!  check for netcdf output switch (use for non-namelist input only!)
+  if (iout.ge.8) then
+     lnetcdfout = 1
+     iout = iout - 8
+! #ifndef NETCDF_OUTPUT
+!      print*,'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
+!      print*,'Please recompile with netcdf library or use standard output format.'
+!      stop
+! #endif
+  endif
+
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
   if ((iout.lt.1).or.(iout.gt.5)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, OR 5!          #### '
+    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, OR 5 FOR       #### '
+    write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
+    write(*,*) ' #### FOR NETCDF OUTPUT                       #### '
     stop
   endif
 
@@ -360,7 +395,6 @@ subroutine readcommand
     write(*,*) ' #### FOR MASS UNITS (at the moment)          #### '
     stop
   endif
-
 
 
   ! For quasilag output for each release is forbidden
@@ -443,7 +477,7 @@ subroutine readcommand
 
   if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IPOUT MUST BE 0, 1, or 2!                #### '
+    write(*,*) ' #### IPOUT MUST BE 1, 2 OR 3!                #### '
     stop
   endif
 

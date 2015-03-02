@@ -97,7 +97,7 @@ subroutine readoutgrid_nest
   endif
 
   ! write outgrid_nest file in namelist format to output directory if requested
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     open(unitoutgrid,file=path(2)(1:length(2))//'OUTGRID_NEST.namelist',err=1000)
     write(unitoutgrid,nml=outgridn)
     close(unitoutgrid)

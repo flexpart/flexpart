@@ -68,6 +68,10 @@ subroutine calcpv(n,uuh,vvh,pvh)
       enddo
     enddo
   enddo
+
+! :DBG: halts with SIGFPE if compiling with -ffpe-trap
+!  where(ppml.le.0) ppml=10000.0
+!  ppmk(:,:,1:nuvz)=(100000./ppml(:,:,1:nuvz))**kappa
   ppmk=(100000./ppml)**kappa
 
   do jy=0,nymin1

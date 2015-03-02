@@ -20,29 +20,29 @@
 !**********************************************************************
 
 subroutine interpol_wind_short(itime,xt,yt,zt)
-  !                                 i   i  i  i
-  !*****************************************************************************
-  !                                                                            *
-  !  This subroutine interpolates the wind data to current trajectory position.*
-  !                                                                            *
-  !    Author: A. Stohl                                                        *
-  !                                                                            *
-  !    16 December 1997                                                        *
-  !                                                                            *
-  !  Revision March 2005 by AST : all output variables in common block         *
-  !                                                                            *
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  ! u,v,w              wind components                                         *
-  ! itime [s]          current temporal position                               *
-  ! memtime(3) [s]     times of the wind fields in memory                      *
-  ! xt,yt,zt           coordinates position for which wind data shall be       *
-  !                    calculated                                              *
-  !                                                                            *
-  ! Constants:                                                                 *
-  !                                                                            *
-  !*****************************************************************************
+!                                 i   i  i  i
+!*****************************************************************************
+!                                                                            *
+!  This subroutine interpolates the wind data to current trajectory position.*
+!                                                                            *
+!    Author: A. Stohl                                                        *
+!                                                                            *
+!    16 December 1997                                                        *
+!                                                                            *
+!  Revision March 2005 by AST : all output variables in common block         *
+!                                                                            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+! u,v,w              wind components                                         *
+! itime [s]          current temporal position                               *
+! memtime(3) [s]     times of the wind fields in memory                      *
+! xt,yt,zt           coordinates position for which wind data shall be       *
+!                    calculated                                              *
+!                                                                            *
+! Constants:                                                                 *
+!                                                                            *
+!*****************************************************************************
 
   use par_mod
   use com_mod
@@ -50,8 +50,8 @@ subroutine interpol_wind_short(itime,xt,yt,zt)
 
   implicit none
 
-  integer :: itime
-  real :: xt,yt,zt
+  integer, intent(in) :: itime
+  real, intent(in) :: xt,yt,zt
 
   ! Auxiliary variables needed for interpolation
   real :: dz1,dz2,dz

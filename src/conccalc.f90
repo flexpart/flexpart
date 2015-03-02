@@ -65,7 +65,6 @@ subroutine conccalc(itime,weight)
   ! releasepoints
   !***************************************************************************
 
-
   do i=1,numpart
     if (itra1(i).ne.itime) goto 20
 

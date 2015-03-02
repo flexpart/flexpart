@@ -29,7 +29,7 @@ subroutine readspecies(id_spec,pos_spec)
   !   Author: A. Stohl                                                         *
   !                                                                            *
   !   11 July 1996                                                             *
-  !
+  !                                                                            *
   !   Changes:                                                                 *
   !   N. Kristiansen, 31.01.2013: Including parameters for in-cloud scavenging *
   !                                                                            *
@@ -44,9 +44,8 @@ subroutine readspecies(id_spec,pos_spec)
   ! weta, wetb           Parameters for determining below-cloud scavenging     *
   ! weta_in              Parameter for determining in-cloud scavenging         *
   ! wetb_in              Parameter for determining in-cloud scavenging         *
-  ! wetc_in              Parameter for determining in-cloud scavenging         *
-  ! wetd_in              Parameter for determining in-cloud scavenging         *
-  ! ohreact              OH reaction rate                                      *
+  ! ohcconst             OH reaction rate constant C                           *
+  ! ohdconst             OH reaction rate constant D                           *
   ! id_spec              SPECIES number as referenced in RELEASE file          *
   ! id_pos               position where SPECIES data shall be stored           *
   !                                                                            *
@@ -66,16 +65,16 @@ subroutine readspecies(id_spec,pos_spec)
 
   character(len=16) :: pspecies
   real :: pdecay, pweta, pwetb, preldiff, phenry, pf0, pdensity, pdquer
-  real :: pdsigma, pdryvel, pweightmolar, pohreact, pspec_ass, pkao
+  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pspec_ass, pkao
   real :: pweta_in, pwetb_in, pwetc_in, pwetd_in
   integer :: readerror
 
-  ! declare namelist
+! declare namelist
   namelist /species_params/ &
-   pspecies, pdecay, pweta, pwetb, &
-   pweta_in, pwetb_in, pwetc_in, pwetd_in, &
-   preldiff, phenry, pf0, pdensity, pdquer, &
-   pdsigma, pdryvel, pweightmolar, pohreact, pspec_ass, pkao
+       pspecies, pdecay, pweta, pwetb, &
+       pweta_in, pwetb_in, pwetc_in, pwetd_in, &
+       preldiff, phenry, pf0, pdensity, pdquer, &
+       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pspec_ass, pkao
 
   pspecies=" "
   pdecay=-999.9
@@ -83,8 +82,8 @@ subroutine readspecies(id_spec,pos_spec)
   pwetb=0.0
   pweta_in=-9.9E-09
   pwetb_in=-9.9E-09
-  pwetc_in=-9.9E-09
-  pwetd_in=-9.9E-09
+!  pwetc_in=-9.9E-09
+!  pwetd_in=-9.9E-09
   preldiff=-9.9
   phenry=0.0
   pf0=0.0
@@ -92,27 +91,25 @@ subroutine readspecies(id_spec,pos_spec)
   pdquer=0.0
   pdsigma=0.0
   pdryvel=-9.99
-  pohreact=-9.9E-09
+  pohcconst=-9.99
+  pohdconst=-9.9E-09
   pspec_ass=-9
   pkao=-99.99
   pweightmolar=-789.0 ! read failure indicator value
 
-  ! Open the SPECIES file and read species names and properties
-  !************************************************************
+! Open the SPECIES file and read species names and properties
+!************************************************************
   specnum(pos_spec)=id_spec
   write(aspecnumb,'(i3.3)') specnum(pos_spec)
   open(unitspecies,file=path(1)(1:length(1))//'SPECIES/SPECIES_'//aspecnumb,status='old',form='formatted',err=998)
- 
-  if (verbosity.gt.0) then
-    write(*,*) 'reading SPECIES',specnum(pos_spec)
-  endif
+!write(*,*) 'reading SPECIES',specnum(pos_spec)
 
   ASSSPEC=.FALSE.
 
-  ! try namelist input
+! try namelist input
   read(unitspecies,species_params,iostat=readerror)
   close(unitspecies)
-   
+
   if ((pweightmolar.eq.-789.0).or.(readerror.ne.0)) then ! no namelist found
 
     readerror=1
@@ -124,46 +121,48 @@ subroutine readspecies(id_spec,pos_spec)
     end do
 
     read(unitspecies,'(a10)',end=22) species(pos_spec)
-  !  write(*,*) species(pos_spec)
+!  write(*,*) species(pos_spec)
     read(unitspecies,'(f18.1)',end=22) decay(pos_spec)
-  !  write(*,*) decay(pos_spec)
+!  write(*,*) decay(pos_spec)
     read(unitspecies,'(e18.1)',end=22) weta(pos_spec)
-  !  write(*,*) weta(pos_spec)
+!  write(*,*) weta(pos_spec)
     read(unitspecies,'(f18.2)',end=22) wetb(pos_spec)
-  !  write(*,*) wetb(pos_spec)
+!  write(*,*) wetb(pos_spec)
 
-  !*** NIK 31.01.2013: including in-cloud scavening parameters
-   read(unitspecies,'(e18.1)',end=22) weta_in(pos_spec)
-  !  write(*,*) weta_in(pos_spec)
-   read(unitspecies,'(f18.2)',end=22) wetb_in(pos_spec)
-  !  write(*,*) wetb_in(pos_spec)
-   read(unitspecies,'(f18.2)',end=22) wetc_in(pos_spec)
-  !  write(*,*) wetc_in(pos_spec)
-   read(unitspecies,'(f18.2)',end=22) wetd_in(pos_spec)
-  !  write(*,*) wetd_in(pos_spec)
+!*** NIK 31.01.2013: including in-cloud scavening parameters
+    read(unitspecies,'(e18.1)',end=22) weta_in(pos_spec)
+!  write(*,*) weta_in(pos_spec)
+    read(unitspecies,'(f18.2)',end=22) wetb_in(pos_spec)
+!  write(*,*) wetb_in(pos_spec)
+! read(unitspecies,'(f18.2)',end=22) wetc_in(pos_spec)
+!  write(*,*) wetc_in(pos_spec)
+! read(unitspecies,'(f18.2)',end=22) wetd_in(pos_spec)
+!  write(*,*) wetd_in(pos_spec)
 
     read(unitspecies,'(f18.1)',end=22) reldiff(pos_spec)
-  !  write(*,*) reldiff(pos_spec)
+!  write(*,*) reldiff(pos_spec)
     read(unitspecies,'(e18.1)',end=22) henry(pos_spec)
-  !  write(*,*) henry(pos_spec)
+!  write(*,*) henry(pos_spec)
     read(unitspecies,'(f18.1)',end=22) f0(pos_spec)
-  !  write(*,*) f0(pos_spec)
+!  write(*,*) f0(pos_spec)
     read(unitspecies,'(e18.1)',end=22) density(pos_spec)
-  !  write(*,*) density(pos_spec)
+!  write(*,*) density(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dquer(pos_spec)
-  !  write(*,*) dquer(pos_spec)
+!  write(*,*) dquer(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dsigma(pos_spec)
-  !  write(*,*) dsigma(pos_spec)
+!  write(*,*) dsigma(pos_spec)
     read(unitspecies,'(f18.2)',end=22) dryvel(pos_spec)
-  !  write(*,*) dryvel(pos_spec)
+!  write(*,*) dryvel(pos_spec)
     read(unitspecies,'(f18.2)',end=22) weightmolar(pos_spec)
-  !  write(*,*) weightmolar(pos_spec)
-    read(unitspecies,'(e18.1)',end=22) ohreact(pos_spec)
-  !  write(*,*) ohreact(pos_spec)
+!  write(*,*) weightmolar(pos_spec)
+    read(unitspecies,'(e18.2)',end=22) ohcconst(pos_spec)
+!  write(*,*) ohcconst(pos_spec)
+    read(unitspecies,'(f8.2)',end=22) ohdconst(pos_spec)
+!  write(*,*) ohdconst(pos_spec)
     read(unitspecies,'(i18)',end=22) spec_ass(pos_spec)
-  !  write(*,*) spec_ass(pos_spec)
+!  write(*,*) spec_ass(pos_spec)
     read(unitspecies,'(f18.2)',end=22) kao(pos_spec)
-  !       write(*,*) kao(pos_spec)
+!       write(*,*) kao(pos_spec)
 
     pspecies=species(pos_spec)
     pdecay=decay(pos_spec)
@@ -171,8 +170,8 @@ subroutine readspecies(id_spec,pos_spec)
     pwetb=wetb(pos_spec)
     pweta_in=weta_in(pos_spec)
     pwetb_in=wetb_in(pos_spec)
-    pwetc_in=wetc_in(pos_spec)
-    pwetd_in=wetd_in(pos_spec)
+!    pwetc_in=wetc_in(pos_spec)
+!    pwetd_in=wetd_in(pos_spec)
     preldiff=reldiff(pos_spec)
     phenry=henry(pos_spec)
     pf0=f0(pos_spec)
@@ -181,7 +180,8 @@ subroutine readspecies(id_spec,pos_spec)
     pdsigma=dsigma(pos_spec)
     pdryvel=dryvel(pos_spec)
     pweightmolar=weightmolar(pos_spec)
-    pohreact=ohreact(pos_spec)
+    pohcconst=ohcconst(pos_spec)
+    pohdconst=ohdconst(pos_spec)
     pspec_ass=spec_ass(pos_spec)
     pkao=kao(pos_spec)
 
@@ -193,8 +193,8 @@ subroutine readspecies(id_spec,pos_spec)
     wetb(pos_spec)=pwetb
     weta_in(pos_spec)=pweta_in
     wetb_in(pos_spec)=pwetb_in
-    wetc_in(pos_spec)=pwetc_in
-    wetd_in(pos_spec)=pwetd_in
+!    wetc_in(pos_spec)=pwetc_in
+!    wetd_in(pos_spec)=pwetd_in
     reldiff(pos_spec)=preldiff
     henry(pos_spec)=phenry
     f0(pos_spec)=pf0
@@ -203,7 +203,8 @@ subroutine readspecies(id_spec,pos_spec)
     dsigma(pos_spec)=pdsigma
     dryvel(pos_spec)=pdryvel
     weightmolar(pos_spec)=pweightmolar
-    ohreact(pos_spec)=pohreact
+    ohcconst(pos_spec)=pohcconst
+    ohdconst(pos_spec)=pohdconst
     spec_ass(pos_spec)=pspec_ass
     kao(pos_spec)=pkao
 
@@ -211,8 +212,62 @@ subroutine readspecies(id_spec,pos_spec)
 
   i=pos_spec
 
+!NIK 16.02.2015
+! Check scavenging parameters given in SPECIES file
+  if (dquer(pos_spec).gt.0) then !is particle
+    write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
+         &(Rain collection efficiency)  ', weta(pos_spec)
+    write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter B &
+         &(Snow collection efficiency)  ', wetb(pos_spec)
+    if (weta(pos_spec).gt.1.0 .or. wetb(pos_spec).gt.1.0) then
+      write(*,*) '*******************************************'
+      write(*,*) ' WARNING: Particle below-cloud scavenging parameter A or B &
+           &is out of likely range'
+      write(*,*) '          Likely range is 0.0-1.0'
+      write(*,*) '*******************************************'
+    endif
+    write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Ai &
+         &(CCN efficiency)  ', weta_in(pos_spec)
+    write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
+         &(IN efficiency)  ', wetb_in(pos_spec)
+    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.7 )then
+      write(*,*) '*******************************************'
+      write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
+      write(*,*) '          The default value is 0.9 for CCN '
+      write(*,*) '*******************************************'
+    endif
+    if (wetb_in(pos_spec).gt.0.2 .or. wetb_in(pos_spec).lt.0.01) then
+      write(*,*) '*******************************************'
+      write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
+      write(*,*) '          The default value is 0.1 for IN '
+      write(*,*) '*******************************************'
+    endif
+
+  else !is gas
+    write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
+    write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb(pos_spec)
+    write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
+    if (wetb(pos_spec).gt.0.) then !if wet deposition is turned on
+      if (wetb(pos_spec).gt.0.8 .or. wetb(pos_spec).lt.0.6) then
+        write(*,*) '*******************************************'
+        write(*,*) ' WARNING: Gas below-cloud scavenging parameter B is out of likely range'
+        write(*,*) '          Likely range is 0.6 to 0.8 (see Hertel et al 1995)'
+        write(*,*) '*******************************************'
+      endif
+    end if
+    if (weta(pos_spec).gt.0.) then !if wet deposition is turned on
+      if (weta(pos_spec).gt.1E-04 .or. weta(pos_spec).lt.1E-09) then
+        write(*,*) '*******************************************'
+        write(*,*) ' WARNING: Gas below-cloud scavenging parameter A is out of likely range'
+        write(*,*) '          Likely range is 1E-04 to 1E-08 (see Hertel et al 1995)'
+        write(*,*) '*******************************************'
+      endif
+    end if
+  endif
+
+
   if ((weta(pos_spec).gt.0).and.(henry(pos_spec).le.0)) then
-   if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
+    if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
   endif
 
   if (spec_ass(pos_spec).gt.0) then
@@ -239,22 +294,23 @@ subroutine readspecies(id_spec,pos_spec)
     write(*,*) '#### SPECIES NUMBER',aspecnumb
     stop
   endif
-20   continue
+20 continue
+
+
+! Read in daily and day-of-week variation of emissions, if available
+!*******************************************************************
+! HSO: This is not yet implemented as namelist parameters
+
+  do j=1,24           ! initialize everything to no variation
+    area_hour(i,j)=1.
+    point_hour(i,j)=1.
+  end do
+  do j=1,7
+    area_dow(i,j)=1.
+    point_dow(i,j)=1.
+  end do
 
   if (readerror.ne.0) then ! text format input
-
-    ! Read in daily and day-of-week variation of emissions, if available
-    !*******************************************************************
-    ! HSO: This is not yet implemented as namelist parameters
-
-    do j=1,24           ! initialize everything to no variation
-      area_hour(i,j)=1.
-      point_hour(i,j)=1.
-    end do
-    do j=1,7
-      area_dow(i,j)=1.
-      point_dow(i,j)=1.
-    end do
 
     read(unitspecies,*,end=22)
     do j=1,24     ! 24 hours, starting with 0-1 local time
@@ -269,16 +325,16 @@ subroutine readspecies(id_spec,pos_spec)
 
 22 close(unitspecies)
 
-  ! namelist output if requested
-  if (nmlout.eqv..true.) then
-    open(unitspecies,file=path(2)(1:length(2))//'SPECIES_'//aspecnumb//'.namelist',access='append',status='new',err=1000)
+! namelist output if requested
+  if (nmlout.and.lroot) then
+    open(unitspecies,file=path(2)(1:length(2))//'SPECIES_'//aspecnumb//'.namelist',access='append',status='replace',err=1000)
     write(unitspecies,nml=species_params)
     close(unitspecies)
   endif
 
   return
 
-996   write(*,*) '#####################################################'
+996 write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL ERROR!                      #### '
   write(*,*) '#### WET DEPOSITION SWITCHED ON, BUT NO HENRYS  #### '
   write(*,*) '#### CONSTANT IS SET                            ####'
@@ -287,7 +343,7 @@ subroutine readspecies(id_spec,pos_spec)
   stop
 
 
-997   write(*,*) '#####################################################'
+997 write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL ERROR!                      #### '
   write(*,*) '#### THE ASSSOCIATED SPECIES HAS TO BE DEFINED  #### '
   write(*,*) '#### BEFORE THE ONE WHICH POINTS AT IT          #### '
@@ -297,7 +353,7 @@ subroutine readspecies(id_spec,pos_spec)
   stop
 
 
-998   write(*,*) '#####################################################'
+998 write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL ERROR!                      #### '
   write(*,*) '#### THE SPECIES FILE FOR SPECIES ', id_spec
   write(*,*) '#### CANNOT BE FOUND: CREATE FILE'

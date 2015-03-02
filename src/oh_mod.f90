@@ -26,7 +26,13 @@ module oh_mod
 
   implicit none
 
-  real,allocatable, dimension (:,:,:,:) :: OH_field
-  real,allocatable, dimension (:) :: OH_field_height
+  integer :: nxOH,nyOH,nzOH
+  real, allocatable, dimension(:) :: lonOH,latOH,altOH
+  real, allocatable, dimension(:,:,:,:) :: OH_hourly
+  real, allocatable, dimension (:,:,:,:) :: OH_field
+  real, dimension(2) :: memOHtime
+  real, dimension(360,180,12) :: jrate_average
+  real, dimension(360) :: lonjr
+  real, dimension(180) :: latjr
 
 end module oh_mod

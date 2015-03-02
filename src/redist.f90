@@ -36,6 +36,7 @@ subroutine redist (ipart,ktop,ipconv)
   use par_mod
   use com_mod
   use conv_mod
+  use random_mod
 
   implicit none
 
@@ -48,9 +49,11 @@ subroutine redist (ipart,ktop,ipconv)
   real :: temp_levold,temp_levold1
   real :: sub_levold,sub_levold1
   real :: pint, pold, rn, tv, tvold, dlevfrac
-  real :: ew,ran3, ztold,ffraction
+  real :: ew,ztold,ffraction
   real :: tv1, tv2, dlogp, dz, dz1, dz2
   integer :: iseed = -88
+
+
 
   ! ipart   ... number of particle to be treated
 

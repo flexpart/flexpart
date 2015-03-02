@@ -23,12 +23,18 @@ module unc_mod
 
   implicit none
 
-  real,allocatable, dimension (:,:,:,:,:,:,:) :: gridunc
+  real,allocatable ,dimension (:,:,:,:,:,:,:) :: gridunc
   real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn
   real,allocatable, dimension (:,:,:,:,:,:) :: drygridunc
   real,allocatable, dimension (:,:,:,:,:,:) :: drygriduncn
   real,allocatable, dimension (:,:,:,:,:,:) :: wetgridunc
   real,allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn
+
+! For sum of individual contributions, used for the MPI version
+  real,allocatable, dimension (:,:,:,:,:,:) :: drygridunc0
+  real,allocatable, dimension (:,:,:,:,:,:) :: drygriduncn0
+  real,allocatable, dimension (:,:,:,:,:,:) :: wetgridunc0
+  real,allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn0
 
   real,allocatable, dimension (:,:,:,:,:) :: init_cond
 

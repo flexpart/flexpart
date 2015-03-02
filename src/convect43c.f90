@@ -969,7 +969,7 @@
     ENTS=0.0
     DO I=1,INB
      ENTS=ENTS+(CPN(I)*FT(I)+LV(I)*FQ(I))* &
-          (PHCONV_HPA(I)-PHCONV_HPA(I+1))	
+          (PHCONV_HPA(I)-PHCONV_HPA(I+1))
     END DO
     ENTS=ENTS/(PHCONV_HPA(1)-PHCONV_HPA(INB+1))
     DO I=1,INB

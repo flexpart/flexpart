@@ -46,10 +46,11 @@ subroutine boundcond_domainfill(itime,loutend)
   use point_mod
   use par_mod
   use com_mod
+  use random_mod, only: ran1
 
   implicit none
 
-  real :: dz,dz1,dz2,ran1,dt1,dt2,dtt,ylat,xm,cosfact,accmasst
+  real :: dz,dz1,dz2,dt1,dt2,dtt,ylat,xm,cosfact,accmasst
   integer :: itime,in,indz,indzp,i,loutend
   integer :: j,k,ix,jy,m,indzh,indexh,minpart,ipart,mmass
   integer :: numactiveparticles

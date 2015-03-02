@@ -42,8 +42,13 @@ subroutine timemanager
   !  Changes Petra Seibert, Nov 2002                                           *
   !     call convection BEFORE new fields are read in BWD mode                 *
   !  Changes Caroline Forster, Feb 2005                                        *
-  !new interface between flexpart and convection scheme                        *
-  !Emanuel's latest subroutine convect43c.f is used                            *
+  !   new interface between flexpart and convection scheme                     *
+  !   Emanuel's latest subroutine convect43c.f is used                         *
+  !  Changes Stefan Henne, Harald Sodemann, 2013-2014                          *
+  !   added netcdf output code                                                 *
+  !  Changes Espen Sollum 2014                                                 *
+  !   For compatibility with MPI version,                                      *
+  !   variables uap,ucp,uzp,us,vs,ws,cbt now in module com_mod                 *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -91,6 +96,8 @@ subroutine timemanager
   use oh_mod
   use par_mod
   use com_mod
+  use netcdf_output_mod, only: concoutput_netcdf,concoutput_nest_netcdf,&
+       &concoutput_surf_netcdf,concoutput_surf_nest_netcdf
 
   implicit none
 
@@ -98,10 +105,11 @@ subroutine timemanager
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
   integer :: ix,jy,ldeltat,itage,nage
-  real :: outnum,weight,prob(maxspec)
-  real :: uap(maxpart),ucp(maxpart),uzp(maxpart),decfact
-  real :: us(maxpart),vs(maxpart),ws(maxpart)
-  integer(kind=2) :: cbt(maxpart)
+  integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
+  real :: outnum,weight,prob(maxspec),decfact
+  ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
+  ! real :: us(maxpart),vs(maxpart),ws(maxpart)
+  ! integer(kind=2) :: cbt(maxpart)
   real :: drydeposit(maxspec),gridtotalunc,wetgridtotalunc
   real :: drygridtotalunc,xold,yold,zold,xmassfract
   !double precision xm(maxspec,maxpointspec_act),
@@ -128,9 +136,6 @@ subroutine timemanager
   !**********************************************************************
 
 
-  !write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
-  itime=0 ! initialise to avoid random numbers on output IP 2015-03-02
-  write(*,46) float(itime)/3600,itime,numpart
   if (verbosity.gt.0) then
     write (*,*) 'timemanager> starting simulation'
     if (verbosity.gt.1) then
@@ -140,10 +145,6 @@ subroutine timemanager
   endif
 
   do itime=0,ideltas,lsynctime
-    if (verbosity.gt.0) then
-           write (*,*) 'timemanager>  itime=', itime
-    endif
-
 
   ! Computation of wet deposition, OH reaction and mass transfer
   ! between two species every lsynctime seconds
@@ -197,12 +198,25 @@ subroutine timemanager
         endif 
     if (nstop1.gt.1) stop 'NO METEO FIELDS AVAILABLE'
 
+  ! Get hourly OH fields if not available 
+  !****************************************************
+    if (OHREA) then
+      if (verbosity.gt.0) then
+             write (*,*) 'timemanager> call gethourlyOH'
+      endif
+      call gethourlyOH(itime)
+          if (verbosity.gt.1) then
+            CALL SYSTEM_CLOCK(count_clock)
+            WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
+          endif
+    endif
+        
   ! Release particles
   !******************
 
-    !if (verbosity.gt.0) then
-    !       write (*,*) 'timemanager>  Release particles'
-    !endif 
+    if (verbosity.gt.0) then
+           write (*,*) 'timemanager>  Release particles'
+    endif 
 
     if (mdomainfill.ge.1) then
       if (itime.eq.0) then
@@ -218,7 +232,7 @@ subroutine timemanager
       endif
     else
       if (verbosity.gt.0) then
-        print*,'timemanager> call releaseparticles'  
+        print*,'call releaseparticles'  
       endif
       call releaseparticles(itime)
       if (verbosity.gt.1) then
@@ -353,31 +367,50 @@ subroutine timemanager
       if ((itime.eq.loutend).and.(outnum.gt.0.)) then
         if ((iout.le.3.).or.(iout.eq.5)) then
           if (surf_only.ne.1) then 
-          call concoutput(itime,outnum,gridtotalunc, &
-               wetgridtotalunc,drygridtotalunc)
+            if (lnetcdfout.eq.1) then 
+              call concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+            else 
+              call concoutput(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+            endif
           else  
-  if (verbosity.eq.1) then
-     print*,'call concoutput_surf '
-     CALL SYSTEM_CLOCK(count_clock)
-     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
-  endif
-          call concoutput_surf(itime,outnum,gridtotalunc, &
-               wetgridtotalunc,drygridtotalunc)
-  if (verbosity.eq.1) then
-     print*,'called concoutput_surf '
-     CALL SYSTEM_CLOCK(count_clock)
-     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
-  endif
+            if (verbosity.eq.1) then
+             print*,'call concoutput_surf '
+             call system_clock(count_clock)
+             write(*,*) 'system clock',count_clock - count_clock0   
+            endif
+            if (lnetcdfout.eq.1) then 
+              call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+            else
+              call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              if (verbosity.eq.1) then
+                print*,'called concoutput_surf '
+                call system_clock(count_clock)
+                write(*,*) 'system clock',count_clock - count_clock0   
+              endif
+            endif
           endif
 
-          if ((nested_output.eq.1).and.(surf_only.ne.1)) call concoutput_nest(itime,outnum)
-          if ((nested_output.eq.1).and.(surf_only.eq.1)) call concoutput_surf_nest(itime,outnum)
+          if (nested_output .eq. 1) then
+            if (lnetcdfout.eq.0) then
+              if (surf_only.ne.1) then
+                call concoutput_nest(itime,outnum)
+              else 
+                call concoutput_surf_nest(itime,outnum)
+              endif
+            else
+              if (surf_only.ne.1) then
+                call concoutput_nest_netcdf(itime,outnum)
+              else 
+                call concoutput_surf_nest_netcdf(itime,outnum)
+              endif
+            endif
+          endif
           outnum=0.
         endif
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)
         if (iflux.eq.1) call fluxoutput(itime)
-        !write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
-        write(*,46) float(itime)/3600,itime,numpart
+        write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
+        !write(*,46) float(itime)/3600,itime,numpart
 45      format(i9,' SECONDS SIMULATED: ',i8, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i9,' s), ',i8, ' particles')
         if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
@@ -447,7 +480,14 @@ subroutine timemanager
 
   ! Loop over all particles
   !************************
-
+  ! Various variables for testing reason of CBL scheme, by mc
+    well_mixed_vector=0. !erase vector to test well mixed condition: modified by mc
+    well_mixed_norm=0.   !erase normalization to test well mixed condition: modified by mc
+    avg_ol=0.
+    avg_wst=0.
+    avg_h=0.
+    avg_air_dens=0.  !erase vector to obtain air density at particle positions: modified by mc
+  !-----------------------------------------------------------------------------
     do j=1,numpart
 
 
@@ -541,6 +581,9 @@ subroutine timemanager
 
           if (xmassfract.lt.0.0001) then   ! terminate all particles carrying less mass
             itra1(j)=-999999999
+            if (verbosity.gt.0) then
+              print*,'terminated particle ',j,' for small mass'
+            endif
           endif
 
   !        Sabine Eckhardt, June 2008
@@ -557,15 +600,47 @@ subroutine timemanager
   !***************************************************************
 
           if (abs(itra1(j)-itramem(j)).ge.lage(nageclass)) then
-            if (linit_cond.ge.1) &
-                 call initial_cond_calc(itime+lsynctime,j)
+            if (linit_cond.ge.1) call initial_cond_calc(itime+lsynctime,j)
             itra1(j)=-999999999
+            if (verbosity.gt.0) then
+              print*,'terminated particle ',j,' for age'
+            endif
           endif
         endif
 
       endif
 
-    end do
+    end do !loop over particles
+    
+  ! Counter of "unstable" particle velocity during a time scale of
+  ! maximumtl=20 minutes (defined in com_mod)
+  !***************************************************************
+    
+          total_nan_intl=0
+          i_nan=i_nan+1 ! added by mc to count nan during a time of maxtl (i.e. maximum tl fixed here to 20 minutes, see com_mod)
+          sum_nan_count(i_nan)=nan_count
+          if (i_nan > maxtl/lsynctime) i_nan=1 !lsynctime must be <= maxtl
+          do ii_nan=1, (maxtl/lsynctime) 
+              total_nan_intl=total_nan_intl+sum_nan_count(ii_nan)
+          end do
+  ! Output to keep track of the numerical instabilities in CBL simulation and if
+  ! they are compromising the final result (or not)
+          if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
+          
+!!------------------------------------------------------------------------------
+! these lines below to test the well-mixed condition, modified by  mc, not to be
+! included in final release:
+    ! if (itime.eq.0) then
+    ! open(551,file='/home/mc/test_cbl/out/WELLMIXEDTEST_CBL_lonlat_9_33_100_3hours_3htp_cd.DAT')
+    ! open(552,file='/home/mc/test_cbl/out/avg_ol_h_wst_lonlat_9_33_100_3hours_3htp_cd.DAT')
+    ! end if
+    ! write(552,'(5F16.7)')itime*1./3600.,avg_wst/well_mixed_norm,avg_ol/well_mixed_norm,avg_h/well_mixed_norm
+    ! do j=1,25
+    !      !write(551,*))itime*1.,h_well/50.*j,well_mixed_vector(j)/well_mixed_norm*50.
+    !     avg_air_dens(j)=avg_air_dens(j)/well_mixed_vector(j)
+    !     write(551,'(5F16.7)')itime*1.,h_well/25.*j,well_mixed_vector(j)/well_mixed_norm*25.,avg_air_dens(j),0.04*j
+    ! end do 
+!!------------------------------------------------------------------------------
 
   end do
 
@@ -589,8 +664,8 @@ subroutine timemanager
   if (iflux.eq.1) then
       deallocate(flux)
   endif
-  if (OHREA.eqv..TRUE.) then
-      deallocate(OH_field,OH_field_height)
+  if (OHREA) then
+      deallocate(OH_field,OH_hourly,lonOH,latOH,altOH)
   endif
   if (ldirect.gt.0) then
   deallocate(drygridunc,wetgridunc)

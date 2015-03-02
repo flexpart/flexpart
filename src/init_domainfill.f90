@@ -48,11 +48,12 @@ subroutine init_domainfill
   use point_mod
   use par_mod
   use com_mod
+  use random_mod
 
   implicit none
 
   integer :: j,ix,jy,kz,ncolumn,numparttot
-  real :: gridarea(0:nymax-1),pp(nzmax),ylat,ylatp,ylatm,hzone,ran1
+  real :: gridarea(0:nymax-1),pp(nzmax),ylat,ylatp,ylatm,hzone
   real :: cosfactm,cosfactp,deltacol,dz1,dz2,dz,pnew,fractus
   real,parameter :: pih=pi/180.
   real :: colmass(0:nxmax-1,0:nymax-1),colmasstotal,zposition

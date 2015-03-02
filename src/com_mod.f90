@@ -14,7 +14,7 @@ module com_mod
 
   use par_mod, only: dp, numpath, maxnests, maxageclass, maxspec, ni, &
        numclass, nymax, nxmax, maxcolumn, maxwf, nzmax, nxmaxn, nymaxn, &
-       maxreceptor, maxpart, maxrand, nwzmax, nuvzmax
+       maxreceptor, maxpart, maxrand, nwzmax, nuvzmax, numwfmem
 
   implicit none
 
@@ -22,7 +22,7 @@ module com_mod
   ! Variables defining where FLEXPART input/output files are stored
   !****************************************************************
 
-  character :: path(numpath+2*maxnests)*256
+  character :: path(numpath+2*maxnests)*120
   integer :: length(numpath+2*maxnests)
   character(len=256) :: pathfile, flexversion, arg1, arg2
   
@@ -69,6 +69,7 @@ module com_mod
   integer :: mquasilag,nested_output,ind_source,ind_receptor
   integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond,surf_only
   logical :: turbswitch
+  integer :: cblflag  !added by mc for cbl
 
   ! ctl      factor, by which time step must be smaller than Lagrangian time scale
   ! ifine    reduction factor for time step used for vertical wind
@@ -99,6 +100,7 @@ module com_mod
   ! turbswitch              determines how the Markov chain is formulated
 
   ! ind_rel and ind_samp  are used within the code to change between mass and mass-mix (see readcommand.f)
+  ! cblflag !: 1 activate cbl skewed pdf routines with bi-gaussina pdf whan OL<0 added by mc
 
 
   integer :: mintime,itsplit
@@ -112,6 +114,8 @@ module com_mod
   ! lconvection  1 if convection parameterization switched on, 0 if not
   ! lagespectra  1 if age spectra calculation switched on, 2 if not
 
+  integer :: lnetcdfout
+  ! lnetcdfout   1 for netcdf grid output, 0 if not. Set in COMMAND (namelist input)
 
   integer :: nageclass,lage(maxageclass)
 
@@ -122,6 +126,12 @@ module com_mod
   logical :: gdomainfill
 
   ! gdomainfill             .T., if domain-filling is global, .F. if not
+
+!hg
+  logical :: readclouds
+
+!NIK 16.02.2015
+  integer :: tot_blc_count, tot_inc_count
 
 
 
@@ -144,14 +154,15 @@ module com_mod
   real :: decay(maxspec)
   real :: weta(maxspec),wetb(maxspec)
 ! NIK: 31.01.2013- parameters for in-cloud scavening
-  real :: weta_in(maxspec), wetb_in(maxspec), wetc_in(maxspec), wetd_in(maxspec)
+  real :: weta_in(maxspec), wetb_in(maxspec)
   real :: reldiff(maxspec),henry(maxspec),f0(maxspec)
   real :: density(maxspec),dquer(maxspec),dsigma(maxspec)
   real :: vsetaver(maxspec),cunningham(maxspec),weightmolar(maxspec)
   real :: vset(maxspec,ni),schmi(maxspec,ni),fract(maxspec,ni)
   real :: ri(5,numclass),rac(5,numclass),rcl(maxspec,5,numclass)
   real :: rgs(maxspec,5,numclass),rlu(maxspec,5,numclass)
-  real :: rm(maxspec),dryvel(maxspec),kao(maxspec),ohreact(maxspec)
+  real :: rm(maxspec),dryvel(maxspec),kao(maxspec)
+  real :: ohcconst(maxspec),ohdconst(maxspec)
   ! se  it is possible to associate a species with a second one to make transfer from gas to aerosol
   integer :: spec_ass(maxspec)
 
@@ -255,13 +266,14 @@ module com_mod
   ! wftime(maxwf) [s]       times relative to beginning time of wind fields
   ! wfname(maxwf)           file names of wind fields
   ! wfspec(maxwf)           specifications of wind field file, e.g. if on hard
-  !                    disc or on tape
+  !                         disc or on tape
 
-  integer :: memtime(2),memind(2)
+  integer :: memtime(numwfmem),memind(numwfmem) ! eso: or memind(3) and change
+                                                ! interpol_rain 
 
   ! memtime [s]             validation times of wind fields in memory
   ! memind                  pointer to wind field, in order to avoid shuffling
-  !                    of wind fields
+  !                         of wind fields
 
 
 
@@ -326,21 +338,30 @@ module com_mod
   ! 3d fields
   !**********
 
-  real :: uu(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: vv(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: uupol(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: vvpol(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: ww(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: tt(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: qv(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: pv(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: rho(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,2)
-  real :: tth(0:nxmax-1,0:nymax-1,nuvzmax,2)
-  real :: qvh(0:nxmax-1,0:nymax-1,nuvzmax,2)
-  real :: pplev(0:nxmax-1,0:nymax-1,nuvzmax,2)
-  integer(kind=1) :: clouds(0:nxmax-1,0:nymax-1,nzmax,2)
-  integer :: cloudsh(0:nxmax-1,0:nymax-1,2)
+  real :: uu(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: vv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: uupol(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: vvpol(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: ww(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: tt(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: qv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+!hg adding cloud water 
+  real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: pv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: rho(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: tth(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+  real :: qvh(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+  real :: clwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+  real :: ciwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+
+  real :: pplev(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+  !scavenging NIK, PS
+  integer(kind=1) :: clouds(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  integer :: cloudsh(0:nxmax-1,0:nymax-1,numwfmem)
+  ! integer :: icloudbot(0:nxmax-1,0:nymax-1,numwfmem)
+  ! integer :: icloudthck(0:nxmax-1,0:nymax-1,numwfmem)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
@@ -355,31 +376,34 @@ module com_mod
   !      cloud, no precipitation      1
   !      rainout  conv/lsp dominated  2/3
   !      washout  conv/lsp dominated  4/5
+  ! PS 2013
+  !c icloudbot (m)        cloud bottom height
+  !c icloudthck (m)       cloud thickness     
 
   ! pplev for the GFS version
 
   ! 2d fields
   !**********
 
-  real :: ps(0:nxmax-1,0:nymax-1,1,2)
-  real :: sd(0:nxmax-1,0:nymax-1,1,2)
-  real :: msl(0:nxmax-1,0:nymax-1,1,2)
-  real :: tcc(0:nxmax-1,0:nymax-1,1,2)
-  real :: u10(0:nxmax-1,0:nymax-1,1,2)
-  real :: v10(0:nxmax-1,0:nymax-1,1,2)
-  real :: tt2(0:nxmax-1,0:nymax-1,1,2)
-  real :: td2(0:nxmax-1,0:nymax-1,1,2)
-  real :: lsprec(0:nxmax-1,0:nymax-1,1,2)
-  real :: convprec(0:nxmax-1,0:nymax-1,1,2)
-  real :: sshf(0:nxmax-1,0:nymax-1,1,2)
-  real :: ssr(0:nxmax-1,0:nymax-1,1,2)
-  real :: surfstr(0:nxmax-1,0:nymax-1,1,2)
-  real :: ustar(0:nxmax-1,0:nymax-1,1,2)
-  real :: wstar(0:nxmax-1,0:nymax-1,1,2)
-  real :: hmix(0:nxmax-1,0:nymax-1,1,2)
-  real :: tropopause(0:nxmax-1,0:nymax-1,1,2)
-  real :: oli(0:nxmax-1,0:nymax-1,1,2)
-  real :: diffk(0:nxmax-1,0:nymax-1,1,2)
+  real :: ps(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: sd(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: msl(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: tcc(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: u10(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: v10(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: tt2(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: td2(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: lsprec(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: convprec(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: sshf(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: ssr(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: surfstr(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: ustar(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: wstar(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: hmix(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: tropopause(0:nxmax-1,0:nymax-1,1,numwfmem)
+  real :: oli(0:nxmax-1,0:nymax-1,1,numwfmem)
+! real :: diffk(0:nxmax-1,0:nymax-1,1,numwfmem) this is not in use?
 
   ! ps                   surface pressure
   ! sd                   snow depth
@@ -402,7 +426,7 @@ module com_mod
   ! diffk [m2/s]         diffusion coefficient at reference height
 
 
-  real :: vdep(0:nxmax-1,0:nymax-1,maxspec,2)
+  real :: vdep(0:nxmax-1,0:nymax-1,maxspec,numwfmem)
 
   ! vdep [m/s]           deposition velocities
 
@@ -452,42 +476,42 @@ module com_mod
   ! 3d nested fields
   !*****************
 
-  real :: uun(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: vvn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: wwn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: ttn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: qvn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: pvn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  integer(kind=1) :: cloudsn(0:nxmaxn-1,0:nymaxn-1,0:nzmax,2,maxnests)
-  integer :: cloudsnh(0:nxmaxn-1,0:nymaxn-1,2,maxnests)
-  real :: rhon(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: drhodzn(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: tthn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,2,maxnests)
-  real :: qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,2,maxnests)
+  real :: uun(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: vvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: wwn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: ttn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: qvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: pvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  integer(kind=1) :: cloudsn(0:nxmaxn-1,0:nymaxn-1,0:nzmax,numwfmem,maxnests)
+  integer :: cloudsnh(0:nxmaxn-1,0:nymaxn-1,numwfmem,maxnests)
+  real :: rhon(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: drhodzn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: tthn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,maxnests)
+  real :: qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,maxnests)
 
   ! 2d nested fields
   !*****************
 
-  real :: psn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: sdn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: msln(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: tccn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: u10n(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: v10n(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: tt2n(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: td2n(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: lsprecn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: convprecn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: sshfn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: ssrn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: surfstrn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: ustarn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: wstarn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: hmixn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: tropopausen(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: olin(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: diffkn(0:nxmaxn-1,0:nymaxn-1,1,2,maxnests)
-  real :: vdepn(0:nxmaxn-1,0:nymaxn-1,maxspec,2,maxnests)
+  real :: psn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: sdn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: msln(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: tccn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: u10n(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: v10n(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: tt2n(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: td2n(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: lsprecn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: convprecn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: sshfn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: ssrn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: surfstrn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: ustarn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: wstarn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: hmixn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: tropopausen(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  real :: olin(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests)
+  ! real :: diffkn(0:nxmaxn-1,0:nymaxn-1,1,numwfmem,maxnests) ! not in use?
+  real :: vdepn(0:nxmaxn-1,0:nymaxn-1,maxspec,numwfmem,maxnests)
 
 
   !*************************************************
@@ -627,13 +651,19 @@ module com_mod
   ! Variables characterizing each particle
   !***************************************
 
-  integer :: numpart,itra1(maxpart)
-  integer :: npoint(maxpart),nclass(maxpart)
-  integer :: idt(maxpart),itramem(maxpart),itrasplit(maxpart)
+  integer :: numpart=0
   integer :: numparticlecount
 
-  real(kind=dp) :: xtra1(maxpart),ytra1(maxpart)
-  real :: ztra1(maxpart),xmass1(maxpart,maxspec)
+  integer, allocatable, dimension(:) :: itra1, npoint, nclass, idt, itramem, itrasplit
+
+  real(kind=dp), allocatable, dimension(:) :: xtra1, ytra1
+  real, allocatable, dimension(:) :: ztra1 
+  real, allocatable, dimension(:,:) :: xmass1
+
+  ! eso: Moved from timemanager
+  real, allocatable, dimension(:) :: uap,ucp,uzp,us,vs,ws
+  integer(kind=2), allocatable, dimension(:) :: cbt
+
 
   ! numpart                 actual number of particles in memory
   ! itra1 (maxpart) [s]     temporal positions of the particles
@@ -645,7 +675,7 @@ module com_mod
   ! numparticlecount        counts the total number of particles that have been released
   ! xtra1,ytra1,ztra1       spatial positions of the particles
   ! xmass1 [kg]             particle masses
-
+  
 
 
   !*******************************************************
@@ -679,16 +709,57 @@ module com_mod
   real :: rannumb(maxrand)
 
   ! rannumb                 field of normally distributed random numbers
+  
+  !********************************************************************
+  ! variables to control stability of CBL scheme under variation 
+  ! of statistics in time and space 
+  !********************************************************************
+  integer :: nan_count,nan_count2,sum_nan_count(3600),maxtl=1200 
+  !added by mc , note that for safety sum_nan_count(N) with N>maxtl
+
+  !********************************************************************
+  ! variables to test well-mixed state of CBL scheme not to be included in final release
+  !********************************************************************
+  real :: well_mixed_vector(50),h_well,well_mixed_norm,avg_air_dens(50),avg_ol,avg_wst,avg_h 
+  ! modified by mc to test well-mixed for cbl
 
   !********************
   ! Verbosity, testing flags, namelist I/O
   !********************   
   integer :: verbosity=0
   integer :: info_flag=0
-  integer :: time_flag=0
-  integer :: debug_flag=0
   integer :: count_clock, count_clock0,  count_rate, count_max
-  logical :: nmlout=.true.
+  real    :: tins
+  logical, parameter :: nmlout=.false.
+
+  ! These variables are used to avoid having separate versions of
+  ! files in cases where differences with MPI version is minor (eso)
+  !*****************************************************************
+  integer :: mpi_mode=0 ! .gt. 0 if running MPI version
+  logical :: lroot=.true. ! true if serial version, or if MPI and root process
+
+  contains
+      subroutine com_mod_allocate(nmpart)
+!*******************************************************************************    
+! Dynamic allocation of arrays 
+!
+!*******************************************************************************
+    implicit none 
+
+    integer, intent(in) :: nmpart
+    
+! Arrays previously static of size maxpart
+    allocate(itra1(nmpart),npoint(nmpart),nclass(nmpart),&
+         & idt(nmpart),itramem(nmpart),itrasplit(nmpart),&
+         & xtra1(nmpart),ytra1(nmpart),ztra1(nmpart),&
+         & xmass1(nmpart, maxspec))
+
+    allocate(uap(nmpart),ucp(nmpart),uzp(nmpart),us(nmpart),&
+         & vs(nmpart),ws(nmpart),cbt(nmpart))
+    
+!    allocate(memind(
+
+  end subroutine com_mod_allocate
    
 
 end module com_mod

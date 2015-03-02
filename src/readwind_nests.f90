@@ -247,7 +247,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   if(isec2(3).ne.nyn(l)) stop &
   'READWIND: NY NOT CONSISTENT FOR A NESTING LEVEL'
   if(isec2(12)/2-1.ne.nlev_ec) stop 'READWIND: VERTICAL DISCRET&
-  IZATION NOT CONSISTENT FOR A NESTING LEVEL'
+       &IZATION NOT CONSISTENT FOR A NESTING LEVEL'
   endif ! ifield
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages

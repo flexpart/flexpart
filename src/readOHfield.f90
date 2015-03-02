@@ -25,17 +25,19 @@ subroutine readOHfield
   !                                                                            *
   ! Reads the OH field into memory                                             *
   !                                                                            *
-  ! AUTHOR: Sabine Eckhardt, June 2007                                         *
+  ! AUTHOR: R.L. Thompson, Nov 2014                                            *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
-  ! i                       loop indices                                       *
-  ! LENGTH(numpath)         length of the path names                           *
-  ! PATH(numpath)           contains the path names                            *
-  ! unitoh                  unit connected with OH field                       *
   !                                                                            *
-  ! -----                                                                      *
+  ! path(numpath)              contains the path names                         *
+  ! lonOH(nxOH)                longitude of OH fields                          *
+  ! latOH(nyOH)                latitude of OH fields                           *
+  ! altOH(nzOH)                altitude of OH fields                           *
+  ! etaOH(nzOH)                eta-levels of OH fields                         *
+  ! OH_field(nxOH,nyOH,nzOH,m) OH concentration (molecules/cm3)                *
+  !                                                                            *
   !                                                                            *
   !*****************************************************************************
 
@@ -43,42 +45,155 @@ subroutine readOHfield
   use par_mod
   use com_mod
 
+
   implicit none
 
-  integer :: ix,jy,lev,m
+  include 'netcdf.inc'
 
+  character(len=150) :: thefile
+  character(len=2) :: mm
+  integer :: nid,ierr,xid,yid,zid,vid,m
+  real, dimension(:), allocatable :: etaOH
 
-  ! Read OH field and level heights
+!  real, parameter :: gasct=8.314   ! gas constant
+!  real, parameter :: mct=0.02894   ! kg mol-1
+!  real, parameter :: g=9.80665     ! m s-2
+!  real, parameter :: lrate=0.0065  ! K m-1
+  real, parameter :: scalehgt=7000. ! scale height in metres
+
+  ! Read OH fields and level heights
   !********************************
 
-! write (*,*) 'reading OH'
-  open(unitOH,file=path(1)(1:length(1))//'OH_7lev_agl.dat', &
-       status='old',form='UNFORMATTED', err=998)
   do m=1,12
-    do lev=1,maxzOH
-      do ix=0,maxxOH-1
-  !      do 10 jy=0,maxyOH-1
-          read(unitOH) (OH_field(m,ix,jy,lev),jy=0,maxyOH-1)
-  !      if ((ix.eq.20).and.(lev.eq.1)) then
-  !          write(*,*) 'reading: ', m, OH_field(m,ix,20,lev)
-  !      endif
-      end do
-    end do
-  end do
-  close(unitOH)
+  
+    ! open netcdf file
+    write(mm,fmt='(i2.2)') m
+    thefile=trim(path(1))//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
+    ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
+    if(ierr.ne.0) then
+      write(*,*) nf_strerror(ierr)
+      stop
+    endif
 
-  do lev=1,7
-    OH_field_height(lev)=1000+real(lev-1)*2.*1000.
-  end do
+    ! inquire about variables
+    ierr=nf_inq_dimid(nid,'Lon-000',xid)
+    if(ierr.ne.0) then
+      write(*,*) nf_strerror(ierr)
+      stop
+    endif
+    ierr=nf_inq_dimid(nid,'Lat-000',yid)
+    if(ierr.ne.0) then
+      write(*,*) nf_strerror(ierr)
+      stop
+    endif
+    ierr=nf_inq_dimid(nid,'Alt-000',zid)
+    if(ierr.ne.0) then
+      write(*,*) nf_strerror(ierr)
+      stop
+    endif
 
-!  write (*,*) 'OH read'
+    if(m.eq.1) then
+
+      ! read dimension sizes
+      ierr=nf_inq_dimlen(nid,xid,nxOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif
+      ierr=nf_inq_dimlen(nid,yid,nyOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif
+      ierr=nf_inq_dimlen(nid,zid,nzOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif  
+
+      ! allocate variables
+      allocate(lonOH(nxOH))
+      allocate(latOH(nyOH))
+      allocate(etaOH(nzOH))
+      allocate(altOH(nzOH))
+      allocate(OH_field(nxOH,nyOH,nzOH,12))
+      allocate(OH_hourly(nxOH,nyOH,nzOH,2))
+
+      ! read dimension variables
+      ierr=nf_inq_varid(nid,'LON',xid)
+      ierr=nf_get_var_real(nid,xid,lonOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif
+      ierr=nf_inq_varid(nid,'LAT',yid)
+      ierr=nf_get_var_real(nid,yid,latOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif
+      ierr=nf_inq_varid(nid,'ETAC',zid)
+      ierr=nf_get_var_real(nid,zid,etaOH)
+      if(ierr.ne.0) then
+        write(*,*) nf_strerror(ierr)
+        stop
+      endif
+
+      ! convert eta-level to altitude (assume surface pressure of 1010 hPa)
+      altOH=log(1010./(etaOH*1010.))*scalehgt
+
+    endif ! m.eq.1
+
+    ! read OH_field
+    ierr=nf_inq_varid(nid,'CHEM-L_S__OH',vid)
+    ierr=nf_get_var_real(nid,vid,OH_field(:,:,:,m))
+    if(ierr.ne.0) then
+      write(*,*) nf_strerror(ierr)
+      stop
+    endif
+
+    ierr=nf_close(nid)
+
+  end do 
+ 
+  deallocate(etaOH)
+
+  ! Read J(O1D) photolysis rates
+  !********************************  
+
+  ! open netcdf file
+  thefile=trim(path(1))//'OH_FIELDS/jrate_average.nc'
+  ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
+  if(ierr.ne.0) then
+    write(*,*) nf_strerror(ierr)
+    stop
+  endif
+
+  ! read dimension variables
+  ierr=nf_inq_varid(nid,'longitude',xid)
+  ierr=nf_get_var_real(nid,xid,lonjr)
+  if(ierr.ne.0) then
+    write(*,*) nf_strerror(ierr)
+    stop
+  endif
+  ierr=nf_inq_varid(nid,'latitude',yid)
+  ierr=nf_get_var_real(nid,yid,latjr)
+  if(ierr.ne.0) then
+    write(*,*) nf_strerror(ierr)
+    stop
+  endif
+
+  ! read jrate_average
+  ierr=nf_inq_varid(nid,'jrate',vid)
+  ierr=nf_get_var_real(nid,vid,jrate_average)
+  if(ierr.ne.0) then
+    write(*,*) nf_strerror(ierr)
+    stop
+  endif
+
+  ierr=nf_close(nid) 
+
   return
 
-  ! Issue error messages
-  !*********************
+end subroutine readOHfield
 
-998   write(*,*) ' #### FLEXPART ERROR! FILE CONTAINING          ####'
-  write(*,*) ' #### OH FIELD DOES NOT EXIST                  ####'
-  stop
-
-end subroutine readohfield

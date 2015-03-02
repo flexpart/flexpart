@@ -43,6 +43,7 @@ subroutine convmix(itime)
   integer :: ipconv
   integer :: jy, kpart, ktop, ngrid,kz
   integer :: igrid(maxpart), ipoint(maxpart), igridn(maxpart,maxnests)
+
   ! itime [s]                 current time
   ! igrid(maxpart)            horizontal grid position of each particle
   ! igridn(maxpart,maxnests)  dto. for nested grids
@@ -131,8 +132,8 @@ subroutine convmix(itime)
  20 continue
   end do
 
-  !sumall = 0.
-  !sumconv = 0.
+  ! sumall = 0.
+  ! sumconv = 0.
 
   !*****************************************************************************
   ! 1. Now, do everything for the mother domain and, later, for all of the nested domains
@@ -154,7 +155,7 @@ subroutine convmix(itime)
     igr = igrid(kpart)
     if (igr .eq. -1) goto 50
     ipart = ipoint(kpart)
-  !  sumall = sumall + 1
+  ! sumall = sumall + 1
     if (igr .ne. igrold) then
   ! we are in a new grid column
       jy = (igr-1)/nx
@@ -227,7 +228,7 @@ subroutine convmix(itime)
       igr = igrid(kpart)
       if (igr .eq. -1) goto 60
       ipart = ipoint(kpart)
-  !    sumall = sumall + 1
+      ! sumall = sumall + 1
       if (igr .ne. igrold) then
   ! we are in a new grid column
         jy = (igr-1)/nxn(inest)
@@ -284,16 +285,16 @@ subroutine convmix(itime)
     end do
   end do
   !--------------------------------------------------------------------------
-  !write(*,*)'############################################'
-  !write(*,*)'TIME=',
+  ! write(*,*)'############################################'
+  ! write(*,*)'TIME=',&
   !    &  itime
-  !write(*,*)'fraction of particles under convection',
+  ! write(*,*)'fraction of particles under convection',&
   !    &  sumconv/(sumall+0.001)
-  !write(*,*)'total number of particles',
+  ! write(*,*)'total number of particles',&
   !    &  sumall
-  !write(*,*)'number of particles under convection',
+  ! write(*,*)'number of particles under convection',&
   !    &  sumconv
-  !write(*,*)'############################################'
+  ! write(*,*)'############################################'
 
   return
 end subroutine convmix

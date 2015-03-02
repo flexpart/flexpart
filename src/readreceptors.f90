@@ -79,8 +79,9 @@ subroutine readreceptors
   read(unitreceptor,receptors,iostat=readerror)
 
   ! prepare namelist output if requested
-  if (nmlout.eqv..true.) then
-    open(unitreceptorout,file=path(2)(1:length(2))//'RECEPTORS.namelist',access='append',status='new',err=1000)
+  if (nmlout.and.lroot) then
+    open(unitreceptorout,file=path(2)(1:length(2))//'RECEPTORS.namelist',&
+         &access='append',status='replace',err=1000)
   endif
 
   if ((lon.lt.-900).or.(readerror.ne.0)) then
@@ -121,7 +122,7 @@ subroutine readreceptors
     receptorarea(j)=xm*ym
 
     ! write receptors file in namelist format to output directory if requested
-    if (nmlout.eqv..true.) then
+    if (nmlout.and.lroot) then
       lon=x
       lat=y
       write(unitreceptorout,nml=receptors)
@@ -156,7 +157,7 @@ subroutine readreceptors
       endif
 
       ! write receptors file in namelist format to output directory if requested
-      if (nmlout.eqv..true.) then
+      if (nmlout.and.lroot) then
         write(unitreceptorout,nml=receptors)
       endif
 
@@ -166,7 +167,7 @@ subroutine readreceptors
 
   endif
 
-  if (nmlout.eqv..true.) then
+  if (nmlout.and.lroot) then
     close(unitreceptorout)
   endif
 

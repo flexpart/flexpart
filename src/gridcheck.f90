@@ -104,6 +104,11 @@ subroutine gridcheck
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'gridcheck'
 
+  !NIK 16.02.2015
+  tot_blc_count=0 !count for total number of occurences of below cloud scavenging
+  tot_inc_count=0 !count for total number of occurences of in cloud scavenging
+
+
   iumax=0
   iwmax=0
 
@@ -189,6 +194,12 @@ subroutine gridcheck
     isec1(6)=132         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
     isec1(6)=133         ! indicatorOfParameter
+!hg
+  elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
+    isec1(6)=246         ! indicatorOfParameter
+  elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
+    isec1(6)=247         ! indicatorOfParameter
+!hg end
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
@@ -285,14 +296,6 @@ subroutine gridcheck
     xaux2=xaux2in
     yaux1=yaux1in
     yaux2=yaux2in
-     if (verbosity.gt.1) then
-        print*, 'longitudeOfFirstGridPointInDegrees', xaux1in
-        print*, 'longitudeOfLastGridPointInDegrees ', xaux2in
-        print*, 'latitudeOfLastGridPointInDegrees  ', yaux1in
-        print*, 'latitudeOfFirstGridPointInDegrees ', yaux2in
- 
-     endif 
- 
     if (xaux1.gt.180.) xaux1=xaux1-360.0
     if (xaux2.gt.180.) xaux2=xaux2-360.0
     if (xaux1.lt.-180.) xaux1=xaux1+360.0
@@ -450,16 +453,17 @@ subroutine gridcheck
   ! Output of grid info
   !********************
 
-  write(*,'(a,2i7)') ' Vertical levels in ECMWF data: ', &
-       nuvz+1,nwz
-  !write(*,*)
-  write(*,'(a)') ' Mother domain:'
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') ' Longitude range: ', &
-       xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') ' Latitude range : ', &
-       ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
-  write(*,*)
-
+  if (lroot) then
+    write(*,'(a,2i7)') ' Vertical levels in ECMWF data: ', &
+         nuvz+1,nwz
+    write(*,*)
+    write(*,'(a)') ' Mother domain:'
+    write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
+         xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
+    write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range : ', &
+         ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
+    write(*,*)
+  end if
 
   ! CALCULATE VERTICAL DISCRETIZATION OF ECMWF MODEL
   ! PARAMETER akm,bkm DESCRIBE THE HYBRID "ETA" COORDINATE SYSTEM
@@ -552,17 +556,17 @@ subroutine gridcheck
   write(*,*) ' ###########################################'// &
        '###### '
   write(*,*)
-  !write(*,'(a)') '!!! PLEASE INSERT A NEW CD-ROM AND   !!!'
-  !write(*,'(a)') '!!! PRESS ANY KEY TO CONTINUE...     !!!'
-  !write(*,'(a)') '!!! ...OR TERMINATE FLEXPART PRESSING!!!'
-  !write(*,'(a)') '!!! THE "X" KEY...                   !!!'
-  !write(*,*)
-  !read(*,'(a)') opt
-  !if(opt.eq.'X') then
+  write(*,'(a)') '!!! PLEASE INSERT A NEW CD-ROM AND   !!!'
+  write(*,'(a)') '!!! PRESS ANY KEY TO CONTINUE...     !!!'
+  write(*,'(a)') '!!! ...OR TERMINATE FLEXPART PRESSING!!!'
+  write(*,'(a)') '!!! THE "X" KEY...                   !!!'
+  write(*,*)
+  read(*,'(a)') opt
+  if(opt.eq.'X') then
     stop
-  !else
-  !  goto 5
-  !endif
+  else
+    goto 5
+  endif
 
 end subroutine gridcheck
 

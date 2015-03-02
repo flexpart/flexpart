@@ -39,12 +39,13 @@ subroutine readpartpositions
 
   use par_mod
   use com_mod
+  use random_mod
 
   implicit none
 
   integer :: ibdatein,ibtimein,nspecin,itimein,numpointin,i,j,ix
   integer :: id1,id2,it1,it2
-  real :: xlonin,ylatin,ran1,topo,hmixi,pvi,qvi,rhoi,tri,tti
+  real :: xlonin,ylatin,topo,hmixi,pvi,qvi,rhoi,tri,tti
   character :: specin*7
   real(kind=dp) :: julin,julpartin,juldate
 

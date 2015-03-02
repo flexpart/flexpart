@@ -21,23 +21,23 @@
 
 subroutine outgrid_init_nest
 
-  !*****************************************************************************
-  !                                                                            *
-  !  This routine calculates, for each grid cell of the output nest, the       *
-  !  volume and the surface area.                                              *
-  !                                                                            *
-  !     Author: A. Stohl                                                       *
-  !                                                                            *
-  !    30 August 2004                                                          *
-  !                                                                            *
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  !                                                                            *
-  ! arean              surface area of all output nest cells                   *
-  ! volumen            volumes of all output nest cells                        *
-  !                                                                            *
-  !*****************************************************************************
+!*****************************************************************************
+!                                                                            *
+!  This routine calculates, for each grid cell of the output nest, the       *
+!  volume and the surface area.                                              *
+!                                                                            *
+!     Author: A. Stohl                                                       *
+!                                                                            *
+!    30 August 2004                                                          *
+!                                                                            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+!                                                                            *
+! arean              surface area of all output nest cells                   *
+! volumen            volumes of all output nest cells                        *
+!                                                                            *
+!*****************************************************************************
 
   use unc_mod
   use outg_mod
@@ -54,23 +54,43 @@ subroutine outgrid_init_nest
 
 
 
-  ! gridunc,griduncn        uncertainty of outputted concentrations
+! gridunc,griduncn        uncertainty of outputted concentrations
   allocate(griduncn(0:numxgridn-1,0:numygridn-1,numzgrid,maxspec, &
        maxpointspec_act,nclassunc,maxageclass),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
 
   if (ldirect.gt.0) then
-  allocate(wetgriduncn(0:numxgridn-1,0:numygridn-1,maxspec, &
-       maxpointspec_act,nclassunc,maxageclass),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
-  allocate(drygriduncn(0:numxgridn-1,0:numygridn-1,maxspec, &
-       maxpointspec_act,nclassunc,maxageclass),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+    allocate(wetgriduncn(0:numxgridn-1,0:numygridn-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+    allocate(drygriduncn(0:numxgridn-1,0:numygridn-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
   endif
 
-  ! Compute surface area and volume of each grid cell: area, volume;
-  ! and the areas of the northward and eastward facing walls: areaeast, areanorth
-  !***********************************************************************
+! Extra field for totals at MPI root process
+  if (lroot.and.mpi_mode.gt.0) then
+    ! allocate(griduncn0(0:numxgridn-1,0:numygridn-1,numzgrid,maxspec, &
+    !      maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    ! if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+
+    if (ldirect.gt.0) then
+      allocate(wetgriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+      allocate(drygriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+    endif
+! allocate a dummy to avoid compilator complaints
+  else if (.not.lroot.and.mpi_mode.gt.0) then
+    allocate(wetgriduncn0(1,1,1,1,1,1),stat=stat)
+    allocate(drygriduncn0(1,1,1,1,1,1),stat=stat)
+  end if
+
+! Compute surface area and volume of each grid cell: area, volume;
+! and the areas of the northward and eastward facing walls: areaeast, areanorth
+!***********************************************************************
 
   do jy=0,numygridn-1
     ylat=outlat0n+(real(jy)+0.5)*dyoutn
@@ -80,9 +100,9 @@ subroutine outgrid_init_nest
       hzone=dyoutn*r_earth*pi180
     else
 
-  ! Calculate area of grid cell with formula M=2*pi*R*h*dx/360,
-  ! see Netz, Formeln der Mathematik, 5. Auflage (1983), p.90
-  !************************************************************
+! Calculate area of grid cell with formula M=2*pi*R*h*dx/360,
+! see Netz, Formeln der Mathematik, 5. Auflage (1983), p.90
+!************************************************************
 
       cosfactp=cos(ylatp*pi180)
       cosfactm=cos(ylatm*pi180)
@@ -99,16 +119,16 @@ subroutine outgrid_init_nest
 
 
 
-  ! Surface are of a grid cell at a latitude ylat
-  !**********************************************
+! Surface are of a grid cell at a latitude ylat
+!**********************************************
 
     gridarea=2.*pi*r_earth*hzone*dxoutn/360.
 
     do ix=0,numxgridn-1
       arean(ix,jy)=gridarea
 
-  ! Volume = area x box height
-  !***************************
+! Volume = area x box height
+!***************************
 
       volumen(ix,jy,1)=arean(ix,jy)*outheight(1)
       do kz=2,numzgrid
@@ -118,19 +138,19 @@ subroutine outgrid_init_nest
   end do
 
 
-  !**************************************************************************
-  ! Determine average height of model topography in nesteed output grid cells
-  !**************************************************************************
+!**************************************************************************
+! Determine average height of model topography in nesteed output grid cells
+!**************************************************************************
 
-  ! Loop over all output grid cells
-  !********************************
+! Loop over all output grid cells
+!********************************
 
   do jjy=0,numygridn-1
     do iix=0,numxgridn-1
       oroh=0.
 
-  ! Take 100 samples of the topography in every grid cell
-  !******************************************************
+! Take 100 samples of the topography in every grid cell
+!******************************************************
 
       do j1=1,10
         ylat=outlat0n+(real(jjy)+real(j1)/10.-0.05)*dyoutn
@@ -139,8 +159,8 @@ subroutine outgrid_init_nest
           xlon=outlon0n+(real(iix)+real(i1)/10.-0.05)*dxoutn
           xl=(xlon-xlon0)/dx
 
-  ! Determine the nest we are in
-  !*****************************
+! Determine the nest we are in
+!*****************************
 
           ngrid=0
           do j=numbnests,1,-1
@@ -152,8 +172,8 @@ subroutine outgrid_init_nest
           end do
 43        continue
 
-  ! Determine (nested) grid coordinates and auxiliary parameters used for interpolation
-  !*****************************************************************************
+! Determine (nested) grid coordinates and auxiliary parameters used for interpolation
+!*****************************************************************************
 
           if (ngrid.gt.0) then
             xtn=(xl-xln(ngrid))*xresoln(ngrid)
@@ -191,8 +211,8 @@ subroutine outgrid_init_nest
         end do
       end do
 
-  ! Divide by the number of samples taken
-  !**************************************
+! Divide by the number of samples taken
+!**************************************
 
       orooutn(iix,jjy)=oroh/100.
     end do
@@ -200,30 +220,30 @@ subroutine outgrid_init_nest
 
 
 
-  !*******************************
-  ! Initialization of output grids
-  !*******************************
+!*******************************
+! Initialization of output grids
+!*******************************
 
   do kp=1,maxpointspec_act
-  do ks=1,nspec
-    do nage=1,nageclass
-      do jy=0,numygridn-1
-        do ix=0,numxgridn-1
-          do l=1,nclassunc
-  ! Deposition fields
-            if (ldirect.gt.0) then
-              wetgriduncn(ix,jy,ks,kp,l,nage)=0.
-              drygriduncn(ix,jy,ks,kp,l,nage)=0.
-            endif
-  ! Concentration fields
-            do kz=1,numzgrid
-              griduncn(ix,jy,kz,ks,kp,l,nage)=0.
+    do ks=1,nspec
+      do nage=1,nageclass
+        do jy=0,numygridn-1
+          do ix=0,numxgridn-1
+            do l=1,nclassunc
+! Deposition fields
+              if (ldirect.gt.0) then
+                wetgriduncn(ix,jy,ks,kp,l,nage)=0.
+                drygriduncn(ix,jy,ks,kp,l,nage)=0.
+              endif
+! Concentration fields
+              do kz=1,numzgrid
+                griduncn(ix,jy,kz,ks,kp,l,nage)=0.
+              end do
             end do
           end do
         end do
       end do
     end do
-  end do
   end do
 
 

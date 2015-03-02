@@ -36,10 +36,11 @@ module par_mod
   implicit none
 
   !****************************************************************
-  ! Parameter defining KIND parameter for "double precision"
+  ! Parameter defining KIND parameter for double/single precision
   !****************************************************************
 
   integer,parameter :: dp=selected_real_kind(P=15)
+  integer,parameter :: sp=selected_real_kind(6)
 
 
   !***********************************************************
@@ -121,16 +122,14 @@ module par_mod
   !*********************************************
   
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=26,nwzmax=26,nzmax=26
   !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
-  integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF 0.5
   !integer,parameter :: nxmax=1201,nymax=235,nuvzmax=58,nwzmax=58,nzmax=58
 
   integer,parameter :: nxshift=359 ! for ECMWF
-  !integer,parameter :: nxshift=718 ! for ECMWF 0.5
-  !integer,parameter :: nxshift=0     ! for GFS or FNL (XF)
+  !integer,parameter :: nxshift=0     ! for GFS or FNL
 
   integer,parameter :: nconvlevmax = nuvzmax-1
   integer,parameter :: na = nconvlevmax+1
@@ -156,7 +155,8 @@ module par_mod
   !*********************************************
 
   !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=351 !ECMWF
+  integer,parameter :: maxnests=1,nxmaxn=351,nymaxn=351 !ECMWF
+
   !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
   ! maxnests                maximum number of nested grids
   ! nxmaxn,nymaxn           maximum dimension of nested wind fields in
@@ -199,12 +199,14 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=4000000
+  integer,parameter :: maxpart=50000000
+!  integer,parameter :: maxpart=60000000
+!  integer,parameter :: maxpart=120000000
   integer,parameter :: maxspec=1
-
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
+
 
   ! maxpoint is also set dynamically during runtime
   ! maxpoint                Maximum number of release locations
@@ -213,12 +215,16 @@ module par_mod
   ! Sabine Eckhardt: change of landuse inventary numclass=13
   ! ---------
   integer,parameter :: maxwf=50000, maxtable=1000, numclass=13, ni=11
+  !integer,parameter :: numwfmem=2 ! Serial version/MPI with 2 fields
+  integer,parameter :: numwfmem=3 ! MPI with 3 fields
 
   ! maxwf                   maximum number of wind fields to be used for simulation
   ! maxtable                Maximum number of chemical species that can be
   !                         tabulated for FLEXPART
   ! numclass                Number of landuse classes available to FLEXPART
   ! ni                      Number of diameter classes of particles
+  ! numwfmem                Number of windfields kept in memory. 2 for serial
+  !                         version, 2 or 3 for MPI version
 
   !**************************************************************************
   ! dimension of the OH field
@@ -237,10 +243,12 @@ module par_mod
   ! Dimension of random number field
   !*********************************
 
-  integer,parameter :: maxrand=2000000
+  integer,parameter :: maxrand=120000000
+!  integer,parameter :: maxrand=2000000
+!  integer,parameter :: maxrand=20
 
   ! maxrand                 number of random numbers used
-
+  
 
   !*****************************************************
   ! Number of clusters to be used for plume trajectories
@@ -267,9 +275,7 @@ module par_mod
 ! integer code for missing values, used in wet scavenging (PS, 2012)
 !******************************************************
 
-    !  integer icmv
-    !  parameter(icmv=-9999)
-      integer,parameter ::  icmv=-9999
+  integer,parameter ::  icmv=-9999
 
 ! Parameters for testing
 !*******************************************

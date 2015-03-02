@@ -62,35 +62,20 @@ subroutine readpaths !(pathfile)
     read(unitpath,'(a)',err=998) path(i)
     length(i)=index(path(i),' ')-1
 
-
-  if (verbosity.gt.0) then
-      print*, 'path read', i, '=',  trim(path(i))
-  end if
     
-  end do
-
-
-    do i=1,numpath
     string_test = path(i)
     character_test = string_test(length(i):length(i))
-    ! print*, 'character_test,  string_test ', character_test,  string_test 
-    ! include nested fields
-      if ((character_test .NE. '/') .AND. ((i .LT. 4) .OR. (i .EQ. 5) ))  then
-         if (verbosity.gt.0) then 
-         print*, 'readpaths> WARNING: path not ending in /' 
+    !print*, 'character_test,  string_test ', character_test,  string_test 
+      if ((character_test .NE. '/') .AND. (i .LT. 4))  then
+         print*, 'WARNING: path not ending in /' 
          print*, path(i)
-         endif
          path(i) = string_test(1:length(i)) // '/'
          length(i)=length(i)+1
-         if (verbosity.gt.0) then 
          print*, 'fix: padded with /' 
          print*, path(i)
-         print*, 'length(i) increased 1',  length(i) 
-         endif
+         print*, 'length(i) increased 1' 
       endif
-    end do
-
-
+  end do
 
   ! Check whether any nested subdomains are to be used
   !***************************************************
@@ -109,17 +94,8 @@ subroutine readpaths !(pathfile)
 
 30   numbnests=i-1
 
-  !if (verbosity.gt.0) then
-  !    do i=1,numpath
-  !    print*, 'path tested', i, '=',  path(i)
-  !    end do 
-  !end if
-
   close(unitpath)
   return
-
-   
-
 
 998   write(*,*) ' #### TRAJECTORY MODEL ERROR! ERROR WHILE     #### '
   write(*,*) ' #### READING FILE PATHNAMES.                 #### '

@@ -50,7 +50,8 @@ subroutine writeheader_txt
 
   implicit none
 
-  integer :: jjjjmmdd,ihmmss,i,ix,jy,j
+!  integer :: jjjjmmdd,ihmmss,i,ix,jy,j
+  integer :: jjjjmmdd,ihmmss,i,j
   real :: xp1,yp1,xp2,yp2
 
 

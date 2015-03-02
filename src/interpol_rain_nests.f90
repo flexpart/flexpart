@@ -69,15 +69,16 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
   ! zt                   current z coordinate                                 *
   !                                                                           *
   !****************************************************************************
+  use par_mod, only: numwfmem
 
   implicit none
 
   integer :: maxnests,ngrid
-  integer :: nxn(maxnests),nyn(maxnests),nxmaxn,nymaxn,nzmax,memind(2)
+  integer :: nxn(maxnests),nyn(maxnests),nxmaxn,nymaxn,nzmax,memind(numwfmem)
   integer :: m,ix,jy,ixp,jyp,itime,itime1,itime2,level,indexh
-  real :: yy1(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: yy2(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
-  real :: yy3(0:nxmaxn-1,0:nymaxn-1,nzmax,2,maxnests)
+  real :: yy1(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: yy2(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
+  real :: yy3(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
   real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2)
   real :: xt,yt,yint1,yint2,yint3,p1,p2,p3,p4
 
