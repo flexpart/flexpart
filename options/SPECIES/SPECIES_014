@@ -6,11 +6,11 @@
 ****************************************************************************
 I2-131             Tracer name
 691200.0           Species half life
- 8.0E-05           Below cloud scavenging - A
-0.62               Below cloud scavenging - B
+ 8.0E-05           Wet deposition - A
+0.62               Wet deposition - B
 2.0E-7             In-cloud scavenging - Ai (cl=Ai*prec**Bi)
 0.36               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
-0.9                In-cloud scavenging - Ci (S_i=Ci/cl)
+0.1                In-cloud scavenging - Ci (S_i=Ci/cl)
 1.                 In-cloud scavenging - Di (wetscav=S_i*prec/3.6E6/clouds_h/Di)
  2.7               Dry deposition (gases) - D
 1.0e+05            Dry deposition (gases) - Henrys const.
@@ -20,6 +20,7 @@ I2-131             Tracer name
                    Dry deposition (particles) - dsig
 -9.99              Alternative: dry deposition velocity
  -9.99             molweight
--9.9E-09           OH Reaction rate at 25 deg, [cm^3/sec]
+-9.99E-09          OH Reaction rate - C [cm^3/molecule/sec]
+-9.9               OH reaction rate - D [K]
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning

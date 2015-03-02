@@ -11,5 +11,5 @@
 *time a particle is carried in the simulation. *
 *                                              *
 ************************************************
-1          Integer        Number of age classes
-1728000 
+1          Integer        Number of age classes 
+1728000

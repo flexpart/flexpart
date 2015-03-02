@@ -2,25 +2,23 @@
 *                                                                          *
 *     Input file for the Lagrangian particle dispersion model FLEXPART     *
 *               Definition file of chemical species/radionuclides          *
-*                                                                          *
+* ESO: edited to work with Rona's changes+Henrik                           *
 ****************************************************************************
-NO3-aero           Tracer name
+SO2                Tracer name
 -999.9             Species half life
- 5.0E-06           Wet deposition - A
-0.62               Wet deposition - B
-2.0E-7             In-cloud scavenging - Ai (cl=Ai*prec**Bi)
-0.36               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
-0.1                In-cloud scavenging - Ci (S_i=Ci/cl)
-1.                 In-cloud scavenging - Di (wetscav=S_i*prec/3.6E6/clouds_h/Di)
+1.0                Below cloud scavenging - A
+1.0                Below cloud scavenging - B
+0.9                In-cloud scavenging - Ai 
+0.1                In-cloud scavenging - Bi 
 -9.9               Dry deposition (gases) - D
                    Dry deposition (gases) - Henrys const.
                    Dry deposition (gases) - f0 (reactivity)
- 2.0E03            Dry deposition (particles) - rho
-4.0E-7             Dry deposition (particles) - dquer
-3.0E-1             Dry deposition (particles) - dsig
+1.9E03            Dry deposition (particles) - rho
+4.0E-07            Dry deposition (particles) - dquer
+3.0E-01            Dry deposition (particles) - dsig
 -9.99              Alternative: dry deposition velocity
- -9.99             molweight
--9.99E-09          OH Reaction rate - C [cm^3/molecule/sec]
--9.9               OH reaction rate - D [K]
+ 64.00             molweight
+-1.35E-12          OH Reaction rate - C
+1.0                OH Reaction rate - D
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning

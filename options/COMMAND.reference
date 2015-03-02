@@ -105,6 +105,10 @@
     0
     SURF_ONLY        IF THIS IS SET TO 1, OUTPUT IS WRITTEN ONLY OUT FOR LOWEST LAYER
 
+26. _                4X, I1
+    0
+    CBLFLAG          IF THIS IS SET TO 1, USES NEW CONVECTIVE PBL ROUTINES
+
 
 1. Simulation direction, 1 for forward, -1 for backward in time 
 	(consult Seibert and Frank, 2004 for backward runs)
@@ -196,3 +200,8 @@
 25. SURF_ONLY: When set to 1, concentration/emission sensitivity is written out only
     for the surface layer; useful for instance when only footprint emission sensitivity is needed
     but initial conditions are needed on a full 3-D grid
+
+26. CBLFLAG: When set to 1, a skewed rather than Gaussian turbulence in the 
+    convective PBL is used. If selected, this option requires shorter time
+    steps (typically values of CTL= 10 and IFINE= 10), and is therefore more 
+    computationally demanding.

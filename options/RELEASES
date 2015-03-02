@@ -1,54 +1,36 @@
-*************************************************************************
-*                                                                       *
-*                                                                       *
-*                                                                       *
-*   Input file for the Lagrangian particle dispersion model FLEXPART    *
-*                        Please select your options                     *
-*                                                                       *
-*                                                                       *
-*                                                                       *
-*************************************************************************
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  1      
-___                        i3    Total number of species emitted
-
-  3
-___                        i3    Index of species in file SPECIES
-
-=========================================================================
-20111210 000001 
-________ ______            i8,1x,i6 Beginning date and time of release
-
-20111210 090000 
-________ ______            i8,1x,i6 Ending date and time of release
-
-   9.4048 
-____.____                  f9.4  Longitude [DEG] of lower left corner
-
-  48.5060
-____.____                  f9.4  Latitude [DEG] of lower left corner
-
-   9.5067
-____.____                  f9.4  Longitude [DEG] of upper right corner
-
-  48.5158
-____.____                  f9.4  Latitude [DEG] of upper right corner
-
-        2
-_________                  i9    1 for m above ground, 2 for m above sea level
-
-    0.00
-_____.___                  f10.3 Lower z-level (in m agl or m asl)
- 
-   10.00
-_____.___                  f10.3 Upper z-level (in m agl or m asl)
- 
-    20000                
-_________                  i9    Total number of particles to be released
-
-1.0000E00
-_.____E__                  e9.4  Total mass emitted
-
-RELEASE_TEST1
-________________________________________   character*40 comment
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+&RELEASES_CTRL
+ NSPEC=          1,
+ SPECNUM_REL=         108,
+ /
+&RELEASE
+ IDATE1=   20110310,
+ ITIME1=     120000,
+ IDATE2=   20110310,
+ ITIME2=     130000,
+ LON1=  15.004    ,
+ LON2=  15.054    ,
+ LAT1=  44.734    ,
+ LAT2=  44.784    ,
+ Z1=  1500.000000    ,
+ Z2=  3000.000000    ,
+ ZKIND=     1,
+ MASS=  2.1000E8    ,
+ PARTS=   2000000
+ COMMENT="TEST1                          ",
+ /
+&RELEASE
+ IDATE1=   20110310,
+ ITIME1=     120000,
+ IDATE2=   20110310,
+ ITIME2=     130000,
+ LON1=  20.004    ,
+ LON2=  20.054    ,
+ LAT1=  44.734    ,
+ LAT2=  44.784    ,
+ Z1=  1500.000000    ,
+ Z2=  3000.000000    ,
+ ZKIND=     1,
+ MASS=  2.0000E8    ,
+ PARTS=   2000000
+ COMMENT="TEST2                          ",
+ /
