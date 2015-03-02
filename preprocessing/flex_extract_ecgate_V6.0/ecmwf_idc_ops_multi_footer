@@ -1,0 +1,33 @@
+# go to next date 12 hours later
+
+       if [ $(($MSJ%100)) -eq 0 ] ; then
+          MSJ=$(($MSJ+12))
+       else
+          MSJ=$(($MSJ+88))
+       fi
+
+       
+          if [ $MSJ_MONTH -eq 2 ]
+          then
+          DDD=28
+          [ `expr \$YYY \% 4` -eq 0 ] && DDD=29
+          elif [ $MSJ_MONTH -eq 4 -o $MSJ_MONTH -eq 6 -o $MSJ_MONTH -eq 9 -o $MSJ_MONTH -eq 11 ]
+          then
+          DDD=30
+          else
+          DDD=31
+          fi
+
+       if [ $MSJ_DAY -gt $DDD ] ; then
+          MSJ_DAY=1
+          MSJ_MONTH=$(($MSJ_MONTH+1))
+       fi
+       if [ $MSJ_MONTH -gt 12 ] ; then
+          MSJ_MONTH=1
+          MSJ_YEAR=$(($MSJ_YEAR+1))
+       fi
+       
+
+
+# close 
+done

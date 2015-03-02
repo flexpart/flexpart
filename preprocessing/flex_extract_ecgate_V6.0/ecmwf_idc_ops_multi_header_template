@@ -1,0 +1,83 @@
+#!/bin/ksh
+
+#SBATCH --workdir=/scratch/ms/ggg/xxx
+#SBATCH --qos=normal
+#SBATCH --job-name=flex_ecmwf_oper
+#SBATCH --output=ms_sms_output_Vv.v/CTBTO_ops.out
+#SBATCH --error=ms_sms_output_Vv.v/CTBTO_ops.out
+#SBATCH --mail-type=ALL
+#SBATCH --time=12:00:00
+
+
+set -x
+
+alias ecp='set noglob; $ECFS_SYS_PATH/ecp.p'
+
+export OMP_NUM_HREADS=1
+
+
+
+###########################
+
+# ADD BEGIN AND END HERE  #
+
+###########################
+
+   MSJ_START=2013110700
+   MSJ_END=2013110812
+
+
+###########################
+
+# NO CHANGES BELOW        #
+
+###########################
+
+VERSION=v.v
+JOBNAME=ecmwf_idc_ops_ecgate_V${VERSION}
+CONTROLFILE=${HOME}/flex_extract_ecgate_V${VERSION}/CONTROL_OPS_V${VERSION}
+
+WDAY=$(date +%A)
+[ ! -d $SCRATCH/ms_sms_output_V${VERSION} ] && mkdir $SCRATCH/ms_sms_output_V${VERSION}
+
+LOG_FILE=$SCRATCH/ms_sms_output_V${VERSION}/${JOBNAME}_${WDAY}
+exec 1>${LOG_FILE}
+
+[ -z "$WSHOME" ] && export WSHOME=$HOME
+
+   DAY1=$(($MSJ_START/100))
+   DAY2=$(($MSJ_END/100))
+   TDIFF=$(( (`date +%s -d $DAY2` - `date +%s -d $DAY1` )/86400 ))
+   if [[ $TDIFF -lt 0 || $TDIFF -gt 31 ]] ; then
+     echo invalid difference $TDIFF between dates $1, $2
+     echo difference must be positive and smaller than 32
+     exit
+   fi
+
+
+       MSJ=$MSJ_START
+       MSJ_YEAR=$(( ($MSJ/1000000)))
+       while [ $MSJ -le $MSJ_END ]
+       do
+
+       MSJ_MONTH=$(( ($MSJ%1000000)/10000))
+       MSJ_DAY=$(( ($MSJ%10000)/100))
+       MSJ_BASETIME=$(($MSJ%100))
+
+       if [ $MSJ_MONTH -lt 10 ] ; then
+          MSJ_MONTH='0'$MSJ_MONTH
+       fi
+       if [ $MSJ_DAY -lt 10 ] ; then
+          MSJ_DAY='0'$MSJ_DAY
+       fi
+       if [ $MSJ_BASETIME -lt 10 ] ; then
+          MSJ_BASETIME='0'$MSJ_BASETIME
+       fi
+
+       MSJ=$MSJ_YEAR$MSJ_MONTH$MSJ_DAY$MSJ_BASETIME
+
+       echo 'MSJ_ENVIRONMENT:' $MSJ
+
+       DATEREF=${MSJ_YEAR}${MSJ_MONTH}${MSJ_DAY}
+
+

@@ -1,0 +1,8 @@
+#!/bin/ksh
+
+#$1 should be V4.1 or V6.0 or ..
+
+ecaccess-file-mkdir flex_extract_ecgate_$1 >/dev/null
+ecaccess-file-put source.tar flex_extract_ecgate_$1/source.tar
+ecaccess-file-dir "flex_extract_ecgate_$1/*"
+ecaccess-file-mkdir scratch:ms_sms_output_$1 >/dev/null

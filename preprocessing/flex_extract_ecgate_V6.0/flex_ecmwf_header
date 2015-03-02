@@ -1,0 +1,67 @@
+#!/bin/ksh
+
+# On demand script for retrieving input for FLEXPART trajectory model
+# Version 6.0, September 2013
+# Maintainer Leopold Haimberger leopold.haimberger@univie.ac.at
+#
+#@ shell       = /usr/bin/ksh
+
+# NOTE: If calculation on Gaussian grid are required below, it is
+#       recommended to send the job to the ECMWF HPC facility
+# NOTE: On hpce the class should be ns or np
+# NOTE: On ecgb it should be normal
+
+
+#ON HPC (with loadleveler)
+# start with ecaccess-job-submit -queueName c1a NAME_OF_THIS_FILE  on gateway server
+# start with llsubmit NAME_OF_THIS_FILE directly on machine
+
+#@ shell       = /usr/bin/ksh
+#@ class        = ns
+#@ resources    = ConsumableCpus(1) ConsumableMemory(32000MB)
+#@ job_name     = flex_ecmwf
+#@ output       = /scratch/ms/spatlh00/lh0/$(job_name).$(host).$(jobid).out
+#@ error        = /scratch/ms/spatlh00/lh0/$(job_name).$(host).$(jobid).out
+#@ environment  = COPY_ALL
+#@ queue
+
+
+# ON ECGB:
+# start with ecaccess-job-submit -queueName ecgb NAME_OF_THIS_FILE  on gateway server
+# start with sbatch NAME_OF_THIS_FILE directly on machine
+
+#SBATCH --workdir=/scratch/ms/spatlh00/lh0
+#SBATCH --qos=normal
+#SBATCH --job-name=flex_ecmwf
+#SBATCH --output=flex_ecmwf.%j.out
+#SBATCH --error=flex_ecmwf.%j.out
+#SBATCH --mail-type=FAIL
+#SBATCH --time=12:00:00
+
+set -x
+
+JOBNAME=flex_ecmwf_${HOST}
+
+env
+ulimit -a
+export OMP_NUM_THREADS=1
+export MARS_MULTITARGET_STRICT_FORMAT=1
+
+#export SCRATCH=$TEMP
+export SCRATCHDIR=${SCRATCH}/${JOBNAME}_$$
+[ -z "$WSHOME" ] && WSHOME=$HOME
+
+
+mkdir $SCRATCHDIR
+cd $SCRATCHDIR
+
+LOG_FILE=$SCRATCHDIR/${JOBNAME}_$$
+exec 1>${LOG_FILE}
+
+CONTROLFILE=./CONTROL_ERA
+
+###################################
+#BEGIN: modification of config file
+###################################
+
+cat <<EOF >CONTROL_ERA
