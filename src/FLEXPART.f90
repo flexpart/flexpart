@@ -61,7 +61,8 @@ program flexpart
 
   ! FLEXPART version string
   ! flexversion='Version 9.2 beta (2014-07-01)'
-  flexversion='Version 9.2.0.1 (2015-01-27)'
+  !flexversion='Version 9.2.0.1 (2015-01-27)'
+  flexversion='Version 9.2.0.2 (2015-03-01)'
   ! default inlide options
   inline_options='none'
   !verbosity flags  defined in com_mod.f90
@@ -112,7 +113,6 @@ program flexpart
        verbosity=2
        endif
        print*, 'verbosity level=', verbosity !inline_options(index_v+1:index_v+1)
-              
     endif
     !iif (trim(inline_options).eq.'-v2') then
     !   print*, 'Verbose mode 2: display more detailed information during run'
@@ -120,33 +120,24 @@ program flexpart
     !endif
 
     if (index(inline_options,'i').gt.0) then   
-    !if (trim(inline_options).eq.'-i') then
        index_v=index(inline_options,'i')
-       print*, 'Info mode: provide run specific information and stop'
+       print*, 'Info mode: provide compile and run specific information, then stop'
        verbosity=1
        info_flag=1
-       !if (trim(inline_options).eq.'-i2') then
        if (inline_options(index_v+1:index_v+1).eq.'2') then
-           print*, 'Including input files'
-       !   verbosity=1
        info_flag=2
        endif
     endif
-    !if (trim(inline_options).eq.'-i2') then
-    !   print*, 'Info mode: provide more detailed run specific information and stop'
-    !   verbosity=1
-    !   info_flag=2
-    !endif
     if (index(inline_options,'t').gt.0) then
        time_flag=1
-       print*, 'timing execution: not implemented'
+       print*, 'timing execution activated'
        !stop
     endif
     if (index(inline_options,'d').gt.0) then
        debug_flag=1
-       print*, 'debug: not implemented'
+       print*, 'debug messages activated'
        print*, 'debug_flag=', debug_flag
-       !stop
+       !these messages give additional info on top on verbose mode
     endif 
   endif
            
@@ -185,7 +176,7 @@ program flexpart
   !*******************************************************
 
   if (verbosity.gt.0) then
-    write(*,*) 'call readcommand'
+    write(*,*) 'FLEXPART> call readcommand'
   endif
   call readcommand
   if (verbosity.gt.0) then
@@ -201,7 +192,7 @@ program flexpart
   ! Read the age classes to be used
   !********************************
   if (verbosity.gt.0) then
-    write(*,*) 'call readageclasses'
+    write(*,*) 'FLEXPART> call readageclasses'
   endif
   call readageclasses
 
@@ -214,7 +205,7 @@ program flexpart
   !******************************************************************
 
   if (verbosity.gt.0) then
-    write(*,*) 'call readavailable'
+    write(*,*) 'FLEXPART> call readavailable'
   endif  
   call readavailable
 
@@ -233,7 +224,7 @@ program flexpart
   endif      
 
   if (verbosity.gt.0) then
-    write(*,*) 'call gridcheck_nests'
+    write(*,*) 'FLEXPART> call gridcheck_nests'
   endif  
   call gridcheck_nests
 
@@ -295,7 +286,7 @@ program flexpart
   !****************************************************************
 
   if (verbosity.gt.0) then
-    print*,'call readdepo'
+    print*,'FLEXPART> call readdepo'
   endif
   call readdepo
 
@@ -304,14 +295,14 @@ program flexpart
 
   call coordtrafo  
   if (verbosity.gt.0) then
-    print*,'call coordtrafo'
+    print*,'FLEXPART> call coordtrafo'
   endif
 
   ! Initialize all particles to non-existent
   !*****************************************
 
   if (verbosity.gt.0) then
-    print*,'Initialize all particles to non-existent'
+    print*,'FLEXPART> Initialize all particles to non-existent'
   endif
   do j=1,maxpart
     itra1(j)=-999999999
@@ -322,12 +313,12 @@ program flexpart
 
   if (ipin.eq.1) then
     if (verbosity.gt.0) then
-      print*,'call readpartpositions'
+      print*,'FLEXPART> call readpartpositions'
     endif
     call readpartpositions
   else
     if (verbosity.gt.0) then
-      print*,'set numpart=0, numparticlecount=0'
+      print*,'FLEXPART> set numpart=0, numparticlecount=0'
     endif    
     numpart=0
     numparticlecount=0
@@ -338,7 +329,7 @@ program flexpart
   !***************************************************************
 
   if (verbosity.gt.0) then
-    print*,'call outgrid_init'
+    print*,'FLEXPART> call outgrid_init'
   endif
   call outgrid_init
   if (nested_output.eq.1) call outgrid_init_nest
@@ -348,7 +339,7 @@ program flexpart
 
   if (OHREA.eqv..TRUE.) then
     if (verbosity.gt.0) then
-      print*,'call readOHfield'
+      print*,'FLEXPART> call readOHfield'
     endif
     call readOHfield
   endif
@@ -358,7 +349,7 @@ program flexpart
   !******************************************************************
 
   if (verbosity.gt.0) then
-    print*,'call writeheader'
+    print*,'FLEXPART> call variuos writeheader routines'
   endif
 
   call writeheader
@@ -372,7 +363,7 @@ program flexpart
   !open(unitdates,file=path(2)(1:length(2))//'dates')
 
   if (verbosity.gt.0) then
-    print*,'call openreceptors'
+    print*,'FLEXPART> call openreceptors'
   endif
   call openreceptors
   if ((iout.eq.4).or.(iout.eq.5)) call openouttraj
@@ -381,7 +372,7 @@ program flexpart
   !***************************************************************************
 
   if (verbosity.gt.0) then
-    print*,'discretize release times'
+    print*,'FLEXPART> discretize release times'
   endif
   do i=1,numpoint
     ireleasestart(i)=nint(real(ireleasestart(i))/real(lsynctime))*lsynctime
@@ -392,7 +383,7 @@ program flexpart
   !************************************************************
 
   if (verbosity.gt.0) then
-    print*,'Initialize cloud-base mass fluxes for the convection scheme'
+    print*,'FLEXPART> Initialize cloud-base mass fluxes for the convection scheme'
   endif
 
   do jy=0,nymin1
@@ -416,11 +407,11 @@ program flexpart
     write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
   endif
   if (info_flag.eq.2) then
-    print*, 'info only mode (stop before call timemanager)'
+    print*, 'FLEXPART> info only mode (stop before call timemanager)'
     stop
   endif
   if (verbosity.gt.0) then
-     print*,'call timemanager'
+     print*,'FLEXPART> call timemanager'
   endif
 
   call timemanager

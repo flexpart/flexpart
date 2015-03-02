@@ -139,6 +139,9 @@ subroutine timemanager
   endif
 
   do itime=0,ideltas,lsynctime
+    if (verbosity.gt.0) then
+           write (*,*) 'timemanager>  itime=', itime
+    endif
 
 
   ! Computation of wet deposition, OH reaction and mass transfer
@@ -196,9 +199,9 @@ subroutine timemanager
   ! Release particles
   !******************
 
-    if (verbosity.gt.0) then
-           write (*,*) 'timemanager>  Release particles'
-    endif 
+    !if (verbosity.gt.0) then
+    !       write (*,*) 'timemanager>  Release particles'
+    !endif 
 
     if (mdomainfill.ge.1) then
       if (itime.eq.0) then
@@ -214,7 +217,7 @@ subroutine timemanager
       endif
     else
       if (verbosity.gt.0) then
-        print*,'call releaseparticles'  
+        print*,'timemanager> call releaseparticles'  
       endif
       call releaseparticles(itime)
       if (verbosity.gt.1) then

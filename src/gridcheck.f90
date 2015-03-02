@@ -285,6 +285,14 @@ subroutine gridcheck
     xaux2=xaux2in
     yaux1=yaux1in
     yaux2=yaux2in
+     if (verbosity.gt.1) then
+        print*, 'longitudeOfFirstGridPointInDegrees', xaux1in
+        print*, 'longitudeOfLastGridPointInDegrees ', xaux2in
+        print*, 'latitudeOfLastGridPointInDegrees  ', yaux1in
+        print*, 'latitudeOfFirstGridPointInDegrees ', yaux2in
+ 
+     endif 
+ 
     if (xaux1.gt.180.) xaux1=xaux1-360.0
     if (xaux2.gt.180.) xaux2=xaux2-360.0
     if (xaux1.lt.-180.) xaux1=xaux1+360.0
@@ -444,11 +452,11 @@ subroutine gridcheck
 
   write(*,'(a,2i7)') ' Vertical levels in ECMWF data: ', &
        nuvz+1,nwz
-  write(*,*)
-  write(*,'(a)') 'gridcheck> Mother domain:'
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') 'gridcheck>  Longitude range: ', &
+  !write(*,*)
+  write(*,'(a)') ' Mother domain:'
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') ' Longitude range: ', &
        xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') 'gridcheck>  Latitude range : ', &
+  write(*,'(a,f10.5,a,f10.5,a,f10.5)') ' Latitude range : ', &
        ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
   write(*,*)
 

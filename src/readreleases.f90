@@ -258,7 +258,9 @@ subroutine readreleases
   allocate(xmasssave(numpoint),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate xmasssave'
 
-  write (*,*) 'readreleases> Releasepoints : ', numpoint
+  if (verbosity.gt.0) then
+    write (*,*) 'readreleases> Releasepoints : ', numpoint
+  endif
 
   do i=1,numpoint
     xmasssave(i)=0.
@@ -366,18 +368,26 @@ subroutine readreleases
     if (weta(i).gt.0.)  then
       WETDEP=.true.
       write (*,*) 'Below-cloud scavenging: ON'
+      if (verbosity.gt.0) then
       write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
+      endif
     else
+      if (verbosity.gt.0) then
       write (*,*) 'Below-cloud scavenging: OFF'
+      endif
     endif
     
     ! NIK 31.01.2013 + 10.12.2013
     if (weta_in(i).gt.0.)  then
       WETDEP=.true.
       write (*,*) 'In-cloud scavenging: ON'
+      if (verbosity.gt.0) then 
       write (*,*) 'In-cloud scavenging coefficients: ',weta_in(i),wetb_in(i), wetc_in(i), wetd_in(i),i
-    else
-      write (*,*) 'In-cloud scavenging: OFF' 
+      endif  
+  else
+      if (verbosity.gt.0) then
+      write (*,*) 'In-cloud scavenging: OFF'
+      endif 
     endif
 
     if (ohreact(i).gt.0) then
