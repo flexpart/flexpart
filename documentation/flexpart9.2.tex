@@ -1,0 +1,2835 @@
+%% Version of source file:
+%% Date: 2003 July
+%%  **************************************
+%   *  TEMPLATE FOR EGU STYLE        *
+%   * FOR ARTICLES IN JOURNALS AND BOOKS *
+%%  **************************************
+%  Various alternatives for the input are shown, commented out.
+%  E.g., for the documentstyle options
+%        for the bibliography
+%  Feel free to play around with these variations, especially with
+%    the style options ms and twocolumn and 11pt/12pt
+
+ %%%% LATEX2E: SELECT ONE OF THE NEXT LINES
+\documentclass{egu}            % MANUSCRIPT, 10PT TYPE SIZE
+%\documentclass[ms,11pt]{egu}       % MANUSCRIPT, 11PT TYPE SIZE
+%\documentclass{egu}                 % for EGU TWO-COLUMN REVISED COPY
+%% <<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+%%   REMOVE THIS LINE ONLY IF IT CAUSES PROBLEMS
+  \usepackage{times}                   % WITH TIMES ROMAN FONT
+% ^^^^^^^^^^^^^^^^^^
+%%   This is STRONGLY recommended for the revised version!!
+%% <<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+%% ADD THIS PACKAGE IF GRAPHICS ARE TO BE IMPORTED
+\usepackage{graphicx} 
+\usepackage{amsmath} 
+%\usepackage{psfig}
+
+\printfigures              % PRINTS OUT FIGURES AT END OF MANUSCRIPT 
+\newcommand{\degreee}{{$\, \rm ^{\circ}$}}
+\newcommand{\degreen}{{$\, \rm ^{\circ}$~}}
+
+\begin{document} 
+
+\title{The Lagrangian particle dispersion model FLEXPART version 9.2}
+
+\author[1]{A. Stohl}
+\author[1]{H. Sodemann}
+\author[1]{S. Eckhardt}
+\author[2]{A. Frank}
+\author[2]{P. Seibert}
+\author[3]{G. Wotawa}
+
+\affil[1]{Norwegian Institute of Air Research, Kjeller, Norway}
+\affil[2]{Institute of Meteorology, University of Natural Resources and Applied Life Sciences, Vienna, Austria}
+\affil[3]{Preparatory Commission for the Comprehensive Nuclear Test Ban Treaty Organization, Vienna, Austria}
+
+\runningtitle{FLEXPART description}
+\runningauthor{Stohl et al.}
+%\runninghead{} % This may also be used instead of \runningtitle and \runningauthor
+
+\correspondence{A. Stohl (ast@nilu.no)}
+
+
+%\journal{ACP}       % for NONLINEAR PROCESSES IN GEOPHYSICS
+
+\date{Manuscript version from 29 November 2010}
+
+% ADDITIONAL NON-STANDARD COMMANDS FOR TITLE BLOCK INFORMATON
+\firstauthor{Stohl}
+%\proofs{A. Stohl\\
+%Norwegian Institute for Air Research\\
+%Instituttveien 18, 2027 Kjeller, Norway}
+%\offsets{A. Stohl\\
+%Norwegian Institute for Air Research\\
+%Instituttveien 18, 2027 Kjeller, Norway}
+
+% The manuscript number is supplied by the editorial office
+\msnumber{12345}
+
+% The following commands will be activated by the EGU editorial/production office
+% after inserting appropriate values.
+
+
+\maketitle % YOU MUST USE THE \maketitle COMMAND
+
+\begin{abstract}
+The Lagrangian particle dispersion model FLEXPART was originally (in its first
+release in 1998) designed for calculating the long-range and mesoscale
+dispersion of air pollutants from point sources, such as after an accident in a
+nuclear power plant.  In the meantime FLEXPART has evolved into a comprehensive
+tool for atmospheric transport modeling and analysis.  Its application fields
+were extended from air pollution studies to other topics where atmospheric
+transport plays a role (e.g., exchange between the stratosphere and
+troposphere, or the global water cycle).  It has evolved into a true community
+model that is now being used by at least 35 groups from 14 different countries
+and is seeing both operational and research applications.  The last citable
+manuscript for FLEXPART is: \citep{stohl2005}
+\end{abstract}
+
+\section{Updates since FLEXPART version 8.0} 
+
+In this version 8.2 of FLEXPART the representation of physical processes was
+improved as well as a number of technical changes and bugfixes implemented.  In
+addition, the program is now released under a GNU GPL license.  For the first
+time, detailed installation instructions are provided to help users getting
+started with running FLEXPART.  A short section on the new Python routines
+pflexpart for reading FLEXPART output data has been included as well.
+\bigskip
+
+\noindent {\bf Technical Changes:}
+
+\begin{itemize} 
+
+\item grib2 compatibility for ECMWF data which will be introduced soon (new
+data retrieval routines available)
+
+\item AVAILABLE files can now contain up to 256 characters, and include the
+path directly with the input file name.  This is used to gather data files
+stored in different directories.  The third line in the \verb|pathnames| file
+should be left empty if long data file names are used.
+
+\item The code was updated to work with the ECMWF grib\_api V1.6.1 and above
+(tested up to 1.9.5)
+
+\item An important bug the concentration output routines was fixed.  A
+numerical problem lead in some circumstances to garbled data.  The header
+version identifier has been changed to version 8.2.  New routines for loading
+data available for download on the FLEXPART homepage.
+
+\item Several bugs in the wet deposition parameterization were fixed.
+
+\item A bug which lead to ignoring landuses that was introduced in version 8.0
+has been fixed.
+
+\item Several bugs concerning nested grids have been fixed.
+
+\end{itemize}
+
+\noindent {\bf Algorithm Changes:}
+
+\begin{itemize}
+
+\item A new, more detailed settling parameterisation for aerosols was
+implemented.  The dynamic viscosity of air is now calculated as a function of
+temperature, and the calculation of settling velocities is now more accurate
+for higher Reynolds numbers.
+
+\item It is now possible to produce output files for backward runs that can be used
+to interface FLEXPART with model output from another model or from a FLEXPART
+forward run.  A gridded output file containing the exact sensitivities to these
+initial conditions can produced.  To this end, a new switch has been added in
+the COMMAND file.
+
+\end{itemize}
+
+\section{Introduction}
+
+Lagrangian particle models compute trajectories of a large number of so-called
+particles (not necessarily representing real particles, but infinitesimally
+small air parcels) to describe the transport and diffusion of tracers in the
+atmosphere.  The main advantage of Lagrangian models is that, unlike in
+Eulerian models, there is no numerical diffusion.  Furthermore, in Eulerian
+models a tracer released from a point source is instantaneously mixed within a
+grid box, whereas Lagrangian models are independent of a computational grid and
+have, in principle, infinitesimally small resolution.
+
+The basis for current atmospheric particle models was laid by
+\citet{thomson1987}, who stated the criteria that must be fulfilled in order
+for a model to be theoretically correct.  A monograph on the theory of
+stochastic Lagrangian models was published by \citet{rodean1996} and another
+good review was written by \citet{wilson1996}.  The theory of modeling
+dispersion backward in time with Lagrangian particle models was developed by
+\citet{flesch1995} and \citet{seibert2004}.  Reviews of the more practical
+aspects of particle modeling were provided by \citet{zannetti1992} and
+\citet{uliasz1994}.
+
+This note describes FLEXPART, a Lagrangian particle dispersion model that
+simulates the long-range and mesoscale transport, diffusion, dry and wet
+deposition, and radioactive decay of tracers released from point, line, area or
+volume sources.  It can also be used in a domain-filling mode where the entire
+atmosphere is represented by particles of equal mass.  FLEXPART can be used
+forward in time to simulate the dispersion of tracers from their sources, or
+backward in time to determine potential source contributions for given
+receptors.  The management of input data was largely taken from FLEXTRA, a
+kinematic trajectory model \citep{stohl1995}.  FLEXPART's first version was
+developed during the first author's military service at the
+nuclear-biological-chemical school of the Austrian Forces, the deposition code
+was added soon later (version 2), and this version was validated using data
+from three large tracer experiments \citep{stohletal1998}.  Version 3 saw
+performance optimizations and the development of a density correction
+\citep{stohlthomson1999}.  Further updates included the addition of a
+convection scheme \citep{seibertetal2001} (version 4), better backward
+calculation capabilities \citep{seibert2004}, and improvements in the
+input/output handling (version 5).  Validation was done during intercontinental
+air pollution transport studies \citep{stohl1999, forster2001, spichtinger2001,
+stohl2002, stohl2003}, for which also special developments for FLEXPART were
+made in order to extend the forecasting capabilities \citep{stohl2004}.
+Version 6.2 saw corrections to the numerics in the convection scheme, the
+addition of a domain-filling option, and the possibility to use output nests.
+Version 6.4 runs with NCEP GFS model data.  Version 7.0 was a transition
+version that was not publicly released.  Version 8.0 was a major release.  It
+unifies the ECMWF and GFS model versions in one source package. GFS data in
+GRIB2 format can be read, using ECMWF's grib\_api library. Each species
+got its own definition file.  Output can be written individually for multiple
+species in backward runs.  The output format was changed to a compressed sparse
+matrix format.  Memory is partly allocated dynamically.  Furthermore, dry and
+wet deposition algorithms were updated and new, global landuse inventory
+introduced.  OH reaction based on a monthly averaged 3 dimensional OH-field is
+available as an option.
+
+FLEXPART is coded following the Fortran 95 standard and tested with several
+compilers (gfortran, Absoft, Portland Group) under a number of operating
+systems (Linux, Solaris, Mac~OS~X, etc.).  The code is carefully documented and
+optimized for run-time performance.  No attempts have been made to parallelize
+the code because the model is strictly linear and, therefore, it is most
+effective to partition problems such that they run on single processors and to
+combine the results if needed.
+
+FLEXPART's source code and a manual are freely available from the internet page
+http://transport.nilu.no/flexpart.  According to a recent user survey, at least
+34 groups from 17 countries are currently using FLEXPART.  The user community
+maintains discussion by a mailing list to which one can subscribe on the
+flexpart home page.  The version of FLEXPART described here is based on model
+level data of the numerical weather prediction model of the European Centre for
+Medium-Range Weather Forecasts (ECMWF).  The standard source code distribution
+contains also the source files for a version of FLEXPART using the global
+National Centers of Environmental Prediction (NCEP) model data on pressure
+levels.  Other users have developed FLEXPART versions using input data from a
+suite of different and meso-scale (e.g.  MM5, WRF, COSMO) models, some of which
+are available from the FLEXPART website but are not described here.
+
+\section{License}
+
+FLEXPART has been free software ever since it first was released. The status as
+a free software is now more formally established by releasing the code under
+the GNU General Public License (GPL) Version 3.  The text of the license is
+included in the file COPYING in the source code archive.
+
+\section{Installation}\label{sec:installation}
+
+Getting FLEXPART up and running on their systems has been a major hurdle to many
+new users of the software. Since the inclusion of the grib\_api library has further
+complicated the compilation of FLEXPART, we include a step-by-step installation
+instruction of FLEXPART.  The steps below are described for an Ubunto 10.4 LT
+UNIX release.
+
+\subsection{Installing required libraries}
+
+In order to process input files in GRIB2 format, FLEXPART V8.2 needs to be
+compiled with ECMWF's grib\_api library version 1.6.1 and above.  Since the API
+of the grib\_api library may change in the future, upward compatibility cannot
+be guaranteed.  The input files in GRIB2 format can be compressed to save
+bandwitdth and storage space.  In order to make use of this feature, the jasper
+library needs to be installed on the system.  Optionally, the emos library can
+be used to run FLEXPART with input files in GRIB1 format.
+
+\noindent The following steps should be executed in sequence:
+
+\subsubsection{Install jasper library (Version 1.900.1)}
+
+Download the jasper library from the jasper project page\footnote{http://www.ece.uvic.ca/~mdadams/jasper/} 
+
+\begin{small}
+\begin{verbatim}
+unzip jasper-1.900.1.zip
+cd jasper-1.900.1
+./configure [--prefix=<installation path>]
+make
+make check
+make install
+\end{verbatim}
+\end{small}
+
+Parameters in brackets are optional but may require root privileges.  
+
+\subsubsection{Install grib\_api library (Version 1.6.1 or later)}
+  
+Download the grib\_api library from the ECMWF
+website\footnote{http://www.ecmwf.int/products/data/software/download/grib\_api.html}
+
+\begin{small}
+\begin{verbatim}
+tar -xvf grib_api-1.12.3.tar.gz
+./configure [--with-jasper=<jasper path>]
+make
+make check
+make install
+\end{verbatim}
+\end{small}
+
+\subsubsection{Optional: Install emos library (Version 000372)}
+
+Download the emos library from the ECMWF
+website\footnote{http://www.ecmwf.int/products/data/software/interpolation.html}
+
+\begin{small}
+\begin{verbatim}
+tar -xvf emos_000372.tar.gz
+./build_library
+./install
+\end{verbatim}
+\end{small}
+
+\subsection{Compiling FLEXPART V8.2}
+
+Download the FLEXPART source code archive from the FLEXPART
+homepage\footnote{http://transport.nilu.no/flexpart/flexpart/view}
+
+\begin{small}
+\begin{verbatim}
+tar -xvf flexpart82.tar.gz
+\end{verbatim}
+\end{small}
+optionally edit the file includepar to set parameters for the data center, grid
+dimension, and particle number edit the LIBRARY path variable in the makefiles
+according to the position of libgrib\_api and libjasper
+\begin{small}
+\begin{verbatim}
+make -f makefile.<center>_<compiler>_<system>
+\end{verbatim}
+\end{small}
+In the above statement, center can be one of: gfs, ecmwf, ecmwf\_emos,
+gfs\_emos compiler can be one of absoft or gfortran (emos library only with
+absoft) system can be one of 32, 64 (emos only 32).  The system parameter must
+match that of the compiled libraries. See also Table~\ref{tab:makefile} for all 
+available makefiles.
+
+When recompiling after making changes, all object and module files can be
+removed safely by using
+\begin{small}
+\begin{verbatim}
+make -f makefile.<xxx> clean
+\end{verbatim}
+\end{small}
+
+\begin{table*}
+\setlength{\tabcolsep}{1.1mm}
+\caption{\label{tab:makefile}
+List of available makefiles }
+\vspace{3mm}
+{\centerline{
+\begin{tabular}{llc} \hline
+Makefile GFS & Makefile ECMWF & GRIB version \\ 
+\hline
+makefile.gfs\_gfortran\_32 & makefile.ecmwf\_gfortran\_32 & 1/2 \\
+makefile.gfs\_gfortran\_64 & makefile.ecmwf\_gfortran\_64 & 1/2 \\
+makefile.gfs\_absoft\_32 & makefile.ecmwf\_absoft\_32 & 1/2 \\
+makefile.gfs\_absoft\_64 & makefile.ecmwf\_absoft\_64 & 1/2 \\
+makefile.gfs\_emos\_absoft\_32 & makefile.ecmwf\_emos\_absoft\_32 & 1 \\
+\hline
+\end{tabular}}}
+\end{table*}
+
+\section{Input data and grid definitions}
+
+FLEXPART is an off-line model that uses meteorological fields (analyses or
+forecasts) in Gridded Binary (GRIB) format in version 1 or 2 from the ECMWF
+numerical weather prediction model \citep{ecmwf1995} on a latitude/longitude
+grid and on native ECMWF model levels as input.  Optionally, GRIB data from 
+NCEP's GFS model, available on pressure levels, can be used.  The ECMWF data
+can be retrieved from the ECMWF archives using a pre-processor that is also
+available from the FLEXPART website but not described here.  The GRIB decoding
+libraries is {\it not} provided with the FLEXPART source codes but is publicly
+available (see Sec.~\ref{sec:installation}.  The data can be global or only
+cover a limited area.  Furthermore, higher-resolution domains can be nested
+into a mother domain.
+
+The file \verb|includepar| contains all relevant FLEXPART parameter settings,
+both physical constants and maximum field dimensions.  As the memory required
+by FLEXPART is determined by the various field dimensions, it is recommended
+that they are adjusted to actual needs before compilation.  The file
+\verb|includecom| defines all FLEXPART global variables and fields, i.e., those
+shared between most subroutines.
+
+\subsection{Input data organisation}
+
+A file \verb|pathnames| must exist in the directory where FLEXPART is started.
+It must contain at least four lines:\\ 1.  line: Directory where all the
+FLEXPART command files are stored.\\ 2.  line: Directory to which the model
+output is written.\\ 3.  line: Directory where the GRIB input fields are
+located.\\ 4.  line: Path name of the \verb|AVAILABLE| file (see below).\\ If
+nests with higher-resolution input data shall also be used, lines 3 and 4 must
+be repeated for every nest, thus also specifying the nesting level order.  Any
+number of nesting levels can be used up to a maximum (parameter
+\verb|maxnests|).
+
+The meteorological input data must be organised such that all data for a domain
+and a certain date must be contained in a single GRIB file.  The
+\verb|AVAILABLE| file lists all available dates and the corresponding file
+names.  For each nesting level, the input files must be stored in a different
+directory and the \verb|AVAILABLE| file must contain the same dates as for the
+mother domain.  Given a certain particle position, the last (i.e., innermost)
+nest is checked first whether it contains the particle or not.  If the particle
+resides in this nest, the meteorological data from this nest is interpolated
+linearly to the particle position.  If not, the next nest is checked, and so
+forth until the mother domain is reached.  There is no nesting in the vertical
+direction and the poles must not be contained in any nest.
+
+The maximum dimensions of the meteorological fields are specified by the
+parameters \verb|nxmax, nymax, nuvzmax, nwzmax, nzmax| in file
+\verb|includepar|, for x, y, and three z dimensions, respectively.  The three z
+dimensions are for the original ECMWF data (\verb|nuvzmax, nwzmax| for model
+half levels and model levels, respectively) and transformed data (\verb|nzmax|,
+see below), respectively.  The horizontal dimensions of the nests must be
+smaller than the parameters \verb|nxmaxn, nymaxn|.  Grid dimensions and other
+basic things are checked in routine \verb|gridcheck.f| (\verb|gridcheck_gfs.f|
+for the GFS version), and error messages are issued if necessary.
+
+The longitude/latitude range of the mother grid is also used as the
+computational domain.  All internal FLEXPART coordinates run from the
+western/southern domain boundary with coordinates (0,0) to the eastern/northern
+boundary with coordinates (nx-1,ny-1), where (nx,ny) are the mother grid
+dimensions.  For global input data, FLEXPART repeats the westernmost grid cells
+at the easternmost domain "boundary", in order to facilitate interpolation on
+all locations of the globe (e.g., if input data run from 0 to 359\degreen with
+1\degreen resolution, 0\degreen data are repeated at 360\degreee).  A global
+mother domain can be shifted by \verb|nxshift| (file \verb|includepar|) data
+columns (subroutines \verb|shift_field.f| and \verb|shift_field_0.f|) if nested
+input fields would otherwise overlap the "boundaries".  For instance, a domain
+stretching from 320\degreen to 30\degreen can be nested into the mother grid of
+the above example by shifting the mother grid by 30\degreee. The default setting
+for global ECMWF fields is \verb|nxshift=359|, while GFS fields the default
+value is \verb|nxshift=0|.
+
+\subsection{Vertical model structure and required data}
+
+FLEXPART needs five three-dimensional fields: horizontal and vertical wind
+components, temperature and specific humidity.  Input data must be on ECMWF
+model (i.e.  $\eta$) levels which are defined by a hybrid coordinate system.
+The conversion from $\eta$ to pressure coordinates is given by $p_k=A_k+B_kp_s$
+and the heights of the $\eta$ surfaces are defined by $\eta_k=A_k/p_0+B_k$,
+where $\eta_k$ is the value of $\eta$ at the $k^{\rm_{th}}$ model level, $p_s$
+is the surface pressure and $p_0=$101325 Pa.  $A_k$ and $B_k$ are coefficients,
+chosen such that the levels closest to the ground follow the topography, while
+the highest levels coincide with pressure surfaces; intermediate levels
+transition between the two.  The vertical wind in hybrid coordinates is
+calculated mass-consistently from spectral data by the pre-processor.  A
+surface level is defined in addition to the regular $\eta$ levels.  2~m
+temperature, 10~m winds and specific humidity from the first regular model
+level are assigned to this level, to represent "surface" values.
+
+Parameterized random velocities in the atmospheric boundary layer (ABL, see
+sections~\ref{PBLparameterization} and \ref{diffusion}) are calculated in units
+of m s$^{-1}$, and not in $\eta$ coordinates.  Therefore, in order to avoid
+time-consuming coordinate transformations every time step, all
+three-dimensional data are interpolated linearly from the ECMWF model levels to
+terrain-following Cartesian coordinates $\tilde{z}=z-z_t$, where $z_t$ is the
+height of the topography (subroutine \verb|verttransform.f|).  The conversion
+of vertical wind speeds from the eta coordinate system into the
+terrain-following co-ordinate system follows as
+
+\begin{equation}
+\tilde{w}=\dot{\tilde{z}}=\dot{\tilde{\eta}} \left( \frac{\partial p}{\partial z} \right)^{-1} + \left.\frac{\partial \tilde{z}}{\partial t}\right|_\eta +  \vec{v}_h \cdot \nabla_\eta \tilde{z}  \,
+\end{equation}
+
+where $\dot{\tilde{\eta}}=\dot{\eta} \partial p / \partial \eta$.  The second
+term on the right hand side is missing in the FLEXPART transformation because
+it is much smaller than the others.  One colleague has implemented this term in
+his version of FLEXPART and found virtually no differences (B.  Legras,
+personal communication).
+
+FLEXPART also needs the two-dimensional fields: surface pressure, total cloud
+cover, 10~m horizontal wind components, 2~m temperature and dew point
+temperature, large scale and convective precipitation, sensible heat flux,
+east/west and north/south surface stress, topography, land-sea-mask and subgrid
+standard deviation of topography.  The landuse inventory of \citet{belward1999}
+is provided in an extra file in the options directory (\verb|IGBP_int1.dat|).
+
+Note that GFS data is provided on pressure levels (currently 26) which requires
+that the FLEXPART code is compiled with a makefile for the GFS model. GFS data
+are freely available from the NCEP data archives. An example for a retrieval
+of GFS data files via ftp is given below:
+
+\begin{small}
+\begin{verbatim}
+cd $DIR_GFS_05TEMPORARY
+ftp ftpprd.ncep.noaa.gov << EOF11
+binary
+cd /pub/data/nccf/com/gfs/prod/gfs.2009111006
+get gfs.t06z.pgrb2f00 GF09111006
+quit
+EOF11
+\end{verbatim}
+\end{small}
+
+\subsection{Meteorological input data formats}
+
+While NCEP has already switched to the more flexible and compact GRIB2 format,
+the ECMWF is only gradually transitioning from GRIB1 to the new GRIB2 format.
+Transition to GRIB2 becomes necessary, at least for 3D fields, when the ECMWF
+increases the vertical resolution beyond 100 model levels in 2012 (which cannot
+be handled by the GRIB1 format).  Currently, GRIB2 codes have been defined for
+all 3D-fields required by FLEXPART, while definitions are still missing for a
+part of the 2D-fields.
+
+According to the ECMWF it may take another year to define the GRIB2 codes for
+all 2D-fields used by FLEXPART.  Therefore, in version 8.2, it is now possible
+to read in GRIB files that contain only GRIB1 coded fields, files that contain
+only GRIB2 coded fields, and files that contain mixed GRIB1/2 fields.  Such
+mixed GRIB1/2 files are produced by the current version 4 of the FLEXPART data
+retrieval routines (available from the FLEXPART hompage).
+
+\section[Physical parameterizations]{Physical parameterization of boundary layer parameters}
+
+\label{PBLparameterization} Accumulated surface sensible heat fluxes and
+surface stresses are available from ECMWF forecasts.  The pre-processor selects
+the shortest forecasts available for that date from the ECMWF archives and
+deaccumulates the flux data.  The total surface stress is computed from
+
+\begin{equation}
+\tau=\sqrt{\tau_1^2+\tau_2^2} \;,
+\end{equation}
+
+where $\tau_1$ and $\tau_2$ are the surface stresses in east/west and
+north/south direction, respectively.  Friction velocity is then calculated in
+subroutine \verb|scalev.f| as
+
+\begin{equation}
+u_*=\sqrt{\tau/\rho} \;,
+\end{equation}
+
+where $\rho$ is the air density \citep{wotawa1996}.  Friction velocities and
+heat fluxes calculated using this method are most accurate \citep{wotawa1997}.
+However, if deaccumulated surface stresses and surface sensible heat fluxes are
+not available, the profile method after \citet{berkowicz1982} (subroutine
+\verb|pbl_profile.f|) is applied to wind and temperature data at the second
+model level and at 10~m (for wind) and 2~m (for temperature) (note that
+previously the first model level was used; as ECMWF has its first model level
+now close to 10~m, the second level is used instead).  The following three
+equations are solved iteratively:
+
+\begin{equation}
+u_*=\frac{\kappa\Delta u}{\ln {\frac{z_l}{10}} -\Psi_m(\frac{z_l}{L}) +\Psi_m(\frac{10}{L})} \; ,
+\end{equation}
+
+\begin{equation}
+\Theta_*=\frac{\kappa\Delta \Theta}{0.74 \left[{\ln {\frac{z_l}{2}} -\Psi_h(\frac{z_l}{L}) +\Psi_h(\frac{2}{L})}\right]} \; ,
+\end{equation}
+
+\begin{equation}
+L= \frac{\overline{T}u_*^2}{g \kappa \Theta_*} \;,
+\end{equation}
+
+where $\kappa$ is the von K\'{a}rm\'{a}n constant (0.4), $z_l$ is the height of
+the second model level, $\Delta u$ is the difference between wind speed at the
+second model level and at 10~m, $\Delta \Theta$ is the difference between
+potential temperature at the second model level and at 2~m, $\Psi_m$ and
+$\Psi_h$ are the stability correction functions for momentum and heat
+\citep{businger1971, beljaars1991}, $g$ is the acceleration due to gravity,
+$\Theta_*$ is the temperature scale and $\overline{T}$ is the average surface
+layer temperature (taken as $T$ at the first model level).  The heat flux is
+then computed by
+
+\begin{equation}
+(\overline{w'\Theta_v'})_0=-\rho c_p u_* \Theta_* \;,
+\end{equation}
+
+where $\rho c_p$ is the specific heat capacity of air at constant pressure.
+
+ABL heights are calculated according to \citet{vogelezang1996} using the
+critical Richardson number concept (subroutine \verb|richardson.f|).  The ABL
+height $h_{mix}$ is set to the height of the first model level $l$ for which
+the Richardson number
+
+\begin{equation}
+Ri_l=\frac{(g/\Theta_{v1})(\Theta_{vl}-\Theta_{v1})(z_l-z_1)}{(u_l-u_1)^2+(v_l-v_1)^2+100u_*^2}\;,
+\label{richardson}
+\end{equation}
+
+exceeds the critical value of 0.25.  $\Theta_{v1}$ and $\Theta_{vl}$ are the
+virtual potential temperatures, $z_1$ and $z_l$ are the heights of, and
+$(u_1,v_1)$, and $(u_l,v_l)$ are the wind components at the 1$^{\rm st}$ and
+$l^{\rm th}$ model level, respectively.  The formulation of
+Eq.~\ref{richardson} can be improved for convective situations by replacing
+$\Theta_{v1}$ with
+
+\begin{equation}
+\Theta_{v1}'=\Theta_{v1}+8.5\frac{(\overline{w'\Theta_v'})_0}{w_* c_p}\;,
+\label{excess}
+\end{equation}
+
+where
+
+\begin{equation}
+w_*=\left[{ \frac{(\overline{w'\Theta_v'})_0 g h_{mix}}{\Theta_{v1} c_p} }\right]^{1/3}
+\end{equation}
+
+is the convective velocity scale.  The second term on the right hand side of
+Eq.~\ref{excess} represents a temperature excess of rising thermals.  As $w_*$
+is unknown beforehand, $h_{mix}$ and $w_*$ are calculated iteratively.
+
+Spatial and temporal variations of ABL heights on scales not resolved by the
+ECMWF model play an important role in determining the thickness of the layer
+over which tracer is effectively mixed.  The height of the convective ABL
+reaches its maximum value (say 1500~m) in the afternoon (say, at 1700 local
+time (LT)), before a much shallower stable ABL forms.  Now, if meteorological
+data are available only at 1200 and 1800 LT and the ABL heights at those times
+are, say, 1200~m and 200~m, and linear interpolation is used, the ABL height at
+1700 LT is significantly underestimated (370~m instead of 1500~m).  If tracer
+is released at the surface shortly before the breakdown of the convective ABL,
+this would lead to a serious overestimation of the surface concentrations (a
+factor of four in the above example).  Similar arguments hold for spatial
+variations of ABL heights due to complex topography and variability in landuse
+or soil wetness \citep{hubbe1997}.  The thickness of a tracer cloud traveling
+over such a patchy surface would be determined by the maximum rather than by
+the average ABL height.
+
+In FLEXPART a somewhat arbitrary parameterization is used to avoid a
+significant bias in the tracer cloud thickness and the surface tracer
+concentrations.  To account for spatial variations induced by topography, we
+use an "envelope" ABL height
+
+\begin{equation}
+H_{env}=h_{mix}+\min \left[\sigma_Z, c \frac{V}{N} \right]\; .
+\end{equation}
+
+Here, $\sigma_Z$ is the standard deviation of the ECMWF model subgrid
+topography, $c$ is a constant (here: 2.0), $V$ is the wind speed at height
+$h_{mix}$, and $N$ is the Brunt-Vaisala frequency.  Under convective
+conditions, the envelope ABL height is, thus, the diagnosed ABL height plus the
+subgrid topography (assuming that the ABL height over the hill tops effectively
+determines the dilution of a tracer cloud located in a convective ABL).  Under
+stable conditions, air tends to flow around topographic obstacles rather than
+above it, but some lifting is possible due to the available kinetic energy.
+$\frac{V}{N}$ is the local Froude number (i.e., the ratio of inertial to
+buoyant forces) times the length scale of the sub-grid topographic obstacle.
+The factor $c \frac{V}{N}$, thus, limits the effect of the subgrid topography
+under stable conditions, with $c=2$ being a subjective scaling factor.
+$H_{env}$ rather than $h_{mix}$ is used for all subsequent calculations.  In
+addition, $H_{env}$ is not interpolated to the particle position, but the
+maximum $H_{env}$ of the grid points surrounding a particle's position in space
+and time is used.
+
+\section{\label{diffusion}Particle transport and diffusion}
+
+\subsection{Particle trajectory calculations}
+
+FLEXPART generally uses the simple ``zero acceleration'' scheme 
+
+\begin{equation}
+{\vec{X}}(t+\Delta t)={\vec{X}}(t)+{\vec{v}}({\vec{X}},t) \Delta t\,,
+\label{firstorder}
+\end{equation}
+
+which is accurate to the first order, to integrate the trajectory equation \citep{stohl1998}
+
+\begin{equation}
+\frac{d {\vec{X}}}{dt}={\vec{v}}[{\vec{X}}(t)] \,,
+\end{equation}
+
+with $t$ being time, $\Delta t$ the time increment, ${\vec{X}}$ the position
+vector, and ${\vec{v}}=\overline{\vec{v}}+{\vec{v}}_t+{\vec{v}}_m$ the wind
+vector that is composed of the grid scale wind $\overline{\vec{v}}$, the
+turbulent wind fluctuations ${\vec{v}}_t$ and the mesoscale wind fluctuations
+${\vec{v}}_m$.
+
+Since FLEXPART version 5.0, numerical accuracy has been improved by making one
+iteration of the \citet{petterssen1940} scheme (which is accurate to the second
+order) whenever this is possible, but only for the grid-scale winds.  It is
+implemented as a correction applied to the position obtained with the ``zero
+acceleration'' scheme.  In three cases it cannot be applied.  First, the
+Petterssen scheme needs winds at a second time which may be outside the time
+interval of the two wind fields kept in memory.  Second, if a particle crosses
+the boundaries of nested domains, and third in the ABL if \verb|ctl|$>0$ (see
+below).
+
+Particle transport and turbulent dispersion are handled by the subroutine
+\verb|advance.f| where calls are issued to procedures that interpolate winds
+and other data to the particle position and the Langevin equations (see below)
+are solved.  The poles are singularities on a latitude/longitude grid.  Thus,
+horizontal winds (variables \verb|uu,vv|) poleward of latitudes
+(\verb|switchnorth, switchsouth|) are transformed to a polar stereographic
+projection (variables \verb|uupol,vvpol|) on which particle advection is
+calculated.  As \verb|uupol,vvpol| are also stored on the latitude/longitude
+grid, no additional interpolation is made.
+
+\subsection{The Langevin equation}
+
+Turbulent motions ${\vec{v}}_{t}$ for wind components $i$ are parameterized
+assuming a Markov process based on the Langevin equation \citep{thomson1987}
+
+\begin{equation}
+dv_{t_i}=a_i({\vec{x}},{\vec{v}}_t,t)dt+b_{ij}({\vec{x}},{\vec{v}}_t,t)dW_
+j \,,
+\label{langevin}
+\end{equation}
+
+where the drift term $a$ and the diffusion term $b$ are functions of the
+position, the turbulent velocity and time.  $dW_j$ are incremental components
+of a Wiener process with mean zero and variance $dt$, which are uncorrelated in
+time \citep{legg1982}.  Cross-correlations between the different wind
+components are also not taken into account, since they have little effect for
+long-range dispersion \citep{uliasz1994}.
+
+Gaussian turbulence is assumed in FLEXPART, which is strictly valid only for
+stable and neutral conditions.  Under convective conditions, when turbulence is
+skewed and larger areas are occupied by downdrafts than by updrafts, this
+assumption is violated, but for transport distances where particles are rather
+well mixed throughout the ABL, the error is minor.
+
+With the above assumptions, the Langevin equation for the vertical wind
+component $w$ can be written as
+
+\begin{multline}
+d w = \\
+- w \frac{dt}{\tau_{L_w}}
++ \frac{\partial \sigma_w^2}{\partial z} dt
++ \frac{\sigma_w^2}{\rho} \frac{\partial \rho}{\partial z} dt
++ \left( \frac{2}{\tau_{L_w}} \right)^{1/2} \sigma_w\; dW \;,
+\label{legg}
+\end{multline}
+
+where $w$ and $\sigma_w$ are the turbulent vertical wind component and its
+standard deviation, $\tau_{L_w}$ is the Lagrangian timescale for the vertical
+velocity autocorrelation and $\rho$ is density.  The second and the third term
+on the right hand side are the drift correction \citep{mcnider1988} and the
+density correction \citep{stohlthomson1999}, respectively.  This Langevin
+equation is identical to the one described by \citet{legg1982}, except for the
+term from \citet{stohlthomson1999} which accounts for the decrease of air
+density with height.
+
+Alternatively, the Langevin equation can be re-expressed in terms of
+$w/\sigma_w$ instead of $w$ \citep{wilson1983}:
+
+\begin{multline}
+d \left( \frac{w}{\sigma_w} \right) =\\
+- \frac{w}{\sigma_w} \frac{dt}{\tau_{L_w}}
++ \frac{\partial \sigma_w}{\partial z} dt
++ \frac{\sigma_w}{\rho} \frac{\partial \rho}{\partial z} dt
++ \left( \frac{2}{\tau_{L_w}} \right)^{1/2} dW \;,
+\label{wilson}
+\end{multline}
+
+This form was shown by \citet{thomson1987} to fulfill the well-mixed criterion
+which states that ``if a species of passive marked particles is initially mixed
+uniformly in position and velocity space in a turbulent flow, it will stay that
+way'' \citep{rodean1996}.  Although the method proposed by \citet{legg1982}
+violates this criterion in strongly inhomogeneous turbulence, their formulation
+was found to be practical, as numerical experiments have shown that it is more
+robust against an increase in the integration time step.  Therefore,
+Eq.~\ref{legg} is used with long time steps (see section~\ref{timestep});
+otherwise, Eq.~\ref{wilson} is used.  For the horizontal wind components, the
+Langevin equation is identical to Eq.~\ref{legg}, with no drift and density
+correction terms.
+
+For the discrete time step implementation of the above Langevin equations (at
+the example of Eq.~\ref{wilson}), two different methods are used.  When $\left
+(\Delta t/\tau_{L_w} \right) \ge 0.5$,
+
+\begin{multline}
+\left (\frac{w}{\sigma_w} \right)_{k+1}=
+r_w \left (\frac{w}{\sigma_w} \right)_k
++ \frac{\partial \sigma_w}{\partial z} \tau_{L_w} \left (1-r_w \right )\\
++ \frac{\sigma_w}{\rho} \frac{\partial \rho}{\partial z} \tau_{L_w} \left (1-r_w \right )
++ \left (1-r_w^2 \right )^{1/2} \zeta \;,
+\end{multline}
+
+where $r_w=\exp(-\Delta t/ \tau_{L_w})$ is the autocorrelation of the vertical
+wind, and $\zeta$ is a normally distributed random number with mean zero and
+unit standard deviation.  The subscripts $k$ and $k+1$ refer to subsequent
+times separated by $\Delta t$.
+
+To save computation time for cases when $\left (\Delta t/\tau_{L_w} \right) <
+0.5$, the following first order approximation is used in order to avoid the
+computation of the exponential function:
+
+\begin{multline}
+\left (\frac{w}{\sigma_w} \right)_{k+1}=
+\left (1-\frac{\Delta t}{\tau_{L_w}} \right )\left (\frac{w}{\sigma_w} \right)_k\\
++ \frac{\partial \sigma_w}{\partial z} \Delta t
++ \frac{\sigma_w}{\rho} \frac{\partial \rho}{\partial z} \Delta t
++ \left( \frac{2 \Delta t}{\tau_{L_w}} \right)^{1/2} \zeta \;.
+\end{multline}
+
+When a particle reaches the surface or the top of the ABL, it is reflected and
+the sign of the turbulent velocity is changed \citep{wilson1993}.
+
+\subsection{\label{timestep}Determination of the time step}
+
+FLEXPART can be used in two different modes.  The computationally faster one
+(\verb|ctl|$<$0 in file \verb|COMMAND|) does not adapt the computation time
+step to the Lagrangian timescales $\tau_{L_i}$ (where $i$ is one of the three
+wind components) and FLEXPART uses constant time steps of one synchronisation
+time interval (\verb|lsynctime|, specified in file \verb|COMMAND|, typically
+900 seconds).  Usually, autocorrelations are very low in this mode and
+turbulence is not described well.  Nevertheless, for large scale applications
+FLEXPART works very well with this option \citep{stohletal1998}.  If turbulence
+shall be described more accurately, the time steps must be limited by $\tau_L$.
+Since the vertical wind is most important, only $\tau_{L_w}$ is used for this.
+The user must specify two constants, \verb|ctl| and \verb|ifine| in file
+\verb|COMMAND|.  The first one determines the time step $\Delta t_i$ according
+to
+
+\begin{equation}
+\Delta t_i=\frac{1}{c_{tl}} \min \left ({\tau_{L_w}\, , \; \frac{h}{2w}\, , \; \frac{0.5}{\partial \sigma_w / \partial z}} \right ) \;.
+\end{equation}
+
+The minimum value of $\Delta t_i$ is 1~second.
+$\Delta t_i$ is used for solving the Langevin equations for the horizontal turbulent wind components.
+
+For solving the Langevin equation for the vertical wind component, a shorter
+time step $\Delta t_w=\Delta t_i / \verb|ifine|$ is used.  However, note that
+there is no interaction between horizontal and vertical wind components on
+timescales less than $\Delta t_i$.  This strategy (given sufficiently large
+values for \verb|ctl| and \verb|ifine|) ensures that the particles stay
+vertically well-mixed also in very inhomogeneous turbulence, while keeping the
+computational cost at a minimum.
+
+\subsection{Parameterization of the wind fluctuations}
+
+For $\sigma_{v_i}$ and $\tau_{L_i}$ \citet{hanna1982} proposed a
+parameterization scheme based on the boundary layer parameters $h$, $L$, $w_*$,
+$z_0$ and $u_*$, i.e.  ABL height, Monin-Obukhov length, convective velocity
+scale, roughness length and friction velocity, respectively.  It is used in
+subroutines \verb|hanna.f, hanna1.f, hanna_short.f| with a modification taken
+from \citet{ryall1997} for $\sigma_w$, as Hanna's scheme does not always yield
+smooth profiles of $\sigma_w$ throughout the whole convective ABL.  In the
+following, subscripts $u$ and $v$ refer to the along-wind and the cross-wind
+components (transformed to grid coordinates in subroutine \verb|windalign.f|),
+respectively, and $w$ to the vertical component of the turbulent velocities;
+$f$ is the Coriolis parameter.  The minimum $\tau_{L_u}$, $\tau_{L_v}$ and
+$\tau_{L_w}$ used are 10~s, 10~s and 30~s, respectively, in order to avoid
+excessive computation times for particles close to the surface.\\[0.3cm]
+
+{\bf Unstable conditions:}
+
+\begin{equation}
+\frac{\sigma_u}{u_*}=\frac{\sigma_v}{u_*}=\left(12+\frac{h}{2|L|}\right)^{1/3}
+\end{equation}
+\begin{equation}
+\tau_{L_u}=\tau_{L_v}=0.15\frac{h}{\sigma_u}
+\end{equation}
+\begin{multline}
+\sigma_w=\\
+\left[ 1.2 w_*^2 \left (1-0.9\frac{z}{h} \right )
+\left ( \frac{z}{h} \right )^{2/3}
++\left (1.8-1.4 \frac{z}{h} \right ) u_*^2 \right]^{1/2}
+\end{multline}
+For $z/h<0.1$ and $z-z_0>-L$:
+\begin{equation}
+\tau_{L_w}=0.1\frac{z}{\sigma_w\left[0.55-0.38\left(z-z_0\right)/L\right]}
+\end{equation}
+For $z/h<0.1$ and $z-z_0<-L$:
+\begin{equation}
+\tau_{L_w}=0.59\frac{z}{\sigma_w}
+\end{equation}
+For $z/h>0.1$:
+\begin{equation}
+\tau_{L_w}=0.15\frac{h}{\sigma_w}\left[1-\exp\left(\frac{-5z}{h}\right)\right]
+\end{equation}
+
+{\bf Neutral conditions:}
+
+\begin{equation}
+\frac{\sigma_u}{u_*}=2.0\exp(-3fz/u_*)
+\end{equation}
+\begin{equation}
+\frac{\sigma_v}{u_*}=\frac{\sigma_w}{u_*}=1.3\exp(-2fz/u_*)
+\end{equation}
+\begin{equation}
+\tau_{L_u}=\tau_{L_v}=\tau_{L_w}=\frac{0.5z/\sigma_w}{1+15fz/u_*}
+\end{equation}
+
+{\bf Stable conditions:}
+
+\begin{equation}
+\frac{\sigma_u}{u_*}=2.0\left(1-\frac{z}{h}\right)
+\end{equation}
+\begin{equation}
+\frac{\sigma_v}{u_*}=\frac{\sigma_w}{u_*}=1.3\left(1-\frac{z}{h}\right)
+\end{equation}
+\begin{equation}
+\tau_{L_u}=0.15\frac{h}{\sigma_u}\left(\frac{z}{h}\right)^{0.5}
+\end{equation}
+\begin{equation}
+\tau_{L_v}=0.07\frac{h}{\sigma_v}\left(\frac{z}{h}\right)^{0.5}
+\end{equation}
+\begin{equation}
+\tau_{L_w}=0.1\frac{h}{\sigma_w}\left(\frac{z}{h}\right)^{0.5}
+\end{equation}
+
+Lacking suitable turbulence parameterizations above the ABL ($z>h$), a constant
+vertical diffusivity $D_z$=0.1~m$^2$s$^{-1}$ is used in the stratosphere,
+following recent work of \citet{legras2003}, whereas a horizontal diffusivity
+$D_h$=50~m$^2$s$^{-1}$ is used in the free troposphere.  Stratosphere and
+troposphere are distinguished based on a threshold of 2~pvu (potential
+vorticity units).  Diffusivities are converted into velocity scales using
+$\sigma_{v_i}=\sqrt{D_i/dt}$.
+
+\subsection{Mesoscale velocity fluctuations}
+
+Mesoscale motions are neither resolved by the ECMWF data nor covered by the
+turbulence parameterization.  This unresolved spectral interval needs to be
+taken into account at least in an approximate way, since mesoscale motions can
+significantly accelerate the growth of a dispersing plume \citep{gupta1997}.
+For this, we use a similar method as \citet{maryon1998}, namely to solve an
+independent Langevin equation for the mesoscale wind velocity fluctuations
+(``meandering'' in Maryon's terms).  Assuming that the variance of the wind at
+the grid scale provides some information on its subgrid variance, the wind
+velocity standard deviation used for the mesoscale Langevin equation is set to
+\verb|turbmesoscale| (set in file \verb|includepar|) times the standard
+deviation of the grid points surrounding the particle's position.  The
+corresponding time scale is taken as half the interval at which wind fields are
+available, assuming that the linear interpolation between the grid points can
+recover half the subgrid variability, not an unlikely assumption
+\citep{stohl1995}.  This empirical approach does not describe actual mesoscale
+phenomena, but it is similar to the ensemble methods used to assess trajectory
+accuracy \citep{kahl1996, baumann1997, stohl1998}.
+
+\subsection{Moist convection}
+
+An important transport mechanism are the updrafts in convective clouds.  They
+occur in conjunction with downdrafts within the clouds and compensating
+subsidence in the cloud-free surroundings.  These convective transports are
+grid-scale in the vertical, but sub-grid scale in the horizontal, and are not
+represented by the ECMWF vertical velocity.
+
+To represent convective transport in a particle dispersion model, it is
+necessary to redistribute particles in the entire vertical column.  For
+FLEXPART we chose the convective parameterization scheme by
+\citet{emanuel1999}, as it relies on the grid-scale temperature and humidity
+fields and calculates a displacement matrix providing the necessary mass flux
+information for the particle redistribution.  The convective parameterization
+is switched on using \verb|lconvection| in file \verb|COMMAND|.  It's
+computation time scales to the square of the number of vertical model levels
+and may account for up to 70\% of FLEXPART's computation time using current
+60-level ECMWF data.
+
+The convection is computed within the subroutines {\tt convmix.f}, {\tt
+calcmatrix.f}, {\tt convect43c.f}, and {\tt redist.f}.  It is called every
+FLEXPART \verb|lsynctime| time step (typically 900~s) with time-interpolated
+temperature and specific humiditiy profiles from the ECMWF data.  Note that the
+original ECMWF model levels, not the Cartesian coordinates, are used in the
+convection scheme.  For efficiency reasons, particles are sorted according to
+their horizontal grid positions ({\tt sort2.f}) before calling the convection
+scheme once per grid column.
+
+In the Emanuel scheme ({\tt convect43c.f}), convection is triggered whenever
+
+\begin{equation}
+T_{vp}^{LCL+1} \ge T_{v}^{LCL+1} + T_{thres}
+\end{equation} 
+
+with $T_{vp}^{LCL+1}$ the virtual temperature of a surface air parcel lifted to
+the level above the lifting condensation level $LCL$, $T_{v}^{LCL+1}$ the
+virtual temperature of the environment there, and $T_{thres}=0.9$~K a threshold
+temperature value.  Based on the buoyancy sorting principle \citep{emanuel1991,
+telford1975}, a matrix $MA$ of the saturated upward and downward mass fluxes
+within clouds is calculated by accounting for entrainment and detrainment:
+
+\begin{multline}
+MA^{i,j}=\\
+\frac{M^i(|\sigma^{i,j+1}- \sigma^{i,j}|+ |\sigma^{i,j} - \sigma^{i,j-1}|)}{(1-\sigma^{i,j}) \displaystyle \sum_{j=LCL}^{LNB} [|\sigma^{i,j+1}- \sigma^{i,j}|+ |\sigma^{i,j} - \sigma^{i,j-1}|]}
+\label{matrix}
+\end{multline}
+
+Here $MA^{i,j}$ are the mass fractions displaced from level $i$ to level $j$,
+$M^{i}$ the mass fraction displaced from the surface to level $i$, $LNB$ the
+level of neutral buoyancy of a surface air parcel and $0 < \sigma^{i,j} < 1 $
+the mixing fraction between level $i$ and level $j$.  The fraction
+$\sigma^{i,j}$ is determined by the environmental potential temperature
+$\theta^{j}$, the liquid potential temperature $\theta_{l}^{i,j}$ of air
+displaced adiabatically from $i$ to $j$, and the liquid potential temperature
+$\theta_{lp}^{i,j}$ of an air parcel first lifted adiabatically to level $i$
+and further to level $j$:
+
+\begin{equation}
+\sigma^{i,j}=\frac{\theta^{j}-\theta_{lp}^{i,j}}{\theta_{l}^{i,j}-\theta_{lp}^{i,j}}
+\end{equation}
+
+By summing up over all levels $j$, we then calculate the saturated up- and
+downdrafts at each level $i$ from Eq.~\ref{matrix} and assume that these fluxes
+are balanced by a subsidence mass flux in the environment.
+
+The particles in each convectively active box are then redistributed ({\tt
+redist.f}) according to the matrix $MA$.  If the mass of an ECMWF model layer
+$i$ is $m^i$ and the mass flux from layer $i$ to layer $j$ accumulated over one
+time step is $\Delta MA^{i,j}$, then the probability of a particle to be moved
+from layer $i$ to layer $j$ is $\Delta MA^{i,j}/m^i$.  Whether a given particle
+is displaced or not is determined by drawing a random number between [0,1],
+which also determines the position of the particle within the destination layer
+$j$.  After the convective redistribution of the particles, the compensating
+subsidence mass fluxes are converted to a vertical velocity acting on those
+particles in the grid box that are not displaced by convective drafts.  By
+calculating a subsidence velocity rather than displacing particles randomly
+between layers the scheme's numerical diffusion in the cloud-free environment
+is eliminated.  The scheme was tested and fulfills the well-mixed criterion,
+i.e., if a tracer is well mixed in the whole atmospheric column, it remains so
+after the convection.
+
+\subsection{Particle splitting}
+
+During the initial phase of dispersion from a point source in the atmosphere,
+particles normally form a compact cloud.  Relatively few particles suffice to
+simulate this initial phase correctly.  After some time, however, the particle
+cloud gets distorted and particles spread over a much larger area.  More
+particles are now needed.  FLEXPART allows the user to specify a time constant
+$\Delta t_s$ (file \verb|COMMAND|).  Particles are split into two (each of
+which receives half of the mass of the original particle) after travel times of
+$\Delta t_s$, $2\Delta t_s$, $4\Delta t_s$, $8\Delta t_s$, and so on
+(subroutine \verb|timemanager.f|).\par
+
+\section{\label{backward}Forward and backward modeling}
+
+Normally, when FLEXPART is run forward in time (\verb|ldirect=1| in file
+\verb|COMMAND|), particles are released from one or a number of sources and
+concentrations are determined downwind on a grid.  However, FLEXPART can also
+run backward in time (\verb|ldirect=-1|), which is more efficient than forward
+modeling for calculating source-receptor relationships if the number of
+receptors is smaller than the number of (potential) sources.  In the backward
+mode, particles are released from a receptor location (e.g., a measurement
+site) and a four-dimensional (3 space dimensions plus time) response function
+(sensitivity) to emission input is calculated.
+
+Since this version (6.2) of FLEXPART, the calculation of the source-receptor
+relationships is generalized for both forward and backward runs, allowing much
+greater flexibility regarding the input and output units than before.
+\verb|ind_source| and \verb|ind_receptor| in file \verb|COMMAND| switch between
+mass and mass mixing ratio units at the source and at the receptor,
+respectively.  Note that source always stands for the physical source and not
+the location of the particle release, which is done at the source in forward
+mode but at the receptor in backward mode.  Table ~\ref{units} gives an
+overview of the units used in forward and backward modeling for different
+settings of the above switches.  A "normal" forward simulation which specifies
+the release in mass units (i.e., kg) and also samples the output in mass units
+(i.e., a concentration in ng m$^{-3}$) requires both switches to be set to 1.
+
+\begin{table}
+\setlength{\tabcolsep}{1.1mm}
+\caption{\label{units}
+Physical units of the input (in file RELEASES) and output data for forward
+(files grid\_conc\_date) and backward (files grid\_time\_date) runs for the
+various settings of the unit switches ind\_source and ind\_receptor (in both
+switches 1 refers to mass units, 2 to mass mixing ratio units).} \vspace{3mm}
+{\centerline{
+\begin{tabular}{ccccc} \hline
+Direction & ind\_source & ind\_receptor & input unit & output unit \\ \hline
+Forward  & 1 & 1 & kg & ng m$^{-3}$ \\
+Forward  & 1 & 2 & kg & ppt by mass \\
+Forward  & 2 & 1 & 1 & ng m$^{-3}$ \\
+Forward  & 2 & 2 & 1 & ppt by mass \\ 
+Backward & 1 & 1 & 1 & s \\
+Backward & 1 & 2 & 1 & s m$^3\,$kg$^{-1}$ \\
+Backward & 2 & 1 & 1 & s kg m$^{-3}$ \\
+Backward & 2 & 2 & 1 & s \\ \hline
+\end{tabular}}}
+\end{table}
+
+In the backward mode, any value not equal zero can be entered as the release
+"mass" in file \verb|RELEASES| because the output is normalized by this value.
+The calculated response function is related to the particles' residence time in
+the output grid cells.  The unit of the output response function varies,
+depending on how the switches are set.  If \verb|ind_source=1| and
+\verb|ind_receptor=1|, the response function has the unit s.  If this response
+function is folded (i.e., multiplied) with a 3-d field of emission mass fluxes
+into the output grid boxes (in kg~m$^{-3}$s$^{-1}$), a concentration at the
+receptor (kg~m$^{-3}$) is obtained.  If \verb|ind_source=1| and
+\verb|ind_receptor=2|, the response function has the unit s~m$^3\,$kg$^{-1}$
+and if it is folded with the emission mass flux (again in kg~m$^{-3}$s$^{-1}$),
+a mass mixing ratio at the receptor is obtained.  The units of the response
+function for \verb|ind_source=2| can be understood in analogy.
+
+In the case of loss processes (dry or wet deposition, decay) the response
+function is ``corrected'' for these loss processes.  See \citet{seibert2001}
+and, particularly, \citet{seibert2004} for a description of these generalized
+in- and output options and the implementation of backward modeling in FLEXPART.
+\citet{seibert2004} also describe the theory of backward modeling and give some
+examples, and \citet{stohl2003} presents an application.
+
+\section{\label{plumetraj}Plume trajectories}
+
+In a recent paper, \citet{stohl2002} proposed a method to condense the complex
+and large FLEXPART output using a cluster analysis \citep{dorling1992}.  The
+idea behind this is to cluster, at every output time, the positions of all
+particles originating from a release point, and write out only clustered
+particle positions, along with additional information (e.g., fraction of
+particles in the ABL and in the stratosphere).  This creates information that
+is almost as compact as traditional trajectories but accounts for turbulence
+and convection.  This option can be activated by setting \verb|iout| to 4 or 5
+in file \verb|COMMAND|.  The number of clusters can be set with the parameter
+\verb|ncluster| in file \verb|includepar|.  The clustering is handled and
+output is produced by subroutine \verb|plumetraj.f|.
+
+\section{\label{removal}Removal processes}
+
+FLEXPART takes into account radioactive (or other) decay, wet deposition, and
+dry deposition by reducing a particle's mass.  However, as atmospheric
+transport is the same for all chemical species, a single particle can represent
+several (up to \verb|maxspec|) chemical species, each affected differently by
+the removal processes.
+
+\subsection{\label{radioactive}Radioactive decay}
+
+Radioactive decay is accounted for by reducing the particle mass according to
+
+\begin{equation}
+m(t+\Delta t)=m(t) \exp (-\Delta t /\beta) \;,
+\end{equation}
+
+where $m$ is particle mass, and the time constant $\beta=T_{1/2}/\ln(2)$ is
+determined from the half life $T_{1/2}$ specified in file \verb|SPECIES_nnn|.
+Deposited pollutant mass decays at the same rate.
+
+\subsection{OH Reaction}
+
+If a positive value for the OH reaction rate is given in the file
+\verb|SPECIES_nnn|, OH reaction is performed in the model simulation and tracer
+mass is lost by this reaction.  A monthly averaged 3\degreee$\times$ 5\degreen resolution OH
+field averaged to 7 atmospheric levels is used.  The fields have been obtained
+from the GEOS-CHEM model \citep{bey2001}.  The reaction rate is temperature
+corrected and an activation rate of 1000 J\,mol$^{-1}$ is assumed.
+
+\subsection{\label{wetdepo}Wet deposition}
+
+Since version 8.0, in-cloud and below-cloud scavenging are treated differently.
+Based on the humidity and temperature from the meteorological input data, the
+occurence of clouds is calculated.  If relative humidity exceeds 80\% the
+occurence of a cloud is assumed.
+
+{\bf In cloud scavenging} is treated differently for gases and particles.  
+The implementation follows the scheme of \citet{hertel1995}.
+
+In general, the scavenging coefficient $\Lambda$ ((s$^{-1}$) depends on the precipitation
+rate $I$ (mm\,h$^{-1}$) and the height $H_i$ over which scavenging takes place:
+
+\begin{equation}
+\Lambda=\frac{S_i I}{H_i}
+\end{equation}
+
+$S_i$ is different for gases and particles. For particles,
+
+\begin{equation}
+S_i=0.9/cl
+\end{equation}
+
+where $cl$ is the cloud liquid water content
+
+\begin{equation}
+cl=2\times 10^{-7}\cdot I^{0.36} \;.
+\end{equation}
+
+For gases,
+
+\begin{equation}
+S_i=1/cl_\text{eff} \;,
+\end{equation}
+
+where $cl_\text{eff}$ is an effective cloud liquid water content:
+
+\begin{equation}
+cl_\text{eff}=\frac{(1-cl)}{H_\text{eff}RT}+cl \; .
+\end{equation}
+
+{\bf Below cloud scavenging} takes the form of an exponential decay process
+\citep{mcmahon1979}.  With the scavenging coefficient $\Lambda$, wet
+deposition is described as
+
+\begin{equation}
+m(t+\Delta t)=m(t) \exp (- \Lambda \Delta t) \;,
+\end{equation}
+
+where $m$ is the particle mass.  $\Lambda$ increases with the precipitation
+rate $I$ according to
+
+\begin{equation}
+\Lambda=AI^{B} \;,
+\label{wetscav}
+\end{equation}
+
+where $A$ [s$^{-1}$] is the scavenging coefficient at $I=$1~mm/hour and $B$
+gives the dependency on precipitation rate.  Both $A$ and $B$ must be specified
+in file \verb|SPECIES_nnn|.  FLEXPART uses the same scavenging coefficients for
+snow and rain.
+
+As wet deposition depends nonlinearly on precipitation rate, subgrid
+variability of precipitation must be accounted for \citep{hertel1995}.  The
+area fraction which experiences precipitation given a certain grid-scale
+precipitation rate is calculated by
+
+\begin{equation}
+F=\max\left[0.05,CC\frac{I_l fr_l(I_l) + I_c fr_c(I_c)}{I_l+I_c}\right] \;,
+\end{equation}
+
+where $CC$ is the total cloud cover, $I_l$ and $I_c$ are the large scale and
+convective precipitation rates, respectively, and $fr_l$ and $fr_c$ are
+correction factors that depend on $I_l$ and $I_c$ (see Table~\ref{corrfacts}).
+The subgrid scale precipitation rate is then $I_s=(I_l+I_c)/F \;$.
+
+\begin{table}
+\setlength{\tabcolsep}{1.1mm}
+\caption{\label{corrfacts}
+Correction factors used for the calculation of the area fraction that
+experiences precipitation.  Precipitation rates are in mm/hour.} \vspace{3mm}
+{\centerline{
+\begin{tabular}{cccccc} \hline
+~&\multicolumn{5}{c|}{$I_l$ and $I_c$} \\ \hline
+Factor&$I \le 1$&$1 < I \le 3$&$3 < I\le8$&$8 < I \le 20$&$20 < I$ \\ \hline
+$fr_l$&0.50&0.65&0.80&0.90&0.95 \\
+$fr_c$&0.40&0.55&0.70&0.80&0.90 \\ \hline
+\end{tabular}}}
+\end{table}
+
+\subsection{Dry deposition}
+
+Dry deposition is described in FLEXPART by a deposition velocity 
+
+\begin{equation}
+v_d(z)=-F_C/C(z) \;,
+\end{equation}
+
+where $F_C$ and $C$ are the flux and the concentration of a species at height
+$z$ within the constant flux layer.  A constant deposition velocity $v_d$ can
+be set (file \verb|SPECIES_nnn|).  Alternatively, if the physical and chemical
+properties of a substance are known (file \verb|SPECIES_nnn|), more complex
+parameterizations for gases and particles are also available.
+
+\subsubsection{Dry deposition of gases}
+
+The deposition velocity of a gas is calculated with the {\em resistance method}
+\citep{wesely1977} in subroutine \verb|getvdep.f| according to
+
+\begin{equation}
+|v_d(z)|=\left[r_a(z)+r_b+r_c\right]^{-1} \;,
+\end{equation}
+
+where $r_a$ is the aerodynamic resistance between $z$ and the surface, $r_b$ is
+the quasilaminar sublayer resistance, and $r_c$ is the bulk surface resistance.
+
+The aerodynamic resistance $r_a$ is calculated in function \verb|raerod.f|
+using the flux-profile relationship based on Monin-Obukhov similarity theory
+\citep{stull1988}
+
+\begin{equation}
+r_a(z)=\frac{1}{\kappa u_*}[\ln(z/z_0)- \Psi _h(z/L)+ \Psi _h(z_0/L)] \;.
+\label{ra}
+\end{equation}
+
+Following \citet{erisman1994}, the quasilaminar sublayer resistance is
+
+\begin{equation}
+r_b=\frac{2}{\kappa u_*} \left(\frac{Sc}{Pr}\right)^{2/3} \;,
+\end{equation}
+
+where $Sc$ and $Pr$ are the Schmidt and Prandtl numbers, respectively.  $Pr$ is
+0.72 and $Sc=\upsilon/D_i$, with $\upsilon$ being the kinematic viscosity of
+air and $D_i$ being the molecular diffusivity of species $i$ in air.  The
+slight dependency of $\upsilon$ on air temperature is formulated in accordance
+with \citet{pruppacher1978}.  $r_b$ is calculated in function
+\verb|getrb.f|.\par
+
+The surface resistance is calculated in function \verb|getrc.f| following
+\citet{wesely1989} as
+
+\begin{equation}
+\frac{1}{r_c}=
+\frac{1}{r_s+r_m}+\frac{1}{r_{lu}}+\frac{1}{r_{dc}+r_{cl}}+\frac{1}{r_{ac}+r_{gs}} \;,
+\end{equation}
+
+where $r_s$, $r_m$ and $r_{lu}$ represent the bulk values for leaf stomatal,
+leaf mesophyll and leaf cuticle surface resistances (alltogether the upper
+canopy resistance) , $r_{dc}$ represents the gas-phase transfer affected by
+buoyant convection in canopies, $r_{cl}$ the resistance of leaves, twig, bark
+and other exposed surfaces in the lower canopy, $r_{ac}$ the resistance for
+transfer that depends only on canopy height and density, and $r_{gs}$ the
+resistance for the soil, leaf litter, etc., at the ground.  Each of these
+resistances is parameterized according to the species' chemical reactivity and
+solubility, the landuse type, and the meteorological conditions.  The IGBP
+landuse inventory \citep{belward1999} provides the area fractions of 13 landuse
+classes for which roughness lengths $z_0$ are estimated, on a grid with 0.3
+resolution (Table~\ref{landuses}).  Charnock's relationship \citep{stull1988}
+$z_0=0.016u_*^2/g$ is used to calculate $z_0$ for the classes ``Ocean'' and
+``Inland water'', because of its dependence on wave height.  Deposition
+velocities are calculated for all landuse classes and weighted with their
+respective areas.  The original resolution of the IGBP land cover
+classification is 1 km x 1 km.  To save storage space, this was regridded to a
+0.3 x 0.3 degree resolution.  Table~\ref{conversion} shows how the initial 17
+classse were transfered in the 13 classes used in the deposition scheme of
+\cite{wesely1989}.  According to \cite{helmig2007} a resistance of snow to
+ozone deposition of 10000 s m$^{-1}$ was used.  For SO$_2$ a value of 100
+according to \citet{zhang2002} was used in the model.  As the Wesely scheme was
+initially developed for North America, the rain forest was not represented
+well.  Therefore a new category was introduced and resistance values according
+to \cite{jacob1990} were used.  The resistance values are dependent on 5
+different seasons.  As on the southern hemisphere they are asynchronous to the
+northern hemisphere half a year was added when choosing the appropriate
+seasonal category.  The snow depth is included in the original
+\cite{wesely1989} parameterization to some extend, as at a certain time of the
+year snow cover is assumed.  In order to have more accurate information we use
+the snow cover based on the snow depth in the ECMWF fields.  If the snow cover
+gets over 1 mm of water equivalent, the grid cell is considered as snow covered
+and category 12 (snow and ice) is applied.
+
+\begin{table}
+\setlength{\tabcolsep}{1.1mm}
+\caption{\label{landuses}
+List of the landuse classes and roughness lengths used by FLEXPART.
+``Charnock'' indicates that Charnock's relationship is used to calculate the
+roughness length.} \vspace{3mm}
+{\centerline{
+\begin{tabular}{lc} \hline
+Urban land & 0.7	\\
+Agricultural land	&  0.1 \\
+Range land & 0.1 \\
+Deciduous forest &  1.0 \\
+Coniferous forest & 1.0 \\
+Mixed forest including wetland &	0.7	\\
+Water, both salt and fresh		&   Charnock \\
+Barren land mostly desert &  0.01 \\
+Nonforested wetland &	0.1 \\
+Mixed agricultural and range land &	0.1 \\
+Rocky open areas with low growing shrubs  & 	0.05 \\
+Snow and ice & 0.001 \\
+Rainforest &   1.0 \\ \hline
+\end{tabular}}}
+\end{table}
+
+\begin{table*}
+\setlength{\tabcolsep}{1.1mm}
+\caption{\label{conversion}
+Conversion from the IGBP land cover legend to the landuse categories used by Wesely}
+\vspace{3mm}
+{\centerline{
+\begin{tabular}{clcl} \hline
+\multicolumn{2}{c}{IGBP Land Cover Legend} & \multicolumn{2}{c}{Wesely} \\
+Value &	Description	&		Value &	Description \\
+1& 	Evergreen Needleleaf Forest&			5&	Coniferous forest\\
+2& 	Evergreen Broadleaf Forest	&	     13& Rainforest\\
+3& 	Deciduous Needleleaf Forest&			4&	Deciduous forest\\
+4& 	Deciduous Broadleaf Forest	&			4&	Deciduous forest\\
+5& 	Mixed Forest&6&	Mixed forest including wetland\\
+6& 	Closed Shrublands&	      11& 	rocky open areas with low growing shrubs\\
+7& 	Open Shrublands&		   11& 	rocky open areas with low growing shrubs\\
+8& 	Woody Savannas&11& 	rocky open areas with low growing shrubs\\
+9& 	Savannas&11&rocky open areas with low growing shrubs\\
+10& 	Grasslands			         	&		3	& Range land\\
+11& 	Permanent Wetlands			   &      9	& nonforested wetland	\\
+12& 	Croplands						   &   	2	& Agricultural land\\
+13& 	Urban and Built-Up				&		1	& Urban land\\
+14& 	Cropland/Natural Vegetation Mosaic&	10	& mixed agricultural and range land		\\
+15& 	Snow and Ice							 &  12 & snow and ice\\
+16& 	Barren or Sparsely Vegetated		&	8& 	barren land mostly desert\\
+17& 	Water Bodies							&   7	& water, both salt and fresh\\
+\end{tabular}}}
+\end{table*}
+
+\subsubsection{Dry deposition of particulate matter}
+
+The deposition of particulates is calculated in subroutine \verb|partdep.f|
+according to
+
+\begin{equation}
+v_d(z)=\left[r_a(z)+r_b+r_a(z)r_bv_g\right]^{-1}+v_g \;,
+\end{equation}
+
+where $v_g$ is the gravitational settling velocity calculated from
+\citep{slinn1982}
+
+\begin{equation}
+v_g=\frac{g \rho_p d_p^2C_{cun}}{18 \mu} \;,
+\end{equation}
+
+where $\rho_p$ and $d_p$ are the particle density and diameter, $\mu$ the
+dynamic viscosity of air (0.000018 kg m$^{-1}$s$^{-1}$) and $C_{cun}$ the
+Cunningham slip-flow correction.  The quasilaminar sublayer resistance is
+calculated from the same relationship as for gases, with an additional
+impaction term.  For further details see \citet{slinn1982}.\par
+
+Settling and dry deposition velocities are strongly dependent on particulate
+size.  FLEXPART assumes a logarithmic normal size distribution of the
+particulate mass.  The user must specify the mean particulate diameter
+$\overline{d_p}$ and a measure of the variation around $\overline{d_p}$,
+$\sigma_p$.  Then, the settling and deposition velocities are calculated for
+several particle diameters and are weighted with their respective particulate
+mass fractions.
+
+Gravitational settling is important not only for the computation of the dry
+deposition velocity, but also affects the particle's trajectory.  As a FLEXPART
+particle can normally represent several species, gravitational settling can
+only be taken into account correctly (i.e., influence particle trajectories) in
+single-species simulations.  Pay attention that gravitational settling is
+simply switched off in multi-species simulations, without warning.
+
+With FLEXPART version 8.2, the temperature dependence of the dynamic viscosity
+is taken into account.  Furthermore, we have extended the calculation of
+settling velocities to higher Reynolds numbers.  For this, an iterative
+procedure has been introduced in subroutine \verb|get_settling.f|, where the
+iteration is started with Stokes’ law settling \citep{naeslund1991}, and then
+Reynolds number and settling velocity are calculated until convergence is
+achieved.
+
+\subsubsection{Loss of particle mass due to dry deposition}
+
+The depositon velocity is calculated for a reference height (parameter
+\verb|href| in file \verb|includepar|) of 15~m.  For all particles below
+$2h_{ref}$, the mass lost by deposition is calculated by
+
+\begin{equation}
+\Delta m(t)=m(t)\left[{1-\exp\left({\frac{-v_d(h_{ref})\Delta t}{2h_{ref}}}\right)}\right] \;.
+\end{equation}
+
+\section{\label{conccalc}Calculation of concentrations, uncertainties, age spectra, and mass fluxes}
+
+Output quantities $C_{T_c}$ at time $T_c$ (output interval \verb|loutstep| is
+set in file \verb|COMMAND|) are calculated as time-averages over period
+$[T_c-\Delta T_c/2,T_C+\Delta T_c/2]$.  $\Delta T_c$ must be specified
+(\verb|loutaver|) in file \verb|COMMAND|.  To calculate the time-averages,
+concentrations $C_{T_s}$ at times $T_s$ within $[T_c-\Delta T_c/2,T_C+\Delta
+T_c/2]$ are sampled at shorter intervals $\Delta T_s$ (\verb|loutsample| in
+file \verb|COMMAND|) and are then divided by the number $N=\frac{\Delta
+T_c}{\Delta T_s}$ of samples taken:
+
+\begin{equation}
+C_{T_c}= \frac{1}{N} \sum_{i=1}^N {C_{T_s}} \;.
+\end{equation}
+
+Both $\Delta T_c$ and $\Delta T_s$ must be multiples of the FLEXPART
+synchronisation interval (\verb|lsynctime| in file \verb|COMMAND|).  The
+shorter the sampling interval $\Delta T_s$, the more samples are taken and the
+more accurate are thus the time-averaged concentrations.
+
+\subsection{Concentrations, mixing ratios, and emission response functions}
+
+The user can choose (\verb|iout| in file \verb|COMMAND|, which must be set to 1
+for backward runs) whether concentrations, volume mixing ratios or both shall
+be produced.  We shall use the term "concentration" and particle mass here, but
+note that the actual units are determined by the settings of \verb|ind_source|
+and \verb|ind_receptor|, according to Table~\ref{units}.  The concentration in
+a grid cell is calculated in subroutine \verb|conccalc.f| by sampling the
+tracer mass fractions of all particles within the grid cell and dividing by the
+grid cell volume
+
+\begin{equation}
+C_{T_s} =\frac{1}{V}\sum_{i=1}^N (m_i f_i) \;,
+\end{equation}
+
+with $V$ being the grid cell volume, $m_i$ particle mass, $N$ the total number
+of particles, and $f_i$ the fraction of the mass of particle $i$ attributed to
+the respective grid cell.  This mass fraction is calculated by a uniform kernel
+with bandwidths $(\Delta x,\Delta y)$, where $\Delta x$ and $\Delta y$ are the
+grid distances on the longitude-latitude output grid.  Figure~\ref{kernel}
+illustrates this: The particle is located at the center of the shaded rectangle
+with side lengths $(\Delta x, \Delta y)$.  Generally, the shaded area stretches
+over four grid cells, each of which receives a fraction of the particle's mass
+equal to the fraction of the shaded area falling within this cell.  The uniform
+kernel is not used during the first 3 hours after a particle's release (when
+the mass is attributed only to the grid cell it resides in), in order to avoid
+smoothing close to the source.
+
+\begin{figure}[htb]
+\begin{minipage}[t]{2.8cm}
+\end{minipage}\hfill
+{\begin{minipage}[t]{12.5cm}
+
+\setlength{\unitlength}{2.5cm}
+\begin{picture}(3.0,3.0)
+
+\thicklines
+\multiput(0.5,0)(1,0){3}{\line(0,1){3.0}}
+\multiput(0,0.5)(0,1){3}{\line(1,0){3.0}}
+
+\thinlines
+\put(0.5,0.35){\vector(1,0){1.0}}
+\put(1.5,0.35){\vector(-1,0){1.0}}
+\put(0.35,0.5){\vector(0,1){1.0}}
+\put(0.35,1.5){\vector(0,-1){1.0}}
+
+\put(0.9,0.15){$\Delta x$}
+\put(0.05,0.92){$\Delta y$}
+
+\multiput(1.2909,1.25)(0.0909,0){10}{\line(0,1){1.0}}
+\multiput(1.2,1.34909)(0,0.0909){10}{\line(1,0){1.0}}
+
+\thicklines
+\put(1.67,1.76){\line(1,0){0.06}}
+\put(1.70,1.73){\line(0,1){0.06}}
+
+\put(1.2,1.25){\line(1,0){1.0}}
+\put(2.2,1.25){\line(0,1){1.0}}
+\put(2.2,2.25){\line(-1,0){1.0}}
+\put(1.2,2.25){\line(0,-1){1.0}}
+
+
+\end{picture}
+\end{minipage}}
+\caption{\label{kernel} Illustration of the uniform kernel used to calculate
+gridded concentration and deposition fields.  The particle position is marked
+by ``{\rm +}''}
+\end{figure}
+
+Wet and dry deposition fields are calculated on the same output grid
+(subroutines \verb|wetdepokernel.f| and \verb|drydepokernel.f|) and are written
+to all output grid files.  The deposited matter is accumulated over the course
+of a model run, i.e.  it generally increases with model time.  However,
+radioactive decay is calculated also for the deposited matter.
+
+\subsection{Uncertainties}
+
+The uncertainty of the output is estimated by carrying \verb|nclassunc| classes
+of particles in the model simulation, and determining the concentration
+separately for each class (subroutine \verb|conccalc.f|).  The standard
+deviation, calculated from \verb|nclassunc| concentration estimates and divided
+by $\sqrt{\tt{nclassunc}}$, is the standard deviation of the mean concentration
+(subroutine \verb|concoutput.f|), which is also written to the output files for
+every grid cell.  Note that the memory needed for some auxiliary fields
+increases with \verb|nclassunc| {ít and} the number of age classes (see below).
+It may, thus, be necessary to reduce \verb|nclassunc| for runs with large
+output grids and age spectra calculations or in the backward mode.
+
+\subsection{Age spectra}
+
+The age spectra option is switched on using \verb|lagespectra| in file
+\verb|COMMAND|, with the age classes specified in seconds in file
+\verb|AGECLASSES|.  Concentrations are split into contributions from particles
+of different age, defined as the time passed since their release.  Particles
+are terminated once they are older than the oldest age class and their storage
+space is made available to new particles.  Therefore, the age spectra option
+can be used also with a single age class for defining a maximum particle age.
+
+\subsection{Parabolic kernel}
+
+In addition to the simple uniform kernel method, a computationally demanding
+parabolic kernel as described in \citep{uliasz1994} can be used to calculate
+surface concentrations for a limited number of receptor points (age spectra are
+not available in this case):
+
+\begin{equation}
+C_{T_s}(x,y,z=0)=\sum_{i=1}^N \left[ \frac{2m_iK(r_x,r_y,r_z)}{h_{x_i}h_{y_i}h_{z_i}} \right]\;,
+\end{equation}
+
+where $h_{x_i}$, $h_{y_i}$ and $h_{z_i}$ are the kernel bandwidths which
+determine the degree of smoothing, $r_x=(X_i-x)/h_{x_i}$,
+$r_y=(Y_i-y)/h_{y_i}$, $r_z=Z_i/h_{z_i}$ with $X_i$, $Y_i$ and $Z_i$ being the
+position of particle $i$.  The kernel bandwidths are a function of the
+particles' age.
+
+\subsection{Mass fluxes}
+
+Mass flux calculations can be switched on using \verb|iflux| in file
+\verb|COMMAND|.  Mass fluxes are calculated separately for eastward, westward,
+northward, southward, upward and downward directions and contain both
+grid-scale and subgrid-scale motions.  Mass fluxes are determined for the
+centerlines of the output grid cells, e.g.  vertical fluxes are calculated for
+motions across the half level of each output cell.
+
+\section{Domain-filling option}
+
+\subsection{General}
+
+If \verb|mdomainfill=1| in file \verb|COMMAND| particles are not released at
+specific locations.  Instead, the longitudes and latitudes specified for the
+first release in the \verb|RELEASES| file are used to set up a global or
+limited model domain.  The particles (number is also taken from
+\verb|RELEASES|) are then distributed in the model domain proportionally to air
+density (subroutine \verb|init_domainfill.f|).  Each particle receives the same
+mass, altogether accounting for the total atmospheric mass.  Subsequently,
+particles move freely in the atmosphere.
+
+If a limited domain is chosen, mass fluxes are determined in small grid boxes
+at the boundary of this domain (boundaries must be at least one grid box away
+from the boundaries of the meteorological input data).  In the grid cells with
+air flowing into the model domain, mass fluxes are accumulated over time and
+whenever the accumulated mass exceeds the mass of a particle, a new particle
+(or more, if required) is released at a randomly chosen position at the
+boundary of the box (subroutine \verb|boundcond_domainfill.f|).  At the
+outflowing boundaries particles are terminated.  Note that, due to the change
+of mass of the atmosphere in the model domain and due to numerical effects, the
+number of particles used is not exactly constant throughout the simulation.
+
+\subsection{Stratospheric ozone tracer}
+
+If \verb|mdomainfill=2|, the domain-filling option is used to simulate a
+stratospheric ozone tracer.  Upon particle creation, the potential vorticity
+(PV) at its position is determined by interpolation from the ECMWF data.
+Particles initially located in the troposphere (PV$<$\verb|pvcrit| potential
+vorticity units (pvu), default 2 pvu) are not used.  In contrast, stratospheric
+particles (PV$>$\verb|pvcrit|) are given a mass according to:
+
+\begin{equation}
+M_{O_3}=M_{air}\, P \, C \, 48/29
+\end{equation}
+
+where $M_{air}$ is the mass of air a particle represents, $P$ is PV in pvu,
+$C=60\times$10$^{-9}$ pvu$^{-1}$ is the ozone/PV relationship \citep{stohl2000}
+(parameter \verb|ozonescale|), and the factor 48/29 converts from volume to
+mass mixing ratio.  Particles are then allowed to advect through the
+stratosphere and into the troposphere according to the winds.
+
+\section{Model output}
+
+Tracer concentrations and/or mixing ratios (for forward runs), or emission
+sensitivity response functions (for backward runs) are calculated on a
+three-dimensional longitude-latitude grid, defined in file \verb|OUTGRID|,
+whose domain and resolution can differ from the grid on which meteorological
+input data are given.  Two-dimensional wet and dry deposition fields are
+calculated over the same spatial domain, and tracer mass fluxes can also be
+determined on the 3-d grid.  Except for the mass fluxes, output can also be
+produced on one nested output grid with higher horizontal but the same vertical
+resolution, defined in file \verb|OUTGRID_NEST|.  For certain locations,
+specified in file \verb|RECEPTORS|, concentrations can also be calculated
+independently from a grid (see below).  The time interval (variable
+\verb|loutstep|) at which output is produced is read in from file
+\verb|COMMAND|.  For every output time and for every species (\verb|nnn|),
+files are created, with file names ending with date, time and species number in
+the format \verb|yyyymmddhhmmss_nnn|.  A list of all these output times is
+written to the formatted file \verb|dates|.  The dates indicate the ending time
+of an output sampling interval (see section~\ref{conccalc}).
+
+\subsection{Gridded output}
+
+There are several output options in FLEXPART, which can all be selected in file
+\verb|COMMAND|.  Gridded output fields can be concentrations (files
+\verb|grid_conc_date_nnn|), volume mixing ratios (files
+\verb|grid_pptv_date_nnn|), emission response sensitivity in backward
+simulations (files \verb|grid_time_date_nnn|), or fluxes (files
+\verb|grid_flux_date|, unit 10$^{-12}$ kg m$^{-2}$ s$^{-1}$ for forward runs),
+or, in backward mode, sensitivities to initial conditions taken from another
+model (\verb|grid\_initial\_nnn|).
+
+The species number identifier \verb|nnn| starts at one (with leading zeros) and
+increases to the maximum number of species used in the simulation.  Files
+\verb|grid_conc_date_nnn| are created only in forward runs, whereas files
+\verb|grid_time_date_nnn| are only created in backward runs.  Note that the
+units of the files \verb|grid_conc_date_nnn| and \verb|grid_time_date_nnn|
+depend on the settings of the switches \verb|ind_source| and
+\verb|ind_receptor|, following Table~\ref{units}.  In particular, the units of
+\verb|grid_conc_date| can also be mass mixing ratios.  For forward runs,
+additional files \verb|grid_pptv_date_nnn| can be created, which contain volume
+mixing ratios for gases.  Output files \verb|grid_conc*|, \verb|grid_pptv*|,
+and \verb|grid_time*| also contain wet and dry deposition fields (unit
+10$^{-12}$ kg m$^{-2}$ in forward mode), and all files contain, for each grid
+cell, corresponding uncertainties.  All these file types share a common header,
+file \verb|header| produced by subroutine \verb|writeheader.f|, where important
+information on the model run (start of simulation, grid domain, number and
+position of vertical levels, age classes, release points, etc.) is stored.  In
+all postprocessing programs, the header must be read in before the actual data
+files.  File names for the output nests follow the same nomenclature as
+described above, but with \verb|_nest| added (e.g., \verb|header_nest|, or
+\verb|grid_conc_nest_date_nnn|).  The output files are written with subroutines
+\verb|concoutput.f| and \verb|fluxoutput.f|.
+
+FLEXPART output typically contains many grid cells with zero values.  It would
+be inefficient to write out all these zeroes.  Therefore, a special format has
+been designed that compresses the information to the relevant information.  In
+previous versions (up to version 7), the output consisted of a mixture of a
+full grid dump (including zeroes) and a sparse matrix format - output was
+switched between these two formats based on which one was smaller.
+
+In version 8.0, the output has been redesigned completely for yet more efficiency
+such that output file sizes are only about 40\% of what they used to be.  The
+output grid is searched for consecutive sequences of non-zero values.  The
+variable \verb|sp_count_i| gives the number of such sequences (n), and the
+integer field \verb|sparse_dump_i(n)| contains the field positions of the first
+non-zero element for every sequence.  The variable \verb|sp_count_r| gives the
+total number (k) of non-zero values written out.  They are contained in the
+real field \verb|sparse_dump_r(n)|.  Since all physical output quantities of
+FLEXPART are non-zero, sequences are written out alternatingly as positive or
+negative values.  Every switch between positive and negative values indicates
+that a new sequence with non-zero values starts.  The field position for that
+start is contained in \verb|sparse_dump_i(k)| for the k-th switch between
+positive and negative.  Zero values in between sequences are ignored and not
+written out.  Field positions within the 3-d output field are coded such that a
+single integer value is sufficient.  It can later be converted back to give
+positions in all three coordinates.
+
+The possibility to output the sensitivities to initial conditions for backward
+runs has been introduced with FLEXPART version 8.2. This option can be used to
+calculate the exact sensitivities of the concentrations (or mixing ratios,
+depending on what is simulated) to initial conditions either in concentration
+or mixing ratio units taken from a gridded data set, which can be produced
+either by another model or by a FLEXPART forward simulation.  This option has
+been introduced to allow interfacing FLEXPART with other models.  Multiplying
+the sensitivities in files \verb|grid_initial_nnn| with the corresponding
+concentrations (or mixing ratios, depending on option chosen for switch
+\verb|LINIT_COND| in file \verb|COMMAND|) from the forward simulation at the
+interfacing time gives the concentration (or mixing ratio) response at the
+receptor (taking into account possible loss processes during the FLEXPART
+simulation time).
+
+\subsection{Receptor point output}
+
+For a list of points at the surface, concentrations or mixing ratios in forward
+simulations can be determined with a grid-independent method.  This information
+is written to files \verb|receptor_conc| and \verb|receptor_pptv|,
+respectively, for all dates of a simulation.
+
+\subsection{Particle dump and warm start option}
+
+Particle information (3-d position, release time, release point, and release
+masses for all species) can be written out to files (subroutine
+\verb|partoutput.f|) either continuously (binary files \verb|partposit_date|),
+or `only at the end' of a simulation (file \verb|partposit_end|).  In both
+cases output is written every output interval but file \verb|partposit_end| is
+overwritten upon each new output.  If FLEXPART must be terminated, it can be
+continued later on by reading in files \verb|header| and \verb|partposit_end|
+produced by the previous run (subroutine \verb|readpartpositions.f|).  Such a
+warm start is done if variable \verb|ipin| is set to 1 in file \verb|COMMAND|.
+
+If option \verb|mquasilag| is chosen in file \verb|COMMAND|, particle dumps
+every output interval are produced in a very compact format by converting the
+positions to an \verb|integer*2| format (subroutine \verb|partoutput_short.f|).
+As some accuracy is lost in the conversion, this output is not used for the
+warm start option.  Another difference to the normal particle dump is that
+every particle gets a unique number, thus allowing postprocessing routines to
+identify continuous particle trajectories.
+
+\subsection{Clustered plume trajectories}
+
+Condensed particle output using the clustering algorithm described in
+section~\ref{plumetraj} is written to the formatted file
+\verb|trajectories.txt|.  Information on the release points (coordinates,
+release start and end, number of particles) is written by subroutine
+\verb|openouttraj.f| to the beginning of file \verb|trajectories.txt|.
+Subsequently, \verb|plumetraj.f| writes out a time sequence of the clustering
+results for each release point: release point number, time in seconds elapsed
+since the middle of the release interval, plume centroid position coordinates,
+various overall statistics (e.g., fraction of particles residing in the ABL and
+troposphere), and then for each cluster the cluster centroid position, the
+fraction of particles belonging to the cluster, and the root-mean-square
+distance of cluster member particles from the cluster centroid.
+
+\section{pflexpart: a Python routine for the analysis of FLEXPART output}
+
+To assist in the usage and analysis of FLEXPART data we have created a Python
+module that is available with this new release.  The Python module 'pflexpart'
+enables the user to easily read and access the header and grid output data of
+the FLEXPART model runs.  Furthermore, we provide some basic classes that
+assist in conducted standard analysis of backward and forward model runs.
+
+The module is released under the same GPL license as FLEXPART.  As open source
+code it is constantly undergoing revision and updates from the community.
+Thus, the core functionality of the module is described online.  See:
+http://transport.nilu.no/pflexpart
+
+The module is largely based on the well known Numpy and matplotlib Python
+modules as well as the {``basemap``} tool box of matplotlib.  Additionally, for
+efficiency in reading the data, there are several custom build modules that use
+the \verb|readgrid.f| FORTRAN routines described above.  Note, that some of
+these modules will require the user to compile them for their system to achieve
+maximum benefit.
+
+The central framework to the module is the pflexpart \verb|Header| class.  This
+class will read a FLEXPART header file and provide some functionality toward
+data analysis.  For instance, the \verb|Header| class has a
+\verb|fill_backward| method for backward runs that will calculate the Total
+Column and Footprint sensitivities from the N ageclasses used in the run.  From
+this method, plotting of residence times and emission sensitivities is
+relatively simple.
+
+Other features include wrapper functions around the matplotlib toolboxes that
+allow for plotting of the data easily.  The functions \verb|plot_totalcolumn|
+and \verb|plot_footprint| for example are customized wrappers of the
+\verb|plot_sensitivity| function.  These functions take data objects that are
+created by the \verb|fill_backward| method of the \verb|Header| class and allow
+the user to create plots quickly.  For forward runs, the \verb|Header.readgrid|
+method can be used, again with the \verb|plot_sensitivity| function of the
+pflexpart module.
+
+For more details, the reader is referred again to the more frequently updated
+module home page.
+
+\section{Final remark}
+
+In this note, we have described the Lagrangian particle dispersion model FLEXPART in version
+8.2.  As FLEXPART is developed further this text will be kept up to date and will be accessible
+from the FLEXPART home page at http://transport.nilu.no/flexpart.
+
+\begin{thebibliography}{}
+
+\bibitem[Asman(1995)]{asman1995}
+Asman, W. A. H.:
+Parameterization of below-cloud scavenging of highly soluble gases under convective conditions.
+Atmos. Environ., 29, 1359--1368, 1995.
+\bibitem[Baumann and Stohl(1997)]{baumann1997}
+Baumann, K. and Stohl, A.:
+Validation of a long-range trajectory model using gas balloon tracks from the Gordon Bennett Cup 95.
+J. Appl. Meteor., 36, 711--720, 1997.
+\bibitem[Beljaars and Holtslag(1991)]{beljaars1991}
+Beljaars, A. C. M. and Holtslag, A. A. M.:
+Flux parameterization over land surfaces for atmospheric models.
+J. Appl. Meteor., 30, 327--341, 1991.
+\bibitem[Belward et al.(1999)]{belward1999}
+Belward, A.S., Estes, J.E., and Kline, K.D.: 
+The IGBP-DIS 1-Km Land-Cover Data Set DISCover: A Project Overview. 
+Photogrammetric Engineering and Remote Sensing , v. 65, no. 9, p. 1013--1020, 1999.
+\bibitem[Berkowicz and Prahm(1982)]{berkowicz1982}
+Berkowicz, R. and Prahm, L. P.:
+Evaluation of the profile method for estimation of surface fluxes of momentum and heat.
+Atmos. Environ., 16, 2809--2819, 1982.
+\bibitem[Bey et al.(2001)]{bey2001}
+Bey I, Jacob DJ, Yantosca RM, et al.:
+Asian chemical outflow to the Pacific in spring: Origins, pathways, and budgets.
+J. Geophys. Res., 106, 19, 23073-23095, 2001.
+\bibitem[Businger et al.(1971)]{businger1971}
+Businger, J. A., Wyngaard, J. C., Izumi, Y. and Bradley, E. F.:
+Flux-profile relationships in the atmospheric surface layer.
+J. Atmos. Sci., 28, 181--189, 1971. 
+\bibitem[Dorling et al.(1992)]{dorling1992}
+ Dorling, S. R., Davies, T. D. and Pierce, C.E.:
+Cluster analysis: a technique for estimating the synoptic meteorological controls on air and precipitation chemistry - method and applications.
+Atmos. Environ., 26A, 2575--2581, 1992.
+\bibitem[ECMWF(1995)]{ecmwf1995}
+ECMWF,
+User Guide to ECMWF Products 2.1. Meteorological Bulletin M3.2. Reading, UK, 1995.
+\bibitem[Emanuel(1991)]{emanuel1991}
+Emanuel, K. A.:
+A scheme for representing cumulus convection in large-scale models,
+J. Atmos. Sci., 48, 2313--2335, 1991.
+\bibitem[Emanuel and \v{Z}ivkovi\'{c}-Rothman(1999)]{emanuel1999}
+Emanuel, K. A., and \v{Z}ivkovi\'{c}-Rothman, M.:
+Development and evaluation of a convection scheme for use in climate models.
+J. Atmos. Sci., 56, 1766--1782, 1999.
+\bibitem[Erisman et al.(1994)]{erisman1994}
+Erisman, J. W., Van Pul, A. and Wyers, P.:
+Parametrization of surface resistance for the quantification of atmospheric deposition of acidifying pollutants and ozone.
+Atmos. Environ., 28, 2595--2607, 1994.
+\bibitem[Flesch et al.(1995)]{flesch1995}
+Flesch, T. K., Wilson, J. D., and Lee, E.:
+Backward-time Lagrangian stochastic dispersion models and their application to estimate gaseous emissions,
+J. Appl. Meteorol., 34, 1320--1333, 1995.
+\bibitem[Forster et al.(2001)]{forster2001}
+Forster, C., Wandinger, U., Wotawa, G., James, P., Mattis, I., Althausen, D., Simmonds, P., O'Doherty, S., Kleefeld, C., Jennings, S. G., Schneider, J., Trickl, T., Kreipl, S., J\"ager, H., Stohl, A.:
+Transport of boreal forest fire emissions from Canada to Europe.
+J. Geophys. Res., 106, 22,887--22,906, 2001.
+\bibitem[Gupta et al.(1997)]{gupta1997}
+Gupta, S., McNider, R. T., Trainer, M., Zamora, R. J., Knupp, K. and Singh, M.P.:
+Nocturnal wind structure and plume growth rates due to inertial oscillations.
+J. Appl. Meteor., 36, 1050--1063, 1997.
+\bibitem[Hanna(1982)]{hanna1982}
+Hanna, S.R.:
+Applications in air pollution modeling. In: Nieuwstadt F.T.M. and H. van Dop (ed.): {\em Atmospheric Turbulence and Air Pollution Modelling}.
+D. Reidel Publishing Company, Dordrecht, Holland, 1982.
+\bibitem[Helmig et al.(2007)]{helmig2007}
+Helmig D., Ganzeveld, L., Butler, T. and Oltmans S.J.: 
+The role of ozone atmosphere-snow gas exchange on polar, boundary-layer tropospheric ozone - a review and sensitivity analysis 
+Atmos. Chem. and Physics, 7, 15--30, 2007.
+\bibitem[Hertel et al.(1995)]{hertel1995}
+Hertel, O., Christensen, J. Runge, E. H., Asman, W. A. H., Berkowicz, R., Hovmand, M. F. and Hov, O.:
+Development and testing of a new variable scale air pollution model - ACDEP.
+Atmos. Environ., 29, 1267--1290, 1995.
+\bibitem[Hubbe et al.(1997)]{hubbe1997}
+Hubbe, J. M., Doran, J. C., Liljegren, J.C. and Shaw, W. J.:
+Observations of spatial variations of boundary layer structure over the southern Great Plains cloud and radiation testbed.
+J. Appl. Meteor., 36, 1221--1231, 1997.
+\bibitem[Jacob and Wofsy(1990)]{jacob1990}
+Jacob D. J., Wofsy W. C.:
+Budgets of reactive nitrogen, hydrocarbons, and ozone over the amazon-forest during the wet season. 
+J. Geophys. Res., 95, 16737--16754, 1990. 
+\bibitem[Kahl (1996)]{kahl1996}
+Kahl, J. D. W.:
+On the prediction of trajectory model error.
+Atmos. Environ., 30, 2945--2957, 1996.
+\bibitem[Legg and Raupach(1982)]{legg1982}
+Legg, B. J., and Raupach, M. R.:
+Markov-chain simulation of particle dispersion in inhomogeneous flows: the mean drift velocity induced by a gradient in Eulerian velocity variance.
+Bound.-Layer Met., 24, 3--13, 1982.
+\bibitem[Legras et al.(2003)]{legras2003}
+Legras, B., Joseph, B. and Lefevre, F.:
+Vertical diffusivity in the lower stratosphere from Lagrangian back-trajectory reconstructions of ozone profiles.
+J. Geophys. Res., 108, 4562, doi:10.1029/2002JD003045, 2003.
+\bibitem[Maryon(1998)]{maryon1998}
+Maryon, R. H.:
+Determining cross-wind variance for low frequency wind meander.
+Atmos. Environ., 32, 115--121, 1998.
+\bibitem[McMahon(1979)]{mcmahon1979}
+McMahon, T. A., and Denison, P. J.:
+Empirical atmospheric deposition parameters - a survey.
+Atmos. Environ., 13, 571--585, 1979.
+\bibitem[McNider et al.(1988)]{mcnider1988}
+McNider, R. T., Moran, M. D. and Pielke, R. A.:
+Influence of diurnal and inertial boundary layer oscillations on long-range dispersion.
+Atmos. Environ., 22, 2445--2462, 1988.
+\bibitem[Naeslund and Thaning(1991)]{naeslund1991}
+Naeslund, E., and Thaning, L.:
+On the settling velocity in a nonstationary atmosphere.
+Aerosol Sci. Technol., 14, 247-256, 1991.
+\bibitem[Petterssen(1940)]{petterssen1940}
+Petterssen, S.:
+Weather Analysis and Forecasting.
+McGraw-Hill Book Company, New York. pp. 221--223, 1940.
+\bibitem[Pruppacher and Klett(1978)]{pruppacher1978}
+Pruppacher, H. R. and Klett, J. D.:
+Microphysics of clouds and precipitation.
+D. Reidel Publishing Company, Dordrecht, 714p., 1978.
+\bibitem[Rodean(1996)]{rodean1996}
+Rodean, H.:
+Stochastic Lagrangian models of turbulent diffusion.
+Meteorological Monographs, 26 (48). American Meteorological Society, Boston, USA, 1996.
+\bibitem[Ryall et al.(1997)]{ryall1997}
+Ryall, D. B. and Maryon, R. H.:
+Validation of the UK Met Office's NAME model against the ETEX dataset. In: Nodop, K. (editor): ETEX Symposium on Long-Range Atmospheric Transport, Model Verification and Emergency Response, European Commission EUR 17346, 151--154, 1997.
+\bibitem[Seibert(2001)]{seibert2001}
+Seibert, P.:
+Inverse modelling with a Lagrangian particle dispersion model:  application to point releases over limited time intervals. In: Gryning, S. E., Schiermeier, F.A.  (eds.): Air Pollution Modeling and its Application XIV. Proc. of ITM Boulder. New York: Plenum Press, 381--389, 2001.
+\bibitem[Seibert and Frank(2004)]{seibert2004}
+Seibert, P. and Frank, A.:
+Source-receptor matrix calculation with a Lagrangian particle dispersion model in backward mode.
+Atmos. Chem. Phys., 4, 51--63, 2004.
+\bibitem[Seibert et al.(2001)]{seibertetal2001}
+Seibert, P., Kr\"uger, B. and Frank, A.:
+Parametrisation of convective mixing in a Lagrangian particle dispersion model, Proceedings of the 5th GLOREAM Workshop, Wengen, Switzerland, September 24--26, 2001.
+\bibitem[Slinn(1982)]{slinn1982}
+Slinn, W. G. N.:
+Predictions for particle deposition to vegetative canopies.
+Atmos. Environ., 16, 1785--1794, 1982.
+\bibitem[Spichtinger et al.(2001)]{spichtinger2001}
+Spichtinger, N., Wenig, M., James, P., Wagner, T., Platt, U. and Stohl, A.:
+Satellite detection of a continental-scale plume of nitrogen oxides from boreal forest fires,
+Geophys. Res. Lett., 28, 4579--4582, 2001.
+\bibitem[Stohl(1998)]{stohl1998}
+Stohl, A.:
+Computation, accuracy and applications of trajectories -- a review and bibliography.
+Atmos. Environ., 32, 947--966, 1998.
+\bibitem[Stohl et al.(2005)]{stohl2005} 
+Stohl, A., Forster, C., Frank, A., Seibert, P., Wotawa, G.: 
+Technical note: The Lagrangian particle dispersion model FLEXPART version 6.2., 
+Atmos. Chem. Phys., 5, 2461-2474, 2005
+\bibitem[Stohl et al.(2004)]{stohl2004}
+Stohl, A., Cooper, O. R., Damoah, R., Fehsenfeld, F. C., Forster, C., Hsie, E.-Y., Hübler, G., Parrish,
+D. D. and Trainer, M.:
+Forecasting for a Lagrangian aircraft campaign.
+Atmos. Chem. Phys., 4, 1113--1124, 2004.
+\bibitem[Stohl et al.(2002)]{stohl2002}
+Stohl, A., Eckhardt, S., Forster, C., James, P., Spichtinger, N. and Seibert, P.:
+A replacement for simple back trajectory calculations in the interpretation of atmospheric trace substance measurements.
+Atmos. Environ., 36, 4635--4648, 2002.
+\bibitem[Stohl et al.(2003)]{stohl2003}
+Stohl, A., Forster, C., Eckhardt, S., Spichtinger, N., Huntrieser, H., Heland, J., Schlager, H., Wilhelm, S., Arnold, F. and Cooper, O.:
+A backward modeling study of intercontinental pollution transport using aircraft measurements.
+J. Geophys. Res., 108, 4370, doi:10.1029/2002JD002862, 2003.
+\bibitem[Stohl et al.(1998)]{stohletal1998}
+Stohl, A., Hittenberger, M. and Wotawa, G.:
+Validation of the Lagrangian particle dispersion model FLEXPART against large scale tracer experiment data.
+Atmos. Environ., 32, 4245--4264, 1998.
+\bibitem[Stohl et al.(2000)]{stohl2000}
+Stohl, A., Spichtinger-Rakowsky, N., Bonasoni, P., Feldmann, H., Memmesheimer, M., Scheel, H. E., Trickl, T., H\"ubener, S. H., Ringer, W. and Mandl, M.:
+The influence of stratospheric intrusions on alpine ozone concentrations.
+Atmos. Environ., 34, 1323--1354, 2000. 
+\bibitem[Stohl and Thomson(1999)]{stohlthomson1999}
+Stohl, A. and Thomson, D. J.:
+A density correction for Lagrangian particle dispersion models.
+Bound.-Layer Met., 90, 155--167, 1999.
+\bibitem[Stohl and Trickl(1999)]{stohl1999}
+Stohl, A. and Trickl, T.:
+A textbook example of long-range transport: Simultaneous observation of ozone maxima of stratospheric and North American origin in the free troposphere over Europe,
+J. Geophys. Res., 104, 30,445--30,462, 1999.
+\bibitem[Walmsley and Wesely(1996]{walmsley1996}
+Walmsley J.L., Wesely M.L.: 
+Modification of coded parametrizations of surface resistances to gaseous dry deposition.  
+Atmos. Environ., 30, 1181--1188, 1996. 
+\bibitem[Stohl et al.(1995)]{stohl1995} 
+Stohl, A., Wotawa, G., Seibert, P. and Kromp-Kolb, H.:
+Interpolation errors in wind fields as a function of spatial and temporal resolution and their impact on different types of kinematic trajectories.
+J. Appl. Meteor., 34, 2149--2165, 1995.
+\bibitem[Stull(1988)]{stull1988}
+Stull, R. B.:
+An Introduction to Boundary Layer Meteorology. Kluwer Academic Publishers, Dordrecht, 1988.
+\bibitem[Telford(1975)]{telford1975}
+Telford, J. W.:
+Turbulence, entrainment and mixing in cloud dynamics,
+Pure Appl. Geophys., 113, 1067--1084, 1975.
+\bibitem[Thomson(1987)]{thomson1987}
+Thomson D. J.:
+Criteria for the selection of stochastic models of particle trajectories in turbulent flows.
+J. Fluid Mech., 180, 529--556, 1987.
+\bibitem[Uliasz(1994)]{uliasz1994}
+Uliasz, M.:
+Lagrangian particle dispersion modeling in mesoscale applications. In: Zannetti, P. (ed.): {\it Environmental Modeling, Vol. II}. Computational Mechanics Publications, Southampton, UK, 1994.
+\bibitem[Velde et al.(1994)]{velde1994}
+Velde van de, R. J., Faber, W. S., Katwijk van, V. F., Kuylenstierna, J. C. I., Scholten., H. J., Thewessen, T. J. M., Verspuij, M. and Zevenbergen, M.:
+The Preparation of a European Land Use Database. National Institute of Public Health and Environmental Protection, Report nr 712401001, Bilthoven, The Netherlands, 1994.
+\bibitem[Vogelezang and Holtslag(1996)]{vogelezang1996}
+Vogelezang, D. H. P. and Holtslag, A. A. M.:
+Evaluation and model impacts of alternative boundary-layer height formulations.
+Bound.-Layer Met., 81, 245--269, 1996.
+\bibitem[Wesely and Hicks(1977)]{wesely1977}
+Wesely, M. L. and Hicks, B. B.:
+Some factors that affect the deposition rates of sulfur dioxide and similar gases on vegetation.
+J. Air Poll. Contr. Assoc., 27, 1110--1116, 1977.
+\bibitem[Wesely(1989)]{wesely1989}
+Wesely, M. L.:
+Parameterization of surface resistances to gaseous dry deposition in regional-scale numerical models.
+Atmos. Environ., 23, 1293--1304, 1989.
+\bibitem[Wilson and Flesch(1993)]{wilson1993}
+Wilson, D. J. and Flesch, T. K.:
+Flow boundaries in random-flight dispersion models: enforcing the well-mixed condition.
+J. Appl. Meteor., 32, 1695--1707, 1993.
+\bibitem[Wilson et al.(1983)]{wilson1983}
+Wilson, J. D., Legg, B. J. and Thomson, D. J.:
+Calculation of particle trajectories in the presence of a gradient in turbulent-velocity scale.
+Bound.-Layer Met., 27, 163--169, 1983.
+\bibitem[Wilson and Sawford(1996)]{wilson1996}
+Wilson, J. D. and Sawford, B. L.:
+Review of Lagrangian stochastic models for trajectories in the turbulent atmosphere.
+Bound.-Layer Met., 78, 191--210, 1996.
+\bibitem[Wotawa et al.(1996)]{wotawa1996}
+Wotawa, G., Stohl, A. and Kromp-Kolb, H.:
+Parameterization of the planetary boundary layer over Europe - a data comparison between the observation based OML preprocessor and ECMWF model data.
+Contr. Atmos. Phys., 69, 273--284, 1996.
+\bibitem[Wotawa and Stohl(1997)]{wotawa1997}
+Wotawa, G. and Stohl, A.:
+Boundary layer heights and surface fluxes of momentum and heat derived from ECMWF data for use in pollutant dispersion models -- problems with data accuracy.
+In: Gryning, S.-E., Beyrich, F. and E. Batchvarova (editors): The Determination of the Mixing Height -- Current Progress and Problems. EURASAP Workshop Proceedings, 1-3 October 1997, Ris{\o} National Laboratory, Denmark, 1997.
+\bibitem[Zannetti(1992)]{zannetti1992}
+Zannetti, P.:
+Particle Modeling and Its Application for Simulating Air Pollution Phenomena. In: Melli P. and P. Zannetti (ed.): Environmental Modelling. Computational Mechanics Publications, Southampton, UK, 1992.
+\bibitem[Zhang et al.(2002)]{zhang2002}
+Zhang L.M., Moran M.D., Makar P.A., Brook J.R. and S. Gong
+Modelling gaseous dry deposition in AURAMS: a unified regional air-quality modelling system 
+Atmos. Environ., 36, 537-560, 2002.
+
+\end{thebibliography}
+
+\newpage
+
+\appendix
+
+\onecolumn
+
+\section{FLEXPART sample input files}
+\subsection{The pathnames file}
+A file \verb|pathnames| must exist in the directory where FLEXPART is started.
+It states the pathnames (absolute or relative) of input and output files:
+\begin{footnotesize}\begin{verbatim}
+/home/as/FLEXPART50/options/
+/volc/as/contrace/modelresults/forward/
+/volc/windcontrace/
+/volc/windcontrace/AVAILABLE
+/volc/nested/
+/volc/nested/AVAILABLE
+============================================
+
+Line 1: path where control files "COMMAND" and "RELEASES" are available
+Line 2: name of directory where output files are generated
+Line 3: path where meteorological fields are available (mother grid)
+Line 4: full filename of "AVAILABLE"-file (mother grid)
+
+Subsequent lines:
+Line 2n+3: path where meteorological fields are available (nested grid n)
+Line 2n+4: full filename of "AVAILABLE"-file (nested grid n)
+
+Line below last pathname must be:
+============================================
+
+The grids must be arranged such as that the coarse-scale nests
+come before the fine-scale nests. Multiple nests of the same
+nesting level are allowed. In that case, the order is arbitrary.
+\end{verbatim}\end{footnotesize}
+
+\newpage
+
+\subsection{Files in directory windfields}
+
+The directory where the meteorological input data are stored, here called
+\verb|windfields| (\verb|/volc/windcontrace/| in the above example
+\verb|pathnames| file), contains grib-code files containing the ECMWF data.
+All meteorological fields must have the same structure, i.e.  the same
+computational domain and the same resolution.  An example listing of this
+directory is given below.
+\begin{footnotesize}\begin{verbatim}
+AVAILABLE       EN01102806      EN01102815
+EN01102800      EN01102809      EN01102818
+EN01102803      EN01102812      EN01102821
+\end{verbatim}\end{footnotesize}
+
+The file names of the grib-code files and their validation dates and times (in UTC) must be listed in the file \verb|AVAILABLE|. While it is practical to have this file reside in the same directory as the wind fields, this is no necessity and it can also be located elsewhere, as its file name is also given in the \verb|pathnames| file.
+\begin{footnotesize}\begin{verbatim}
+DATE     TIME         FILENAME     SPECIFICATIONS
+YYYYMMDD HHMISS
+________ ______      __________      __________
+20011028 000000      EN01102800      ON DISC
+20011028 030000      EN01102803      ON DISC
+20011028 060000      EN01102806      ON DISC
+20011028 090000      EN01102809      ON DISC
+20011028 120000      EN01102812      ON DISC
+20011028 150000      EN01102815      ON DISC
+20011028 180000      EN01102818      ON DISC
+20011028 210000      EN01102821      ON DISC
+\end{verbatim}\end{footnotesize}
+
+Since version 7.0, FILENAME can be up to 256 characters long.  Thus, the path
+to a file can be directly placed in the AVAILABLE file.  If this feature is
+used, line 3 in the \verb|pathnames| file should be left empty.
+\begin{footnotesize}\begin{verbatim}
+DATE     TIME         FILENAME     SPECIFICATIONS
+YYYYMMDD HHMISS
+________ ______      __________      __________
+20011028 000000      /work_disk/data/EN01102800      ON DISC
+20011028 030000      /work_disk/data/EN01102803      ON DISC
+20011028 060000      /work_disk/data/EN01102806      ON DISC
+20011028 090000      /work_disk/data/EN01102809      ON DISC
+20011028 120000      /work_disk/data/EN01102812      ON DISC
+20011028 150000      /work_disk/data/EN01102815      ON DISC
+20011028 180000      /work_disk/data/EN01102818      ON DISC
+20011028 210000      /work_disk/data/EN01102821      ON DISC
+\end{verbatim}\end{footnotesize}
+
+Nested wind fields must be stored in one or more different directory/ies, as specified in the \verb|pathnames| file.
+
+\newpage
+
+\subsection{Files in directory options}
+
+The files in directory \begin{footnotesize}\verb|options|\end{footnotesize} are used to specify the model run.
+An example listing of \begin{footnotesize}\verb|options|\end{footnotesize} is given below.
+\begin{footnotesize}\begin{verbatim}
+AGECLASSES           IGBP_int1.dat       RECEPTORS             SPECIES
+COMMAND              OH_7lev_agl.dat     RELEASES              surfdata.t
+COMMAND.alternative  OUTGRID             RELEASES.alternative  surfdepo.t
+COMMAND.reference    OUTGRID_NEST        RELEASES.reference              
+\end{verbatim}\end{footnotesize}
+
+Here, SPECIES is a subdirectory containing a number of files (this feature was introduced in version 8.0):
+\begin{footnotesize}\begin{verbatim}
+SPECIES:
+SPECIES_001  SPECIES_004  SPECIES_007
+SPECIES_002  SPECIES_005  SPECIES_008
+SPECIES_003  SPECIES_006  SPECIES_009
+\end{verbatim}\end{footnotesize}
+
+\subsubsection{File COMMAND}
+
+The most important configuration file for setting up a FLEXPART simulation is
+the \verb|COMMAND| file which specifies (1) the simulation direction (either
+forward or backward), (2) the start and (3) the end time of the simulation, (4)
+the frequency $T_c$ of the model output, (5) the averaging time $\Delta T_c$ of
+model output, and (6) the intervals $\Delta T_s$ at which concentrations are
+sampled, (7) the time constant for particle splitting $\Delta t_s$, (8) the
+synchronisation interval of FLEXPART, (9) the factor $c_{tl}$ by which the time
+steps must be smaller than the Lagrangian time scale, and (10) the refinement
+factor for the time step used for solving the Langevin equation of the vertical
+component of the turbulent wind.  If (9) ($c_{tl}$) is negative, the Langevin
+equations are solved with constant time steps according to the synchronisation
+interval.  In that case, the value of (10) is arbitrary.  The synchronisation
+interval is the minimum time interval used by the model for all activities
+(such as concentration calculations, wet deposition calculations, interpolation
+of data, mesoscale wind fluctuations or output of data) other than the
+simulation of turbulent transport and dry deposition (if ($c_{tl}>0$).  Further
+switches determine (11) whether concentrations, mixing ratios, residence times
+or plume trajectories (or combinations thereof) are to be calculated, (12) the
+option of particle position dump either at the end of or continuously during
+the simulation, (13) on/off of subgrid terrain effect parameterization, (14)
+on/off of deep convection parameterization, (15) on/off calculation of age
+spectra, (16) continuation of simulation from previous particle dump, (17)
+write output for each RELEASE location on/off, (18) on/off for mass flux
+calculations and output, (19) on/off for the domain-filling option of FLEXPART,
+(20) an indicator that determines whether mass or mass mixing ratio units are
+to be used at the source, (21) an indicator that determines whether mass or
+mass mixing ratio units are to be used at the receptor, (22) on/off of
+additional compact dump of the positions of numbered particles, (23) on/off for
+the use of nested output fields, (24) write sensitivity to initial conditions
+in backward mode off/mass units/mass mixing ratio units.
+
+Two versions of \verb|COMMAND| may be used, which both can be read in by
+FLEXPART: the first contains formatted input (i.e., a mask to be filled for the
+various input options that must be filled in), the second contains largely
+unformatted input and is recommended for the more experienced FLEXPART user.
+The following example is for formatted input.
+
+\begin{scriptsize}\begin{verbatim}
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        *
+*                           Please select your options                         *
+*                                                                              *
+********************************************************************************
+
+1. __                3X, I2
+    1       
+   LDIRECT           1 FOR FORWARD SIMULATION, -1 FOR BACKWARD SIMULATION
+
+2. ________ ______   3X, I8, 1X, I6
+   20040626 000000
+   YYYYMMDD HHMISS   BEGINNING DATE OF SIMULATION
+
+3. ________ ______   3X, I8, 1X, I6
+   20040816 120000
+   YYYYMMDD HHMISS   ENDING DATE OF SIMULATION
+
+4. _____             3X, I5
+    7200 
+   SSSSS             OUTPUT EVERY SSSSS SECONDS
+
+5. _____             3X, I5
+    7200 
+   SSSSS             TIME AVERAGE OF OUTPUT (IN SSSSS SECONDS)
+
+6. _____             3X, I5
+     900 
+   SSSSS             SAMPLING RATE OF OUTPUT (IN SSSSS SECONDS)
+
+7. _________         3X, I9
+   999999999
+   SSSSSSSSS         TIME CONSTANT FOR PARTICLE SPLITTING (IN SECONDS)
+
+8. _____             3X, I5
+     900 
+   SSSSS             SYNCHRONISATION INTERVAL OF FLEXPART (IN SECONDS)
+
+9.  ---.--           4X, F6.4
+     -5.0
+    CTL              FACTOR, BY WHICH TIME STEP MUST BE SMALLER THAN TL
+
+10. ---              4X, I3
+      4
+    IFINE            DECREASE OF TIME STEP FOR VERTICAL MOTION BY FACTOR IFINE
+
+11. -                4X, I1
+    3  
+    IOUT             1 CONCENTRATION (RESIDENCE TIME FOR BACKWARD RUNS) OUTPUT, 2 MIXING RATIO OUTPUT, 3 BOTH,4 PLUME TRAJECT., 5=1+4
+
+12. -                4X, I1
+    2  
+    IPOUT            PARTICLE DUMP: 0 NO, 1 EVERY OUTPUT INTERVAL, 2 ONLY AT END
+
+13. _                4X, I1
+    1
+    LSUBGRID         SUBGRID TERRAIN EFFECT PARAMETERIZATION: 1 YES, 0 NO
+
+14. _                4X, I1
+    1
+    LCONVECTION      CONVECTION: 1 YES, 0 NO
+
+15. _                4X, I1
+    0
+    LAGESPECTRA      AGE SPECTRA: 1 YES, 0 NO
+
+16. _                4X, I1
+    0
+    IPIN             CONTINUE SIMULATION WITH DUMPED PARTICLE DATA: 1 YES, 0 NO
+
+17. _
+    0                4X,I1
+    IOFR             IOUTPUTFOREACHREL CREATE AN OUTPUT FILE FOR EACH RELEASE LOCATION: 1 YES, 0 NO
+
+18. _                4X, I1
+    0
+    IFLUX            CALCULATE FLUXES: 1 YES, 0 NO
+
+19. _                4X, I1
+    0
+    MDOMAINFILL      DOMAIN-FILLING TRAJECTORY OPTION: 1 YES, 0 NO, 2 STRAT. O3 TRACER
+
+20. _                4X, I1
+    1
+    IND_SOURCE       1=MASS UNIT , 2=MASS MIXING RATIO UNIT
+
+21. _                4X, I1
+    1
+    IND_RECEPTOR     1=MASS UNIT , 2=MASS MIXING RATIO UNIT
+
+22. _                4X, I1
+    0
+    MQUASILAG        QUASILAGRANGIAN MODE TO TRACK INDIVIDUAL PARTICLES: 1 YES, 0 NO
+
+23. _                4X, I1
+    0
+    NESTED_OUTPUT    SHALL NESTED OUTPUT BE USED? 1 YES, 0 NO
+24. _                4X, I1
+    2
+    LINIT_COND       INITIAL COND. FOR BW RUNS: 0=NO,1=MASS UNIT,2=MASS MIXING RATIO UNIT
+    
+
+1. Simulation direction, 1 for forward, -1 for backward in time
+        (consult Seibert and Frank, 2004 for backward runs)
+
+2. Beginning date and time of simulation. Must be given in format
+   YYYYMMDD HHMISS, where YYYY is YEAR, MM is MONTH, DD is DAY, HH is HOUR,
+   MI is MINUTE and SS is SECOND. Current version utilizes UTC.
+
+3. Ending date and time of simulation. Same format as 3.
+
+4. Average concentrations are calculated every SSSSS seconds.
+
+5. The average concentrations are time averages of SSSSS seconds
+   duration. If SSSSS is 0, instantaneous concentrations are outputted.
+
+6. The concentrations are sampled every SSSSS seconds to calculate the time
+   average concentration. This period must be shorter than the averaging time.
+
+7. Time constant for particle splitting. Particles are split into two
+   after SSSSS seconds, 2xSSSSS seconds, 4xSSSSS seconds, and so on.
+
+8. All processes are synchronized with this time interval (lsynctime).
+   Therefore, all other time constants must be multiples of this value.
+   Output interval and time average of output must be at least twice lsynctime.
+
+9. CTL must be >1 for time steps shorter than the  Lagrangian time scale
+   If CTL<0, a purely random walk simulation is done
+
+10.IFINE=Reduction factor for time step used for vertical wind
+
+11.IOUT determines how the output shall be made: concentration
+   (ng/m3, Bq/m3), mixing ratio (pptv), or both, or plume trajectory mode,
+   or concentration + plume trajectory mode.
+   In plume trajectory mode, output is in the form of average trajectories.
+
+12.IPOUT determines whether particle positions are outputted (in addition
+   to the gridded concentrations or mixing ratios) or not.
+   0=no output, 1 output every output interval, 2 only at end of the
+   simulation
+
+13.Switch on/off subgridscale terrain parameterization (increase of
+   mixing heights due to subgridscale orographic variations)
+
+14.Switch on/off the convection parameterization
+
+15.Switch on/off the calculation of age spectra: if yes, the file AGECLASSES
+   must be available
+
+16. If IPIN=1, a file "partposit_end" from a previous run must be available in
+    the output directory. Particle positions are read in and previous simulation
+    is continued. If IPIN=0, no particles from a previous run are used
+
+17. IF IOUTPUTFOREACHRELEASE is set to 1, one output field for each location
+    in the RELEASES file is created. For backward calculation this should be
+    set to 1. For forward calculation both possibilities are applicable.
+
+18. If IFLUX is set to 1, fluxes of each species through each of the output
+    boxes are calculated. Six fluxes, corresponding to northward, southward,
+    eastward, westward, upward and downward are calculated for each grid cell of
+    the output grid. The control surfaces are placed in the middle of each
+    output grid cell. If IFLUX is set to 0, no fluxes are determined.
+
+19. If MDOMAINFILL is set to 1, the first box specified in file RELEASES is used
+    as the domain where domain-filling trajectory calculations are to be done.
+    Particles are initialized uniformly distributed (according to the air mass
+    distribution) in that domain at the beginning of the simulation, and are
+    created at the boundaries throughout the simulation period.
+
+20. IND_SOURCE switches between different units for concentrations at the source
+    NOTE that in backward simulations the release of computational particles
+    takes place at the "receptor" and the sampling of particles at the "source".
+          1=mass units (for bwd-runs = concentration)
+          2=mass mixing ratio units
+21. IND_RECEPTOR switches between different units for concentrations at the receptor
+          1=mass units (concentrations)
+          2=mass mixing ratio units
+
+22. MQUASILAG indicates whether particles shall be numbered consecutively (1) or
+    with their release location number (0). The first option allows tracking of
+    individual particles using the partposit output files
+
+23. NESTED_OUTPUT decides whether model output shall be made also for a nested
+    output field (normally with higher resolution)
+
+24. LINIT_COND determines whether, for backward runs only, the sensitivity to initial
+    conditions shall be calculated and written to output files
+    0=no output, 1 or 2 determines in which units the initial conditions are provided.
+
+\end{verbatim}\end{scriptsize}
+
+\newpage
+
+\subsubsection{File OUTGRID}
+The file \verb|OUTGRID| specifies the output grid.
+\begin{scriptsize}\begin{verbatim}
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        *
+*                       Please specify your output grid                        *
+*                                                                              *
+********************************************************************************
+
+1.  ------.----       4X,F11.4
+       -10.0000       GEOGRAFICAL LONGITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLONLEFT        (left boundary of the first grid cell - not its centre)
+
+
+2.  ------.----       4X,F11.4
+        40.0000       GEOGRAFICAL LATITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLATLOWER       (lower boundary of the first grid cell - not its centre)
+
+3.  -----             4X,I5
+      101             NUMBER OF GRID POINTS IN X DIRECTION (= No. of cells + 1)
+    NUMXGRID
+
+4.  -----             4X,I5
+       47             NUMBER OF GRID POINTS IN Y DIRECTION (= No. of cells + 1)
+    NUMYGRID
+
+5.  ------.---        4X,F10.3
+         0.500        GRID DISTANCE IN X DIRECTION
+    DXOUTLON
+
+6.  ------.---        4X,F10.3
+         0.500        GRID DISTANCE IN Y DIRECTION
+    DYOUTLAT
+
+7.  -----.-           4X, F7.1
+      100.0
+    LEVEL 1           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+8.  -----.-           4X, F7.1
+      300.0
+    LEVEL 2           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+9.  -----.-           4X, F7.1
+      600.0
+    LEVEL 3           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+10. -----.-           4X, F7.1
+     1000.0
+    LEVEL 4           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+11. -----.-           4X, F7.1
+     2000.0
+    LEVEL 5           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+12. -----.-           4X, F7.1
+     3000.0
+    LEVEL 6           HEIGHT OF LEVEL (UPPER BOUNDARY)
+\end{verbatim}\end{scriptsize}
+In order to define the grid for a nested output field, the file
+\verb|OUTGRID_NEST| must exist.  It has the same format as file \verb|OUTGRID|,
+but does not contain the vertical level information:
+
+\begin{scriptsize}\begin{verbatim}
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        *
+*                       Please specify your output grid                        *
+*                                                                              *
+********************************************************************************
+
+1.  ------.----       4X,F11.4
+      -125.0000       GEOGRAFICAL LONGITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLONLEFT        (left boundary of the first grid cell - not its centre)
+
+2.  ------.----       4X,F11.4
+        25.0000       GEOGRAFICAL LATITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLATLOWER       (lower boundary of the first grid cell - not its centre)
+
+3.  -----             4X,I5
+        1             NUMBER OF GRID POINTS IN X DIRECTION (= No. of cells + 1)
+    NUMXGRID
+
+4.  -----             4X,I5
+        1             NUMBER OF GRID POINTS IN Y DIRECTION (= No. of cells + 1)
+    NUMYGRID
+
+5.  ------.-----      4X,F12.5
+         0.33333      GRID DISTANCE IN X DIRECTION
+    DXOUTLON
+
+6.  ------.-----      4X,F12.5
+         0.25000      GRID DISTANCE IN Y DIRECTION
+    DYOUTLAT
+\end{verbatim}\end{scriptsize}
+
+\newpage
+
+\subsubsection{File RECEPTORS}
+
+\verb|RECEPTORS| specifies the receptor locations for which the parabolic
+kernel method shall be applied to calculate air concentrations.  The maximum
+number of receptor sites is set by parameter \verb|maxreceptor| in file
+\verb|includepar|.
+\begin{scriptsize}\begin{verbatim}
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        * 
+*                       Please specify your receptor points                    * 
+*     For the receptor points, ground level concentrations are calculated      * 
+*                                                                              *
+********************************************************************************
+1.  ----------------  4X,A16
+    F15               NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         6.1333       GEOGRAFICAL LONGITUDE
+    XRECEPTOR
+
+3.  ------.----       4X,F11.4
+        49.0833       GEOGRAFICAL LATITUDE
+    YRECEPTOR
+================================================================================
+1.  ----------------  4X,A16
+    NL01              NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         5.7833       GEOGRAFICAL LONGITUDE
+    XRECEPTOR
+
+3.  ------.----       4X,F11.4
+        50.9167       GEOGRAFICAL LATITUDE
+    YRECEPTOR
+================================================================================
+\end{verbatim}\end{scriptsize}
+
+\newpage
+
+\subsubsection{File RELEASES}
+
+\begin{footnotesize}\verb|RELEASES|\end{footnotesize} defines the release
+specifications.  In the first input line, the number $N$ of emitted species is
+defined (1 in the example below).  At all locations, the same species must be
+released.  The next $N$ input lines give a cross-reference to the respective file
+\begin{footnotesize}\verb|SPECIES_nnn|\end{footnotesize}, where the physical and
+chemical properties of the released species are given (also the temporal
+variations of emissions is defined for each species).  Then follows a list of
+release sites, for each of which the release characteristics must be entered:
+the beginning and the ending time of the release, geographical coordinates of
+the lower left and upper right corners of the release location, type of
+vertical coordinate (above ground level, or above sea level), lower level and
+upper level of source box, the number of particles to be used, and the total
+mass emitted.  Note that the mass entry must be repeated $N$ times, one mass
+per species released.  Finally, a name is assigned to each release point.\par
+
+The particles are released from random locations within a four-dimensional box
+extending from the lower to the upper level above a rectangle (on a lat/lon
+grid) defined by the geographical coordinates, and between the release's start
+and end.  With some of the coordinates set identically, line or point sources
+can be specified.
+
+As for \verb|COMMAND|, the \verb|RELEASES| file can be provided formatted or
+unformatted.  The example below shows the formatted version.
+
+\begin{scriptsize}\begin{verbatim}
+*************************************************************************
+*                                                                       *
+*                                                                       *
+*                                                                       *
+*   Input file for the Lagrangian particle dispersion model FLEXPART    *
+*                        Please select your options                     *
+*                                                                       *
+*                                                                       *
+*                                                                       *
+*************************************************************************
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  1      
+___                        i3    Total number of species emitted
+
+ 24
+___                        i3    Index of species in file SPECIES
+
+=========================================================================
+20011028  150007
+________ ______            i8,1x,i6 Beginning date and time of release
+
+20011028  150046
+________ ______            i8,1x,i6 Ending date and time of release
+
+   9.4048 
+____.____                  f9.4  Longitude [DEG] of lower left corner
+
+  48.5060
+____.____                  f9.4  Latitude [DEG] of lower left corner
+
+   9.5067
+____.____                  f9.4  Longitude [DEG] of upper right corner
+
+  48.5158
+____.____                  f9.4  Latitude [DEG] of upper right corner
+
+        2
+_________                  i9    1 for m above ground, 2 for m above sea level, 3 for pressure in hPa
+
+ 6933.60
+_____.___                  f10.3 Lower z-level (in m agl or m asl)
+ 
+ 6950.40
+_____.___                  f10.3 Upper z-level (in m agl or m asl)
+ 
+    20000                
+_________                  i9    Total number of particles to be released
+
+1.0000E00
+_.____E__                  e9.4  Total mass emitted
+
+FLIGHT_11242
+________________________________________   character*40 comment
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+20011028  150047
+________ ______            i8,1x,i6 Beginning date and time of release
+
+20011028  150107
+________ ______            i8,1x,i6 Ending date and time of release
+
+   9.3038 
+____.____                  f9.4  Longitude [DEG] of lower left corner
+
+  48.5158
+____.____                  f9.4  Latitude [DEG] of lower left corner
+
+   9.4048
+____.____                  f9.4  Longitude [DEG] of upper right corner
+
+  48.5906
+____.____                  f9.4  Latitude [DEG] of upper right corner
+
+        2
+_________                  i9    1 for m above ground, 2 for m above sea level, 3 for pressure in hPa
+
+ 6833.50
+_____.___                  f10.3 Lower z-level (in m agl or m asl)
+ 
+ 6950.40
+_____.___                  f10.3 Upper z-level (in m agl or m asl)
+ 
+    20000                
+_________                  i9    Total number of particles to be released
+
+1.0000E00
+_.____E__                  e9.4  Total mass emitted
+
+FLIGHT_11185
+________________________________________   character*40 comment
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+\end{verbatim}\end{scriptsize}
+
+\newpage
+
+\subsubsection{File AGECLASSES}
+
+\verb|AGECLASSES| provides the times for the age class calculation.  In the
+first data line, the number $n$ of age classes is set, and ages are listed in
+the following $n$ lines.  The entries specify the end times (in seconds) of the
+respective intervals to be used, the first one starting at zero seconds.
+Particles are dropped from the simulation once they exceed the maximum age.
+Even if no age classes are needed, this option (with the number of age classes
+set to 1) can be useful to determine the age at which particles are removed
+from the simulation.
+
+\begin{footnotesize}\begin{verbatim}
+************************************************
+*                                              *
+*Lagrangian particle dispersion model FLEXPART *
+*         Please select your options           *
+*                                              *
+*This file determines the ageclasses to be used*
+*                                              *
+*Ages are given in seconds. The first class    *
+*starts at age zero and goes up to the first   *
+*age specified. The last age gives the maximum *
+*time a particle is carried in the simulation. *
+*                                              *
+************************************************
+ 6          Integer        Number of age classes
+43200       Integer        Age class 1
+86400       Integer        Age class 2
+129600
+172800
+259200
+345600
+\end{verbatim}\end{footnotesize}
+
+\newpage
+
+\subsubsection{Files SPECIES\_nnn and surfdata.t}
+
+\begin{footnotesize}\verb|SPECIES_nnn|\end{footnotesize} (where \verb|nnn| is 
+a zero-padded identifier of the species number) specifies all physico-chemical
+properties for the given species.  Entries are the half life (due to
+radioactive or chemical decay), wet deposition information (\verb|A| and \verb|B| are the
+factors defined by Eq.~\ref{wetscav}), dry deposition information for
+gases ($D=D_{H_2O}/D_i$, $D_{H_2O}$ is the diffusivity of water vapor and \verb|D_i|
+is the diffusivity of the species, \verb|H| is the effective Henry's constant, and
+\verb|f0| varies between 0 and 1 and gives the reactivity of a species relative to
+that of ozone.  For nonreactive species \verb|f0| is 0, for slightly reactive it is
+0.1 and for highly reactive it is 1.), dry deposition information for
+particulates (\verb|rho| specifies the density of the substance, \verb|dquer| its mean
+diameter $\overline{d_p}$, and \verb|dsig| the measure of variation $\sigma_p$).
+Radioactive decay is switched off by specifying a negative half life, wet
+deposition is switched off by specifying negative \verb|A|, dry deposition of gases
+is switched off by negative \verb|D|, dry deposition of particles is switched off by
+negative \verb|rho|.  If no detailed information for deposition velocity calculation
+is available, a constant deposition velocity \verb|vd| (cm s$^{-1}$) can be used.
+\verb|molweight| gives the molecular weight of the species, which is needed for
+mixing ratio output.  For degradation in an monthly averaged OH field
+\citep{bey2001} the OH Reaction ratio at 25\degreee C for the species can be given,
+units are (cm$^3$/s).
+
+Optionally an emission variation information can be added at the end of the
+file, defined as following: Since FLEXPART version 6.0, emission factors can be
+defined that change the temporal variation of particle releases.  This is
+useful, for instance, to simulate the typical daily and weekly cycle of
+anthropogenic emissions.  The emission factors are given in the file of the
+corresponding species \verb|SPECIES_nnn|, where \verb|nnn| is the species
+number defined in file \verb|RELEASES|.  If no emission variation information
+is given, emission rates for species \verb|nnn| are taken as constant.  Release
+rates can vary with the hour of the day and with the day of the week, according
+to the local time at the release location.  Emission factors must be 1 on
+average.  24 hourly as well as 7 daily values must be specified.  Furthermore,
+different disaggregation factors must be given for area sources and for point
+sources.  FLEXPART distinguishes between the two using the lower altitude of
+the release box: area sources are assumed to start below 0.5 m above the
+ground, whereas point sources are assumed to be higher.  Please note that when
+this option is used, it is not so easy to determine the maximum number of
+particles present at a particular time of the model run.  It might then be
+necessary to increase the parameter \verb|maxpart| to a higher value than what
+would otherwise be needed.  The following is an example for an
+\verb|SPECIES_nnn| file including emission variation.
+
+\begin{scriptsize}\begin{verbatim}
+****************************************************************************
+*                                                                          *
+*     Input file for the Lagrangian particle dispersion model FLEXPART     *
+*               Definition file of chemical species/radionuclides          *
+*                                                                          *
+****************************************************************************
+EU-CO              Tracer name
+-999.9             Species half life
+-9.9E-09           Wet deposition - A
+                   Wet deposition - B
+-9.9               Dry deposition (gases) - D
+                   Dry deposition (gases) - Henrys const.
+                   Dry deposition (gases) - f0 (reactivity)
+-9.9E09            Dry deposition (particles) - rho
+                   Dry deposition (particles) - dquer
+                   Dry deposition (particles) - dsig
+-9.99              Alternative: dry deposition velocity
+ 28.00             molweight
+-9.9E-09           OH Reaction rate at 25 deg, [cm^3/s]
+-9                 number of associated specias (neg. none) - not implemented yet
+-99.99             KOA - organic matter air partitioning
+hr_start co_area  co_point
+ 0       0.535       0.932      0-1 local time
+ 1       0.405       0.931      1-2 local time
+ 2       0.317       0.927
+ 3       0.265       0.926
+ 4       0.259       0.928
+ 5       0.367       0.936
+ 6       0.668       0.952
+ 7       1.039       0.975
+ 8       1.015       1.046
+ 9       0.965       1.055
+10       1.016       1.061
+11       1.133       1.064
+12       1.269       1.067
+13       1.368       1.068
+14       1.516       1.069
+15       1.681       1.068
+16       1.777       1.024
+17       1.827       1.017
+18       1.538       1.008
+19       1.282       1.007
+20       1.136       1.004
+21       1.020       0.996
+22       0.879       0.981
+23       0.723       0.958      23-24 local time
+week_day co_area  co_point
+1        1.060       1.000      Monday
+2        1.060       1.000      Tuesday
+3        1.060       1.000      Wednesday
+4        1.060       1.000      Thursday
+5        1.060       1.000      Friday
+6        0.900       1.000      Saturday
+7        0.800       1.000      Sunday
+\end{verbatim}\end{scriptsize}
+
+\begin{footnotesize}\verb|IGBP_int1.dat|\end{footnotesize} contains the landuse inventory in binary format, and
+\begin{footnotesize}\verb|surfdata.t|\end{footnotesize}, shown below, gives the roughness lengths for each landuse class:
+
+\begin{footnotesize}
+\begin{verbatim}
+13 landuse categories are related roughness length
+--------------------------------------------------------
+landuse   comment                               z0
+--------------------------------------------------------
+ 1	Urban land                                   0.7	
+ 2	Agricultural land                            0.1
+ 3	Range land                                   0.1
+ 4	Deciduous forest                             1.
+ 5	Coniferous forest                            1.
+ 6	Mixed forest including wetland               0.7	
+ 7	Water, both salt and fresh                   0.001
+ 8	Barren land mostly desert                    0.01
+ 9	Nonforested wetland                          0.1
+10	Mixed agricultural and range land            0.1
+11	Rocky open areas with low growing shrubs     0.05
+12 Snow and ice                                 0.001
+13 Rainforest                                   1.
+\end{verbatim}
+\end{footnotesize}
+
+\newpage
+
+\subsubsection{File surfdepo.t}
+\verb|surfdepo.t| gives the resistances needed for the parameterization of dry deposition of gases for the 13 landuse classes and five seasonal categories.
+This file must not be changed by the user.\par
+ 
+\begin{scriptsize}\begin{verbatim}
+DRY DEPOSITION
+==============================================================================
+AFTER WESELY, 1989
+==============================================================================
+1 to 11: Landuse types after Wesely; 12 .. snow, 13 .. rainforest
+==============================================================================
+Values are tabulated for 5 seasonal categories:
+1     Midsummer with lush vegetation
+2     Autumn with unharvested cropland
+3     Late autumn after frost, no snow
+4     Winter, snow on ground and subfreezing
+5     Transitional spring with partially green short annuals
+==============================================================================
+               1       2       3       4       5       6       7       8       9     10       11      12      13  
+________________________________________________________________________________________________________________
+ri         9999.     60.    120.     70.    130.    100.   9999.   9999.     80.    100.    150.    9999.    200.  1
+rlu        9999.   2000.   2000.   2000.   2000.   2000.   9999.   9999.   2500.   2000.   4000.    9999.   1000.
+rac         100.    200.    100.   2000.   2000.   2000.      0.      0.    300.    150.    200.       0.   2000.
+rgss        400.    150.    350.    500.    500.    100.      0.   1000.      0.    220.    400.     100.    200.
+rgso        300.    150.    200.    200.    200.    300.   2000.    400.   1000.    180.    200.   10000.    200.
+rcls       9999.   2000.   2000.   2000.   2000.   2000.   9999.   9999.   2500.   2000.   4000.    9999.   9999.
+rclo       9999.   1000.   1000.   1000.   1000.   1000.   9999.   9999.   1000.   1000.   1000.    9999.   9999.
+_________________________________________________________________________________________________________________
+ri         9999.   9999.   9999.   9999.    250.    500.   9999.   9999.   9999.   9999.   9999.    9999.    200. 2
+rlu        9999.   9000.   9000.   9000.   4000.   8000.   9999.   9999.   9000.   9000.   9000.    9999.   1000.
+rac         100.    150.    100.   1500.   2000.   1700.      0.      0.    200.    120.    140.       0.   2000.
+rgss        400.    200.    350.    500.    500.    100.      0.   1000.      0.    300.    400.     100.    200.
+rgso        300.    150.    200.    200.    200.    300.   2000.    400.    800.    180.    200.   10000.    200.
+rcls       9999.   9000.   9000.   9000.   2000.   4000.   9999.   9999.   9000.   9000.   9000.    9999.   9999.
+rclo       9999.    400.    400.    400.   1000.    600.   9999.   9999.    400.    400.    400.    9999.   9999.
+_________________________________________________________________________________________________________________
+ri         9999.   9999.   9999.   9999.    250.    500.   9999.   9999.   9999.   9999.   9999.    9999.    200. 3
+rlu        9999.   9999.   9000.   9000.   4000.   8000.   9999.   9999.   9000.   9000.   9000.    9999.   1000.
+rac         100.     10.    100.   1000.   2000.   1500.      0.      0.    100.     50.    120.       0.   2000.
+rgss        400.    150.    350.    500.    500.    200.      0.   1000.      0.    200.    400.     100.    200.
+rgso        300.    150.    200.    200.    200.    300.   2000.    400.   1000.    180.    200.   10000.    200.
+rcls       9999.   9999.   9000.   9000.   3000.   6000.   9999.   9999.   9000.   9000.   9000.    9999.   9999.
+rclo       9999.   1000.    400.    400.   1000.    600.   9999.   9999.    800.    600.    600.    9999.   9999.
+_________________________________________________________________________________________________________________
+ri         9999.   9999.   9999.   9999.    400.    800.   9999.   9999.   9999.   9999.   9999.    9999.    200. 4
+rlu        9999.   9999.   9999.   9999.   6000.   9000.   9999.   9999.   9000.   9000.   9000.    9999.   1000.
+rac         100.     10.     10.   1000.   2000.   1500.      0.      0.     50.     10.     50.       0.   2000.
+rgss        100.    100.    100.    100.    100.    100.      0.   1000.    100.    100.     50.     100.    200.
+rgso        600.   3500.   3500.   3500.   3500.   3500.   2000.    400.   3500.   3500.   3500.   10000.    200. 
+rcls       9999.   9999.   9999.   9000.    200.    400.   9999.   9999.   9000.   9999.   9000.    9999.   9999.
+rclo       9999.   1000.   1000.    400.   1500.    600.   9999.   9999.    800.   1000.    800.    9999.   9999.
+_________________________________________________________________________________________________________________
+ri         9999.    120.    240.    140.    250.    190.   9999.   9999.    160.    200.    300.    9999.    200.  5
+rlu        9999.   4000.   4000.   4000.   2000.   3000.   9999.   9999.   4000.   4000.   8000.    9999.   1000.
+rac         100.     50.     80.   1200.   2000.   1500.      0.      0.    200.     60.    120.       0.   2000.
+rgss        500.    150.    350.    500     500.    200.      0.   1000.      0.    250.    400.     100.    200.
+rgso        300.    150.    200.    200.    200.    300.   2000.    400.   1000.    180.    200.   10000.    200.
+rcls       9999.   4000.   4000.   4000.   2000.   3000.   9999.   9999.   4000.   4000.   8000.    9999.   9999.
+rclo       9999.   1000.    500.    500.   1500.    700.   9999.   9999.    600.    800.    800.    9999.   9999.
+_________________________________________________________________________________________________________________
+\end{verbatim}\end{scriptsize}
+
+\end{document}
