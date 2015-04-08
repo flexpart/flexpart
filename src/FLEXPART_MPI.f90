@@ -424,7 +424,6 @@ program flexpart
 
 ! NIK 16.02.2005 
   if (lroot) then
-! eso TODO: do MPI_Reduce (sum) of total occurences across processes
     call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
     call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
