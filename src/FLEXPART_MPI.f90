@@ -430,10 +430,12 @@ program flexpart
     call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
   else
-    call MPI_Reduce(tot_blc_count, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
-         & mp_comm_used, mp_ierr)
-    call MPI_Reduce(tot_inc_count, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
-         & mp_comm_used, mp_ierr)
+    if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
+      call MPI_Reduce(tot_blc_count, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
+           & mp_comm_used, mp_ierr)
+      call MPI_Reduce(tot_inc_count, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
+           & mp_comm_used, mp_ierr)
+    end if
   end if
 
   if (lroot) then
