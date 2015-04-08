@@ -228,8 +228,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   h=0.
   if (ngrid.le.0) then
     do k=1,2
-! eso: compatibility with 3-field version
-      mind=memind(k)
+      mind=memind(k) ! eso: compatibility with 3-field version
       do j=jy,jyp
         do i=ix,ixp
           if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)

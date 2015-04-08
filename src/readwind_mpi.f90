@@ -40,7 +40,9 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 !   Variables tth and qvh (on eta coordinates) in common block
 !  eso 2014:
 !    This version for reading windfields in advance by a separate
-!    MPI process. 
+!    MPI process.
+!    TODO: can be merged with readwind.f90 if using numwfmem in
+!          shift_field
 !**********************************************************************
 !                                                                     *
 ! DESCRIPTION:                                                        *
@@ -96,13 +98,13 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 
   integer :: isec1(56),isec2(22+nxmax+nymax)
   real(kind=4) :: zsec4(jpunp)
-  real(kind=4) :: xaux,yaux,xaux0,yaux0
+  real(kind=4) :: xaux,yaux
   real(kind=8) :: xauxin,yauxin
   real,parameter :: eps=1.e-4
   real(kind=4) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
   real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
 
-  logical :: hflswitch,strswitch, readcloud
+  logical :: hflswitch,strswitch !,readcloud
 
 !HSO  grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
@@ -114,7 +116,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   hflswitch=.false.
   strswitch=.false.
 !hg
-  readcloud=.false.
+!  readcloud=.false.
 !hg end
   levdiff2=nlev_ec-nwz+1
   iumax=0
@@ -233,9 +235,11 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       isec1(6)=146         ! indicatorOfParameter
     elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
       isec1(6)=176         ! indicatorOfParameter
-    elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS
+!    elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS --wrong
+    elseif ((parCat.eq.2).and.(parNum.eq.38) .or. parId .eq. 180) then ! EWSS --correct
       isec1(6)=180         ! indicatorOfParameter
-    elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS
+!    elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS --wrong
+    elseif ((parCat.eq.2).and.(parNum.eq.37) .or. parId .eq. 181) then ! NSSS --correct
       isec1(6)=181         ! indicatorOfParameter
     elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
       isec1(6)=129         ! indicatorOfParameter

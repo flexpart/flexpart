@@ -6,11 +6,11 @@
 ********************************************************************************
 
 1.  ------.----       4X,F11.4
-       -15.0000       GEOGRAFICAL LONGITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+       -85.0000       GEOGRAFICAL LONGITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
     OUTLONLEFT        (left boundary of the first grid cell - not its centre)
 
 2.  ------.----       4X,F11.4
-        35.0000       GEOGRAFICAL LATITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+        30.0000       GEOGRAFICAL LATITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
     OUTLATLOWER       (lower boundary of the first grid cell - not its centre)
 
 3.  -----             4X,I5

@@ -61,7 +61,8 @@ subroutine conccalc(itime,weight)
   real :: rhoprof(2),rhoi
   real :: xl,yl,wx,wy,w
   real,parameter :: factor=.596831, hxmax=6.0, hymax=4.0, hzmax=150.
-
+  integer :: mind2
+  ! mind2        eso: pointer to 2nd windfield in memory
 
   ! For forward simulations, make a loop over the number of species;
   ! for backward simulations, make an additional loop over the
@@ -69,6 +70,8 @@ subroutine conccalc(itime,weight)
   !***************************************************************************
 
   if (mp_measure_time) call mpif_mtime('conccalc',0)
+
+  mind2=memind(2)
 
   do i=1,numpart
     if (itra1(i).ne.itime) goto 20
@@ -130,10 +133,15 @@ subroutine conccalc(itime,weight)
   ! Take density from 2nd wind field in memory (accurate enough, no time interpolation needed)
   !*****************************************************************************
       do ind=indz,indzp
-        rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,2) &
-             +p2*rho(ixp,jy ,ind,2) &
-             +p3*rho(ix ,jyp,ind,2) &
-             +p4*rho(ixp,jyp,ind,2)
+        ! rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,2) &
+        !      +p2*rho(ixp,jy ,ind,2) &
+        !      +p3*rho(ix ,jyp,ind,2) &
+        !      +p4*rho(ixp,jyp,ind,2)
+        rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,mind2) &
+             +p2*rho(ixp,jy ,ind,mind2) &
+             +p3*rho(ix ,jyp,ind,mind2) &
+             +p4*rho(ixp,jyp,ind,mind2)
+
       end do
       rhoi=(dz1*rhoprof(2)+dz2*rhoprof(1))*dz
    elseif (ind_samp.eq.0) then

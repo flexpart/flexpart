@@ -43,13 +43,15 @@ module mpi_mod
 ! mp_np                   Number of MPI processes                            *
 ! mp_pid                  Process ID of each MPI process                     *
 ! mp_seed                 Parameter for random number seed                   *
+! read_grp_min            Minimum number of processes at which one will be   *
+!                         used as reader                                     *
 ! numpart_mpi,            Number of particles per node                       *
 ! maxpart_mpi                                                                *
 ! mp_partid               MPI process ID for particle calculation            *
 ! mp_partgroup_           Refers to the subset of processors performing      *
 !                         loops over particles. Will be all processes        *
 !                         unless a dedicated process runs getfields/readwind *
-!                                                                            *
+! lmp_sync                If .false., use asynchronous MPI                   *
 !                                                                            *
 !                                                                            *
 !                                                                            *
@@ -68,7 +70,7 @@ module mpi_mod
 
 ! Set aside a process for reading windfields if using at least these many processes
 !==================================================
-  integer, parameter, private :: read_grp_min=99
+  integer, parameter, private :: read_grp_min=4
 !==================================================
 
 ! Variables for each MPI process in the world group
@@ -85,8 +87,8 @@ module mpi_mod
   integer, parameter :: id_root=0 ! master process
 
 ! MPI tags/requests for send/receive operation
-  integer :: tm1!=100
-  integer, parameter :: nvar_async=27
+  integer :: tm1
+  integer, parameter :: nvar_async=27 !29 :DBG:
   !integer, dimension(:), allocatable :: tags
   integer, dimension(:), allocatable :: reqs
 
@@ -105,7 +107,7 @@ module mpi_mod
   logical :: lmp_sync=.true. 
 !===============================================================================
 
-! mp_dbg_mode       MPI related output for debugging etc.
+! mp_dbg_mode       Used for debugging MPI.
 ! mp_dev_mode       various checks related to debugging the parallel code
 ! mp_dbg_out        write some arrays to data file for debugging
 ! mp_measure_time   Measure cpu/wall time, write out at end of run
@@ -196,7 +198,17 @@ contains
       write(*,*) '#### mpi_mod::mpif_init> WARNING: ', &
            & 'numwfmem should be set to 2 for syncronous reading'
       write(*,FMT='(80("#"))')
+! Force "syncronized" version if all processes will call getfields
+    else if (.not.lmp_sync.and.mp_np.lt.read_grp_min) then
+      if (lroot) then
+        write(*,FMT='(80("#"))')
+        write(*,*) '#### mpi_mod::mpif_init> WARNING: ', &
+             & 'all procs call getfields. Setting lmp_sync=.true.'
+        write(*,FMT='(80("#"))')
+      end if
+      lmp_sync=.true. ! :DBG: eso fix this...
     end if
+! TODO: Add warnings for unimplemented flexpart features
 
 ! Set ID of process that calls getfield/readwind. 
 ! Using the last process in the group ensures statistical identical results
@@ -210,7 +222,7 @@ contains
 
     call MPI_Comm_group (MPI_COMM_WORLD, world_group_id, mp_ierr)
 
-! Create a MPI group/communiactor that will calculate trajectories. 
+! Create a MPI group/communicator that will calculate trajectories. 
 ! Skip this step if program is run with only a few processes
 !************************************************************************
     allocate(mp_partgroup_rank(0:mp_np-2))
@@ -227,7 +239,7 @@ contains
     if (mp_np.ge.read_grp_min) then
       lmp_use_reader = .true.
 
-! Map the subgroup IDs= 0,1,2,...,mp_np-2, skipping 'readwind' process
+! Map the subgroup IDs= 0,1,2,...,mp_np-2, skipping reader process
       j=-1 
       do i=0, mp_np-2 !loop over all (subgroup) IDs
         j=j+1
@@ -288,14 +300,19 @@ contains
       mp_seed = -abs(mod((s*181)*((mp_pid-83)*359), 104729))
     end if
     if (mp_dev_mode) write(*,*) 'PID, mp_seed: ',mp_pid, mp_seed
+    if (mp_dbg_mode) then
+! :DBG: For debugging, set all seed to 0 and maxrand to e.g. 20
+      mp_seed=0
+      if (lroot) write(*,*) 'MPI: setting seed=0'
+    end if
 
 ! Allocate request array for asynchronous MPI
     if (.not.lmp_sync) then
       allocate(reqs(0:nvar_async*mp_np-1))
-      reqs=MPI_REQUEST_NULL
+      reqs(:)=MPI_REQUEST_NULL
     else
       allocate(reqs(0:1))
-      reqs=MPI_REQUEST_NULL
+      reqs(:)=MPI_REQUEST_NULL
     end if
 
     goto 101
@@ -388,7 +405,7 @@ contains
 
     integer :: add_part=0
 
-    call MPI_BCAST(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
+    call MPI_Bcast(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
 
 ! MPI subgroup does the particle-loop 
     if (lmp_use_reader) then
@@ -814,7 +831,7 @@ contains
   subroutine mpif_gf_send_vars(memstat)
 !*******************************************************************************
 ! DESCRIPTION
-!   Distribute 'getfield' variables from reader process to all processes.
+!   Distribute 'getfield' variables from reader process
 ! 
 !   Called from timemanager
 !
@@ -886,6 +903,11 @@ contains
 ! Send variables from getfield process (id_read) to other processes
 !**********************************************************************
 
+! The non-reader processes need to know if clouds were read.
+! TODO: only at first step or always?
+    call MPI_Bcast(readclouds,1,MPI_LOGICAL,id_read,MPI_COMM_WORLD,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+
 ! Static fields/variables sent only at startup
     if (first_call) then
       call MPI_Bcast(oro(:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -903,7 +925,7 @@ contains
       call MPI_Bcast(nmixz,1,MPI_INTEGER,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_Bcast(height,nzmax,MPI_INTEGER,id_read,MPI_COMM_WORLD,mp_ierr)
-    if (mp_ierr /= 0) goto 600
+      if (mp_ierr /= 0) goto 600
 
       first_call=.false.
     endif
@@ -933,7 +955,15 @@ contains
     call MPI_Bcast(pv(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
     call MPI_Bcast(clouds(:,:,:,li:ui),d3s1,MPI_INTEGER1,id_read,MPI_COMM_WORLD,mp_ierr)
-    if (mp_ierr /= 0) goto 600 
+    if (mp_ierr /= 0) goto 600
+
+! cloud water/ice:
+    if (readclouds) then
+      call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    end if
 
 ! 2D fields
     call MPI_Bcast(cloudsh(:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -968,7 +998,6 @@ contains
     call MPI_Bcast(z0,numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
-
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
     goto 601
@@ -994,6 +1023,8 @@ contains
 !   MPI_Bcast is used, so implicitly all processes are synchronized at this
 !   step
 !
+! TODO
+!   Transfer cloud water/ice if and when available for nested
 !
 !***********************************************************************
     use com_mod
@@ -1139,8 +1170,7 @@ contains
 !*******************************************************************************
 ! DESCRIPTION
 !   Distribute 'getfield' variables from reader process to all processes.
-! 
-!   Called from timemanager by root process only
+!   Called from timemanager by reader process only
 !
 ! NOTE
 !   This version uses asynchronious sends. The newest fields are sent in the
@@ -1153,8 +1183,9 @@ contains
 ! VARIABLES
 !   memstat -- input, for resolving pointer to windfield index being read
 !   mind    -- index where to place new fields
-!   !!! Under development, don't use yet !!!
 !
+! TODO
+!   Transfer cloud water/ice
 !
 !*******************************************************************************
     use com_mod
@@ -1172,15 +1203,7 @@ contains
     integer :: d2s2 = nxmax*nymax*maxspec
     integer :: d1s1 = maxwf
 
-    !integer :: d3s1,d3s2,d2s1,d2s2
-
 !*******************************************************************************
-
-! :TODO: don't need these
-    ! d3s1=d3_size1
-    ! d3s2=d3_size2
-    ! d2s1=d2_size1 
-    ! d2s2=d2_size2
 
 ! At the time the send is posted, the reader process is one step further
 ! in the permutation of memstat compared with the receiving processes
@@ -1219,7 +1242,7 @@ contains
 !*****************************************************
 
     do dest=0,mp_np-1 ! mp_np-2 will also work if last proc reserved for reading
-                      ! :TODO: use mp_partgroup_np here
+                      ! TODO: use mp_partgroup_np here
       if (dest.eq.id_read) cycle
       i=dest*nvar_async
       call MPI_Isend(uu(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
@@ -1304,13 +1327,28 @@ contains
       call MPI_Isend(oli(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
+! Send cloud water if it exists. Increment counter always (as on receiving end)
+      if (readclouds) then
+        i=i+1
+        call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+             &MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+
+        call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+             &MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+      ! else
+      !   i=i+2
+      end if
+
     end do
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
     goto 601
 
-600 write(*,*) "mpi_mod> mp_ierr \= 0", mp_ierr
+600 write(*,*) "#### mpi_mod::mpif_gf_send_vars_async> mp_ierr \= 0", mp_ierr
     stop
 
 601 end subroutine mpif_gf_send_vars_async
@@ -1319,9 +1357,8 @@ contains
   subroutine mpif_gf_recv_vars_async(memstat)
 !*******************************************************************************
 ! DESCRIPTION
-!   Receive 'getfield' variables from reader process to all processes.
-! 
-!   Called from timemanager by all processes except root 
+!   Receive 'getfield' variables from reader process.
+!   Called from timemanager by all processes except reader 
 !
 ! NOTE
 !   This version uses asynchronious communications.
@@ -1329,6 +1366,8 @@ contains
 ! VARIABLES
 !   memstat -- input, used to resolve windfield index being received
 !
+! TODO
+!   Transfer cloud water/ice
 !
 !*******************************************************************************
     use com_mod
@@ -1387,96 +1426,136 @@ contains
 
 ! Get MPI tags/requests for communications
     j=mp_pid*nvar_async
-    call MPI_Irecv(uu(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(uu(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(vv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(uupol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(uupol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vvpol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(vvpol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(ww(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(ww(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(tt(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(tt(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(rho(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(rho(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(drhodz(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(drhodz(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(tth(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(tth(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(qvh(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(qvh(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
 
-    call MPI_Irecv(qv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(qv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
-j=j+1
-    call MPI_Irecv(pv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    j=j+1
+    call MPI_Irecv(pv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(clouds(:,:,:,mind),d3s1,MPI_INTEGER1,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)    
+    call MPI_Irecv(clouds(:,:,:,mind),d3s1,MPI_INTEGER1,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)    
     if (mp_ierr /= 0) goto 600 
     j=j+1
 
-    call MPI_Irecv(cloudsh(:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(cloudsh(:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vdep(:,:,:,mind),d2s2,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(vdep(:,:,:,mind),d2s2,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
+    call MPI_Irecv(ps(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600
+    j=j+1
+    call MPI_Irecv(sd(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600
+    j=j+1
+    call MPI_Irecv(tcc(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600
+    j=j+1
+    call MPI_Irecv(tt2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    j=j+1
+    call MPI_Irecv(td2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    j=j+1
+    call MPI_Irecv(lsprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    j=j+1
+    call MPI_Irecv(convprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600 
 
-    call MPI_Irecv(ps(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(sd(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(tcc(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(tt2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(ustar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(td2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(wstar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(lsprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(hmix(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(convprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
+    call MPI_Irecv(tropopause(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
+    if (mp_ierr /= 0) goto 600
+    j=j+1
+    call MPI_Irecv(oli(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+         &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
-    call MPI_Irecv(ustar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(wstar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(hmix(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(tropopause(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(oli(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
+
+! Post request for clwc. These data are possibly not sent, request must then be cancelled
+! For now assume that data at all steps either have or do not have water 
+    if (readclouds) then
+      j=j+1
+      call MPI_Irecv(clwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)    
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(ciwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)    
+      if (mp_ierr /= 0) goto 600 
+    end if
 
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
     goto 601
 
-600 write(*,*) "mpi_mod> mp_ierr \= 0", mp_ierr
+600 write(*,*) "#### mpi_mod::mpif_gf_recv_vars_async> MPI ERROR ", mp_ierr
     stop
 
 601 end subroutine mpif_gf_recv_vars_async
@@ -1493,19 +1572,43 @@ j=j+1
 !
 !
 !*******************************************************************************
+    use com_mod, only: readclouds
+
     implicit none
 
-!    if (mp_measure_time) call mpif_mtime('commtime',0)
+
+    integer :: n_req
+    integer :: i
+
+!***********************************************************************
+
+    n_req=nvar_async*mp_np
+
+    if (mp_measure_time) call mpif_mtime('commtime',0)
 
 !    call MPI_Wait(rm1,MPI_STATUS_IGNORE,mp_ierr)
-    call MPI_Waitall(nvar_async*mp_np,reqs,MPI_STATUSES_IGNORE,mp_ierr)
+
+! TODO: cancel recv request if readclouds=.false.
+!    if (readclouds) then
+    call MPI_Waitall(n_req,reqs,MPI_STATUSES_IGNORE,mp_ierr)
+!    endif
+    ! else
+    !   do i = 0, nvar_async*mp_np-1
+    !     if (mod(i,27).eq.0 .or. mod(i,28).eq.0) then
+    !       call MPI_Cancel(reqs(i),mp_ierr)
+    !       cycle
+    !     end if
+    !     call MPI_Wait(reqs(i),MPI_STATUS_IGNORE,mp_ierr)
+    !   end do
+    ! end if
+
     if (mp_ierr /= 0) goto 600 
 
-!    if (mp_measure_time) call mpif_mtime('commtime',1)
+    if (mp_measure_time) call mpif_mtime('commtime',1)
 
     goto 601
 
-600 write(*,*) "#### mpi_mod::mpif_gf_request> ERROR, mp_ierr \= 0 ", mp_ierr
+600 write(*,*) "#### mpi_mod::mpif_gf_request> MPI ERROR ", mp_ierr
     stop
 
 601 end subroutine mpif_gf_request
@@ -1605,6 +1708,7 @@ j=j+1
     integer :: grid_size2d,grid_size3d
 
 !**********************************************************************
+
     grid_size3d=numxgridn*numygridn*numzgrid*maxspec* &
          & maxpointspec_act*nclassunc*maxageclass
     grid_size2d=numxgridn*numygridn*maxspec* &
@@ -1665,6 +1769,8 @@ j=j+1
 
     character(LEN=*), intent(in) :: ident
     integer, intent(in) :: imode
+
+!***********************************************************************
 
     select case(ident)
 
@@ -1800,6 +1906,8 @@ j=j+1
 
     integer :: ip,j,r
 
+!***********************************************************************
+
     if (mp_measure_time) then
       do ip=0, mp_np-1
         call MPI_BARRIER(MPI_COMM_WORLD, mp_ierr)
@@ -1856,7 +1964,7 @@ j=j+1
 ! j=mp_pid*nvar_async
 ! In the implementation with 3 fields, the processes may have posted
 ! MPI_Irecv requests that should be cancelled here
-!! :TODO:
+!! TODO:
     ! if (.not.lmp_sync) then
     !   r=mp_pid*nvar_async
     !   do j=r,r+nvar_async-1
@@ -1867,7 +1975,7 @@ j=j+1
 
     call MPI_FINALIZE(mp_ierr)
     if (mp_ierr /= 0) then
-      write(*,*) '#### mpif_finalize::MPI_FINALIZE> ERROR ####'
+      write(*,*) '#### mpif_finalize::MPI_FINALIZE> MPI ERROR ', mp_ierr, ' ####'
       stop
     end if
 
@@ -1886,6 +1994,8 @@ j=j+1
     integer, intent(inout) :: my_lun
     integer, save :: free_lun=100
     logical :: exists, iopen
+
+!***********************************************************************
 
     loop1: do
       inquire(UNIT=free_lun, EXIST=exists, OPENED=iopen)
@@ -1910,6 +2020,8 @@ j=j+1
 
     character(LEN=8) :: c_ts
     character(LEN=40) :: fn_1, fn_2
+
+!***********************************************************************
 
     write(c_ts, FMT='(I8.8,BZ)') tstep
     fn_1='-'//trim(adjustl(c_ts))//'-'//trim(ident)

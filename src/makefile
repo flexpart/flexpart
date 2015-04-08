@@ -61,7 +61,7 @@ LIBPATH2 = /homevip/flexpart/lib
 #INCPATH2 = ${HOME}/lib	
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native $(FUSER) # -march=native
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -fdump-core -Warray-bounds -ffpe-trap=invalid,overflow,denormal -Wall -fcheck=all $(FUSER)  # ,underflow,zero
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -Warray-bounds  -Wall -fcheck=all $(FUSER)  # -ffpe-trap=invalid,overflow,denormal,underflow,zero -fdump-core
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)

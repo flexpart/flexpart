@@ -268,8 +268,7 @@ module com_mod
   ! wfspec(maxwf)           specifications of wind field file, e.g. if on hard
   !                         disc or on tape
 
-  integer :: memtime(numwfmem),memind(numwfmem) ! eso: or memind(3) and change
-                                                ! interpol_rain 
+  integer :: memtime(numwfmem),memind(3) ! eso: or memind(numwfmem) 
 
   ! memtime [s]             validation times of wind fields in memory
   ! memind                  pointer to wind field, in order to avoid shuffling

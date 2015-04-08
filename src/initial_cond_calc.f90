@@ -43,6 +43,8 @@ subroutine initial_cond_calc(itime,i)
   real :: rddx,rddy,p1,p2,p3,p4,dz1,dz2,dz
   real :: ddx,ddy
   real :: rhoprof(2),rhoi,xl,yl,wx,wy,w
+  integer :: mind2
+  ! mind2        eso: pointer to 2nd windfield in memory
 
 
   ! For forward simulations, make a loop over the number of species;
@@ -87,11 +89,13 @@ subroutine initial_cond_calc(itime,i)
 
   ! Take density from 2nd wind field in memory (accurate enough, no time interpolation needed)
   !*****************************************************************************
+    mind2=memind(2)
+
     do ind=indz,indzp
-      rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,2) &
-           +p2*rho(ixp,jy ,ind,2) &
-           +p3*rho(ix ,jyp,ind,2) &
-           +p4*rho(ixp,jyp,ind,2)
+      rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,mind2) &
+           +p2*rho(ixp,jy ,ind,mind2) &
+           +p3*rho(ix ,jyp,ind,mind2) &
+           +p4*rho(ixp,jyp,ind,mind2)
     end do
     rhoi=(dz1*rhoprof(2)+dz2*rhoprof(1))*dz
   elseif (linit_cond.eq.2) then    ! mass mixing ratio unit

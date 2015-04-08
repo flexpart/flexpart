@@ -423,12 +423,25 @@ program flexpart
   call timemanager
 
 ! NIK 16.02.2005 
-  write(*,*) '**********************************************'
-  write(*,*) 'Total number of occurences of below-cloud scavenging', tot_blc_count
-  write(*,*) 'Total number of occurences of in-cloud    scavenging', tot_inc_count
-  write(*,*) '**********************************************'
+  if (lroot) then
+! eso TODO: do MPI_Reduce (sum) of total occurences across processes
+    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+  else
+    call MPI_Reduce(tot_blc_count, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+    call MPI_Reduce(tot_inc_count, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+  end if
 
   if (lroot) then
+    write(*,*) '**********************************************'
+    write(*,*) 'Total number of occurences of below-cloud scavenging', tot_blc_count
+    write(*,*) 'Total number of occurences of in-cloud    scavenging', tot_inc_count
+    write(*,*) '**********************************************'
+
     write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&
          &XPART MODEL RUN!'
   end if

@@ -215,52 +215,68 @@ subroutine readspecies(id_spec,pos_spec)
 !NIK 16.02.2015
 ! Check scavenging parameters given in SPECIES file
   if (dquer(pos_spec).gt.0) then !is particle
-    write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
-         &(Rain collection efficiency)  ', weta(pos_spec)
-    write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter B &
-         &(Snow collection efficiency)  ', wetb(pos_spec)
+    if (lroot) then
+      write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
+           &(Rain collection efficiency)  ', weta(pos_spec)
+      write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter B &
+           &(Snow collection efficiency)  ', wetb(pos_spec)
+    end if
     if (weta(pos_spec).gt.1.0 .or. wetb(pos_spec).gt.1.0) then
-      write(*,*) '*******************************************'
-      write(*,*) ' WARNING: Particle below-cloud scavenging parameter A or B &
-           &is out of likely range'
-      write(*,*) '          Likely range is 0.0-1.0'
-      write(*,*) '*******************************************'
+      if (lroot) then
+        write(*,*) '*******************************************'
+        write(*,*) ' WARNING: Particle below-cloud scavenging parameter A or B &
+             &is out of likely range'
+        write(*,*) '          Likely range is 0.0-1.0'
+        write(*,*) '*******************************************'
+      end if
     endif
-    write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Ai &
-         &(CCN efficiency)  ', weta_in(pos_spec)
-    write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
-         &(IN efficiency)  ', wetb_in(pos_spec)
-    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.7 )then
-      write(*,*) '*******************************************'
-      write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
-      write(*,*) '          The default value is 0.9 for CCN '
-      write(*,*) '*******************************************'
+    if (lroot) then
+      write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Ai &
+           &(CCN efficiency)  ', weta_in(pos_spec)
+      write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
+           &(IN efficiency)  ', wetb_in(pos_spec)
+    end if
+    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.7) then
+      if (lroot) then
+        write(*,*) '*******************************************'
+        write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
+        write(*,*) '          The default value is 0.9 for CCN '
+        write(*,*) '*******************************************'
+      end if
     endif
     if (wetb_in(pos_spec).gt.0.2 .or. wetb_in(pos_spec).lt.0.01) then
-      write(*,*) '*******************************************'
-      write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
-      write(*,*) '          The default value is 0.1 for IN '
-      write(*,*) '*******************************************'
+      if (lroot) then
+        write(*,*) '*******************************************'
+        write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
+        write(*,*) '          The default value is 0.1 for IN '
+        write(*,*) '*******************************************'
+      end if
     endif
 
   else !is gas
-    write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
-    write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb(pos_spec)
-    write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
-    if (wetb(pos_spec).gt.0.) then !if wet deposition is turned on
-      if (wetb(pos_spec).gt.0.8 .or. wetb(pos_spec).lt.0.6) then
-        write(*,*) '*******************************************'
-        write(*,*) ' WARNING: Gas below-cloud scavenging parameter B is out of likely range'
-        write(*,*) '          Likely range is 0.6 to 0.8 (see Hertel et al 1995)'
-        write(*,*) '*******************************************'
-      endif
+    if (lroot) then
+      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
+      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb(pos_spec)
+      write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
     end if
     if (weta(pos_spec).gt.0.) then !if wet deposition is turned on
       if (weta(pos_spec).gt.1E-04 .or. weta(pos_spec).lt.1E-09) then
-        write(*,*) '*******************************************'
-        write(*,*) ' WARNING: Gas below-cloud scavenging parameter A is out of likely range'
-        write(*,*) '          Likely range is 1E-04 to 1E-08 (see Hertel et al 1995)'
-        write(*,*) '*******************************************'
+        if (lroot) then
+          write(*,*) '*******************************************'
+          write(*,*) ' WARNING: Gas below-cloud scavenging parameter A is out of likely range'
+          write(*,*) '          Likely range is 1E-04 to 1E-08 (see Hertel et al 1995)'
+          write(*,*) '*******************************************'
+        end if
+      endif
+    end if
+    if (wetb(pos_spec).gt.0.) then !if wet deposition is turned on
+      if (wetb(pos_spec).gt.0.8 .or. wetb(pos_spec).lt.0.6) then
+        if (lroot) then
+          write(*,*) '*******************************************'
+          write(*,*) ' WARNING: Gas below-cloud scavenging parameter B is out of likely range'
+          write(*,*) '          Likely range is 0.6 to 0.8 (see Hertel et al 1995)'
+          write(*,*) '*******************************************'
+        end if
       endif
     end if
   endif

@@ -179,7 +179,7 @@ subroutine timemanager
 
     if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) then
 ! readwind process skips this step
-      if (.not.(lmpreader.and.lmp_use_reader)) then !.or..not.lmp_use_reader)
+      if (.not.(lmpreader.and.lmp_use_reader)) then
         call ohreaction(itime,lsynctime,loutnext)
       endif
     end if
@@ -222,15 +222,15 @@ subroutine timemanager
     if (lmp_sync.and.lmp_use_reader.and.memstat.gt.0) then
       call mpif_gf_send_vars(memstat)
       call mpif_gf_send_vars_nest(memstat)
-! This version is also used whenever 2 fields are needed (in this case,
-! async send/recv is impossible)
+! Version 2  (lmp_sync=.false.) is also used whenever 2 new fields are read (in which
+! case async send/recv is impossible.
     else if (.not.lmp_sync.and.lmp_use_reader.and.memstat.ge.32) then
       call mpif_gf_send_vars(memstat)
       call mpif_gf_send_vars_nest(memstat)
     end if
 
 ! Version 2 (lmp_sync=.false.) is for holding three fields in memory. Uses a
-! read-ahead process where sending/receiving of the 3rd fields are done in
+! read-ahead process where sending/receiving of the 3rd fields is done in
 ! the background in parallel with performing computations with fields 1&2
 !********************************************************************************
     if (.not.lmp_sync) then
@@ -240,18 +240,18 @@ subroutine timemanager
         call mpif_gf_send_vars_async(memstat)
       end if
 
-
 ! COMPLETION CHECK:
 ! Issued at start of each new field period. 
       if (memstat.ne.0.and.memstat.lt.32.and.lmp_use_reader) then
-! :DEV: z0(7) changes with time, so should be dimension (numclass,2)
-! to allow transfer of the future value in the background
-        call mpif_gf_request
+! TODO: z0(7) changes with time, so should be dimension (numclass,2) to
+! allow transfer of the future value in the background
         call MPI_Bcast(z0,numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+        call mpif_gf_request
       end if
 
-
 ! RECVEIVING PROCESS(ES):
+      ! eso TODO: at this point we do not know if clwc/ciwc will be available
+      ! at next time step. Issue receive request anyway, cancel at mpif_gf_request
       if (memstat.gt.0.and.lmp_use_reader.and..not.lmpreader) then
         call mpif_gf_recv_vars_async(memstat)
       end if
@@ -754,6 +754,7 @@ subroutine timemanager
 ! and if they are compromising the final result (or not):
     if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
 
+! TODO: delete for release version?
 !!-------------------------------------------------------------------------------
 ! These lines below to test the well-mixed condition, modified by  mc, not to
 ! be included in final release:
@@ -777,7 +778,7 @@ subroutine timemanager
 !*****************************************************************************
 
 ! eso :TODO: this not implemented yet (transfer particles to PID 0 or rewrite)
-! the tools to do this is in mpi_mod.f90
+! the tools to do this are already in mpi_mod.f90
   if (lroot) then 
     do j=1,numpart
       if (linit_cond.ge.1) call initial_cond_calc(itime,j)
@@ -786,10 +787,10 @@ subroutine timemanager
 
 
   if (ipout.eq.2) then
-! MPI: process 0 creates the file, the other processes append to it
+! MPI process 0 creates the file, the other processes append to it
     do ip=0, mp_partgroup_np-1
       if (ip.eq.mp_partid) then 
-        if (mp_dbg_mode) write(*,*) 'call partoutput(itime), proc, mp_partid',ip,mp_partid
+        !if (mp_dbg_mode) write(*,*) 'call partoutput(itime), proc, mp_partid',ip,mp_partid
         call partoutput(itime)    ! dump particle positions
       end if
       call mpif_mpi_barrier

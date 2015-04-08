@@ -68,7 +68,8 @@ subroutine releaseparticles(itime)
   integer :: nweeks,ndayofweek,nhour,jjjjmmdd,ihmmss,mm
   real(kind=dp) :: juldate,julmonday,jul,jullocal,juldiff
   real,parameter :: eps=nxmax/3.e5,eps2=1.e-6
-  
+  integer :: mind2
+! mind2        eso: pointer to 2nd windfield in memory
 
   integer :: idummy = -7
   !save idummy,xmasssave
@@ -290,23 +291,23 @@ subroutine releaseparticles(itime)
               presspart=ztra1(ipart)
               do kz=1,nz
                 if (ngrid.gt.0) then
-                  r=p1*rhon(ix ,jy ,kz,2,ngrid) &
-                       +p2*rhon(ixp,jy ,kz,2,ngrid) &
-                       +p3*rhon(ix ,jyp,kz,2,ngrid) &
-                       +p4*rhon(ixp,jyp,kz,2,ngrid)
-                  t=p1*ttn(ix ,jy ,kz,2,ngrid) &
-                       +p2*ttn(ixp,jy ,kz,2,ngrid) &
-                       +p3*ttn(ix ,jyp,kz,2,ngrid) &
-                       +p4*ttn(ixp,jyp,kz,2,ngrid)
+                  r=p1*rhon(ix ,jy ,kz,mind2,ngrid) &
+                       +p2*rhon(ixp,jy ,kz,mind2,ngrid) &
+                       +p3*rhon(ix ,jyp,kz,mind2,ngrid) &
+                       +p4*rhon(ixp,jyp,kz,mind2,ngrid)
+                  t=p1*ttn(ix ,jy ,kz,mind2,ngrid) &
+                       +p2*ttn(ixp,jy ,kz,mind2,ngrid) &
+                       +p3*ttn(ix ,jyp,kz,mind2,ngrid) &
+                       +p4*ttn(ixp,jyp,kz,mind2,ngrid)
                 else
-                  r=p1*rho(ix ,jy ,kz,2) &
-                       +p2*rho(ixp,jy ,kz,2) &
-                       +p3*rho(ix ,jyp,kz,2) &
-                       +p4*rho(ixp,jyp,kz,2)
-                  t=p1*tt(ix ,jy ,kz,2) &
-                       +p2*tt(ixp,jy ,kz,2) &
-                       +p3*tt(ix ,jyp,kz,2) &
-                       +p4*tt(ixp,jyp,kz,2)
+                  r=p1*rho(ix ,jy ,kz,mind2) &
+                       +p2*rho(ixp,jy ,kz,mind2) &
+                       +p3*rho(ix ,jyp,kz,mind2) &
+                       +p4*rho(ixp,jyp,kz,mind2)
+                  t=p1*tt(ix ,jy ,kz,mind2) &
+                       +p2*tt(ixp,jy ,kz,mind2) &
+                       +p3*tt(ix ,jyp,kz,mind2) &
+                       +p4*tt(ixp,jyp,kz,mind2)
                 endif
                 press=r*r_air*t/100.
                 if (kz.eq.1) pressold=press
@@ -376,17 +377,17 @@ subroutine releaseparticles(itime)
 
               if (ngrid.gt.0) then
                 do n=1,2
-                  rhoaux(n)=p1*rhon(ix ,jy ,indz+n-1,2,ngrid) &
-                       +p2*rhon(ixp,jy ,indz+n-1,2,ngrid) &
-                       +p3*rhon(ix ,jyp,indz+n-1,2,ngrid) &
-                       +p4*rhon(ixp,jyp,indz+n-1,2,ngrid)
+                  rhoaux(n)=p1*rhon(ix ,jy ,indz+n-1,mind2,ngrid) &
+                       +p2*rhon(ixp,jy ,indz+n-1,mind2,ngrid) &
+                       +p3*rhon(ix ,jyp,indz+n-1,mind2,ngrid) &
+                       +p4*rhon(ixp,jyp,indz+n-1,mind2,ngrid)
                 end do
               else
                 do n=1,2
-                  rhoaux(n)=p1*rho(ix ,jy ,indz+n-1,2) &
-                       +p2*rho(ixp,jy ,indz+n-1,2) &
-                       +p3*rho(ix ,jyp,indz+n-1,2) &
-                       +p4*rho(ixp,jyp,indz+n-1,2)
+                  rhoaux(n)=p1*rho(ix ,jy ,indz+n-1,mind2) &
+                       +p2*rho(ixp,jy ,indz+n-1,mind2) &
+                       +p3*rho(ix ,jyp,indz+n-1,mind2) &
+                       +p4*rho(ixp,jyp,indz+n-1,mind2)
                 end do
               endif
               rhoout=(dz2*rhoaux(1)+dz1*rhoaux(2))*dz

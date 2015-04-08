@@ -98,6 +98,8 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   logical :: sp_zer
   character :: adate*8,atime*6
   character(len=3) :: anspec
+  integer :: mind
+! mind        eso:added to ensure identical results between 2&3-fields versions
 
 
   ! Determine current calendar date, needed for the file name
@@ -139,6 +141,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   ! data to that altitude
   !*******************************************************************
 
+  mind=memind(2)
   do kz=1,numzgrid
     if (kz.eq.1) then
       halfheight=outheight(1)/2.
@@ -161,19 +164,22 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
         yl=(yl-ylat0)/dy !v9.1.1 
         iix=max(min(nint(xl),nxmin1),0)
         jjy=max(min(nint(yl),nymin1),0)
-        densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
-             rho(iix,jjy,kzz-1,2)*dz2)/dz
+        ! densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
+        !      rho(iix,jjy,kzz-1,2)*dz2)/dz
+        densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,mind)*dz1+ &
+             rho(iix,jjy,kzz-1,mind)*dz2)/dz
       end do
     end do
   end do
 
-    do i=1,numreceptor
-      xl=xreceptor(i)
-      yl=yreceptor(i)
-      iix=max(min(nint(xl),nxmin1),0)
-      jjy=max(min(nint(yl),nymin1),0)
-      densityoutrecept(i)=rho(iix,jjy,1,2)
-    end do
+  do i=1,numreceptor
+    xl=xreceptor(i)
+    yl=yreceptor(i)
+    iix=max(min(nint(xl),nxmin1),0)
+    jjy=max(min(nint(yl),nymin1),0)
+    !densityoutrecept(i)=rho(iix,jjy,1,2)
+    densityoutrecept(i)=rho(iix,jjy,1,mind)
+  end do
 
 
   ! Output is different for forward and backward simulations

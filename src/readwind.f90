@@ -76,9 +76,9 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   integer :: gotGrid
 !HSO  end
 
-  real(kind=4) :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real(kind=4) :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real(kind=4) :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
+  real(sp) :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
+  real(sp) :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
+  real(sp) :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
   integer :: indj,i,j,k,n,levdiff2,ifield,iumax,iwmax
 
 ! VARIABLES AND ARRAYS NEEDED FOR GRIB DECODING
@@ -90,14 +90,14 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 ! coordinate parameters
 
   integer :: isec1(56),isec2(22+nxmax+nymax)
-  real(kind=4) :: zsec4(jpunp)
-  real(kind=4) :: xaux,yaux,xaux0,yaux0
-  real(kind=8) :: xauxin,yauxin
-  real,parameter :: eps=1.e-4
-  real(kind=4) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
-  real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
+  real(sp) :: zsec4(jpunp)
+  real(sp) :: xaux,yaux
+  real(dp) :: xauxin,yauxin
+  real(sp),parameter :: eps=1.e-4
+  real(sp) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
+  real(sp) :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
 
-  logical :: hflswitch,strswitch, readcloud
+  logical :: hflswitch,strswitch!,readcloud
 
 !HSO  grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
@@ -106,7 +106,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   hflswitch=.false.
   strswitch=.false.
 !hg
-  readcloud=.false.
+!  readcloud=.false.
 !hg end
   levdiff2=nlev_ec-nwz+1
   iumax=0
@@ -361,7 +361,6 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
         readclouds = .true.
         !write(*,*) 'found water!'
       endif
-
       if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
         ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
         !write(*,*) 'found ice!'
@@ -378,7 +377,6 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 !
 
 50 call grib_close_file(ifile)
-
 
 !error message if no fields found with correct first longitude in it
   if (gotGrid.eq.0) then

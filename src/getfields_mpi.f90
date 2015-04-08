@@ -148,7 +148,7 @@ subroutine getfields(itime,nstop,memstat)
     else 
 ! 3 fields in memory
 ! Note that the reader process never needs to keep 3 fields in memory,
-! so it is possible to save some memory here
+! (2 is enough) so it is possible to save some memory
 !*********************************************************************
       if (mind3.eq.32.or.mind3.eq.19) then
         if (lmpreader) then 
@@ -244,7 +244,7 @@ subroutine getfields(itime,nstop,memstat)
           call verttransform_nests(memind(2),uuhn,vvhn,wwhn,pvhn)
         end if
         memtime(2)=wftime(indj+1)
-! :DEV: not used
+! DEV: not used
         if (.not.lmp_sync) memind(3)=3 ! indicate position of next read
         nstop = 1
         goto 60

@@ -98,6 +98,8 @@ subroutine concoutput_nest(itime,outnum)
   logical :: sp_zer
   character :: adate*8,atime*6
   character(len=3) :: anspec
+  integer :: mind 
+! mind        eso:added to ensure identical results between 2&3-fields versions
 
 ! Measure execution time
   if (mp_measure_time) then
@@ -148,6 +150,7 @@ subroutine concoutput_nest(itime,outnum)
   ! data to that altitude
   !*******************************************************************
 
+  mind=memind(2)
   do kz=1,numzgrid
     if (kz.eq.1) then
       halfheight=outheight(1)/2.
@@ -170,8 +173,10 @@ subroutine concoutput_nest(itime,outnum)
         yl=(yl-ylat0)/dy
         iix=max(min(nint(xl),nxmin1),0)
         jjy=max(min(nint(yl),nymin1),0)
-        densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
-             rho(iix,jjy,kzz-1,2)*dz2)/dz
+        ! densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
+        !      rho(iix,jjy,kzz-1,2)*dz2)/dz
+        densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,mind)*dz1+ &
+             rho(iix,jjy,kzz-1,mind)*dz2)/dz
       end do
     end do
   end do
@@ -181,7 +186,8 @@ subroutine concoutput_nest(itime,outnum)
     yl=yreceptor(i)
     iix=max(min(nint(xl),nxmin1),0)
     jjy=max(min(nint(yl),nymin1),0)
-    densityoutrecept(i)=rho(iix,jjy,1,2)
+    !densityoutrecept(i)=rho(iix,jjy,1,2)
+    densityoutrecept(i)=rho(iix,jjy,1,mind)
   end do
 
 
