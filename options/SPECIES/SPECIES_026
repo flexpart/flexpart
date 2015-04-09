@@ -21,6 +21,7 @@ CH4                Tracer name
 -9.99              Alternative: dry deposition velocity
 16.00              molweight
 9.65E-20           OH Reaction rate - C [cm^3/molecule/sec]
-1082.0             OH reaction rate - D [K]
+1082.0             OH Reaction rate - D [K]
+2.58               OH Reaction rate - N (no unit)
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning

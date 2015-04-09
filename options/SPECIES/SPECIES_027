@@ -21,6 +21,7 @@ C2H6               Tracer name
 -9.99              Alternative: dry deposition velocity
 30.00              molweight
 15.2E-18           OH Reaction rate - C [cm^3/molecule/sec]
-498                OH reaction rate - D [K]
+498.0              OH reaction rate - D [K]
+2.0                OH Reaction rate - N (no unit)
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning

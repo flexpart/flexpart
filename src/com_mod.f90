@@ -162,7 +162,7 @@ module com_mod
   real :: ri(5,numclass),rac(5,numclass),rcl(maxspec,5,numclass)
   real :: rgs(maxspec,5,numclass),rlu(maxspec,5,numclass)
   real :: rm(maxspec),dryvel(maxspec),kao(maxspec)
-  real :: ohcconst(maxspec),ohdconst(maxspec)
+  real :: ohcconst(maxspec),ohdconst(maxspec),ohnconst(maxspec)
   ! se  it is possible to associate a species with a second one to make transfer from gas to aerosol
   integer :: spec_ass(maxspec)
 
