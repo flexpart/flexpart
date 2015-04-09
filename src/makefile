@@ -33,16 +33,14 @@ FLEXPART-ECMWF 		= FP_ecmwf_gfortran
 FLEXPART-GFS 		= FP_gfs_gfortran
 FLEXPART-GFS-MPI 	= FP_gfs_MPI
 
-## Linker
-LD = ld.gold
 
 ## COMPILERS
-#F90       = /usr/bin/gfortran
-F90	  = ${HOME}/gcc-4.9.1/bin/gfortran
+F90       = /usr/bin/gfortran
+#F90	  = ${HOME}/gcc-4.9.1/bin/gfortran
 #MPIF90    = ${HOME}/opt/bin/mpifort
 #MPIF90    = mpif90.mpich
-#MPIF90    = mpif90.openmpi
-MPIF90    = mpifort
+MPIF90    = mpif90.openmpi
+#MPIF90    = mpifort
 
 ## OPTIMIZATION LEVEL
 O_LEV = 2 # [0,1,2,3,g,s,fast]
@@ -52,17 +50,17 @@ O_LEV_DBG = 0 # [0,g]
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff   # -fopenmp # -llapack -lnetcdf
 
 ## 1) System libraries at NILU
-# INCPATH1 = /usr/include
-# INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
-# LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
-# LIBPATH2 = /usr/lib/x86_64-linux-gnu
+INCPATH1 = /usr/include
+INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+LIBPATH2 = /usr/lib/x86_64-linux-gnu
 
 ## 2) Home-made libraries
-INCPATH1  = ${HOME}/include
-INCPATH2  = /homevip/flexpart/include/
+#INCPATH1  = ${HOME}/include
+#INCPATH2  = /homevip/flexpart/include/
 #LIBPATH2 = /homevip/flexpart/lib/
-LIBPATH1 = ${HOME}/lib
-LIBPATH2 = ${HOME}/lib	
+#LIBPATH1 = ${HOME}/lib
+#LIBPATH2 = ${HOME}/lib	
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native -fuse-linker-plugin $(FUSER) # -march=native
 
