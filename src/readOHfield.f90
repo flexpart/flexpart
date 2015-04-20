@@ -45,7 +45,6 @@ subroutine readOHfield
   use par_mod
   use com_mod
 
-
   implicit none
 
   include 'netcdf.inc'

@@ -119,7 +119,7 @@ subroutine gethourlyOH(itime)
     m1=(jjjjmmdd-(jjjjmmdd/10000)*10000)/100
     memOHtime(1)=0.
 
-    jul2=bdate+real(1./24.,kind=dp)  ! date for next hour
+    jul2=bdate+ldirect*real(1./24.,kind=dp)  ! date for next hour
     call caldate(jul2,jjjjmmdd,hhmmss)
     m2=(jjjjmmdd-(jjjjmmdd/10000)*10000)/100
     memOHtime(2)=ldirect*3600.

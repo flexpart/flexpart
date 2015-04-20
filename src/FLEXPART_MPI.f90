@@ -335,6 +335,10 @@ program flexpart
   ! and open files that are to be kept open throughout the simulation
   !******************************************************************
 
+  if (mp_measure_time) call mpif_mtime('iotime',0)
+! :DEV: was a bug here (all processes writing)?
+  if (lroot) then ! MPI: this part root process only
+
   if (lnetcdfout.eq.1) then 
     call writeheader_netcdf(lnest=.false.)
   else 
@@ -349,7 +353,7 @@ program flexpart
     endif
   endif
 
-  if (lroot) then ! MPI: this part root process only
+!
     if (verbosity.gt.0) then
       print*,'call writeheader'
     endif
@@ -363,9 +367,9 @@ program flexpart
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
-  !open(unitdates,file=path(2)(1:length(2))//'dates')
+  if (mp_measure_time) call mpif_mtime('iotime',0)
 
-!open(unitdates,file=path(2)(1:length(2))//'dates')
+  !open(unitdates,file=path(2)(1:length(2))//'dates')
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'

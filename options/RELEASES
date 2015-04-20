@@ -15,7 +15,7 @@
  Z2=  3000.000000    ,
  ZKIND=     1,
  MASS=  2.0000E8    ,
- PARTS=   2000000
+ PARTS=   20000000
  COMMENT="TEST1                          ",
  /
 &RELEASE
@@ -31,6 +31,6 @@
  Z2=  1000.000000    ,
  ZKIND=     1,
  MASS=  2.0000E8    ,
- PARTS=   2000000
+ PARTS=   20000000
  COMMENT="TEST2                          ",
  /

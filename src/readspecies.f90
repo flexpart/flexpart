@@ -210,7 +210,7 @@ subroutine readspecies(id_spec,pos_spec)
     weightmolar(pos_spec)=pweightmolar
     ohcconst(pos_spec)=pohcconst
     ohdconst(pos_spec)=pohdconst
-    ohdconst(pos_spec)=pohnconst
+    ohnconst(pos_spec)=pohnconst
     spec_ass(pos_spec)=pspec_ass
     kao(pos_spec)=pkao
 
