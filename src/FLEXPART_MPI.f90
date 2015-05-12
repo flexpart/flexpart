@@ -76,7 +76,7 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! FLEXPART version string
-  flexversion='Ver. 10.0pre MPI (2015-03-01)'
+  flexversion='Ver. 10 Beta MPI (2015-05-01)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -335,6 +335,9 @@ program flexpart
   ! and open files that are to be kept open throughout the simulation
   !******************************************************************
 
+  if (mp_measure_time) call mpif_mtime('iotime',0)
+  if (lroot) then ! MPI: this part root process only
+
   if (lnetcdfout.eq.1) then 
     call writeheader_netcdf(lnest=.false.)
   else 
@@ -349,7 +352,7 @@ program flexpart
     endif
   endif
 
-  if (lroot) then ! MPI: this part root process only
+!
     if (verbosity.gt.0) then
       print*,'call writeheader'
     endif
@@ -363,9 +366,9 @@ program flexpart
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
-  !open(unitdates,file=path(2)(1:length(2))//'dates')
+  if (mp_measure_time) call mpif_mtime('iotime',0)
 
-!open(unitdates,file=path(2)(1:length(2))//'dates')
+  !open(unitdates,file=path(2)(1:length(2))//'dates')
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'

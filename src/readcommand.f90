@@ -110,7 +110,8 @@ subroutine readcommand
   linit_cond, &
   lnetcdfout, &
   surf_only, &
-  cblflag
+  cblflag, &
+  ohfields_path
 
   ! Presetting namelist command
   ldirect=0
@@ -142,6 +143,7 @@ subroutine readcommand
   lnetcdfout=0
   surf_only=0 
   cblflag=0
+  ohfields_path="../../flexin/"
 
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
@@ -231,6 +233,7 @@ subroutine readcommand
     read(unitcommand,*) surf_only
     if (old) call skplin(3,unitcommand)  !added by mc
     read(unitcommand,*) cblflag          !added by mc
+
     close(unitcommand)
 
   endif ! input format

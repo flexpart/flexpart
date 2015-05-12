@@ -68,7 +68,7 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! FLEXPART version string
-  flexversion='Version 10.0pre  (2015-03-01)'
+  flexversion='Version 10.0beta (2015-05-01)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored

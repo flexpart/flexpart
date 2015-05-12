@@ -207,15 +207,21 @@ subroutine timemanager
       write (*,*) 'timemanager> call getfields'
     endif
 
+! This time measure includes reading/MPI communication (for the reader process),
+! or MPI communication time only (for other processes)
     if (mp_measure_time) call mpif_mtime('getfields',0)
 
     call getfields(itime,nstop1,memstat)
 
     if (mp_measure_time) call mpif_mtime('getfields',1)
 
+
+
 ! Broadcast fields to all MPI processes 
 ! Skip if all processes have called getfields or if no new fields
 !*****************************************************************
+
+    if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',0)
 
 ! Version 1 (lmp_sync=.true.) uses a read-ahead process where send/recv is done
 ! in sync at start of each new field time interval
@@ -257,6 +263,9 @@ subroutine timemanager
       end if
 
     end if
+
+    if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',1)
+
 
 !*******************************************************************************
 
@@ -445,6 +454,7 @@ subroutine timemanager
 !**************************************
           call mpif_tm_reduce_grid
 
+          if (mp_measure_time) call mpif_mtime('iotime',0)
           if (surf_only.ne.1) then
             if (lroot) then
               if (lnetcdfout.eq.1) then 
@@ -469,6 +479,7 @@ subroutine timemanager
               gridunc(:,:,:,:,:,:,:)=0.
             endif
           endif
+          if (mp_measure_time) call mpif_mtime('iotime',1)
 
 ! :TODO: Correct calling of conc_surf above?
 
@@ -480,6 +491,8 @@ subroutine timemanager
 ! MPI: Root process collects/sums nested grids
 !*********************************************
             call mpif_tm_reduce_grid_nest
+ 
+           if (mp_measure_time) call mpif_mtime('iotime',0)
 
             if (lnetcdfout.eq.0) then
               if (surf_only.ne.1) then
@@ -514,11 +527,14 @@ subroutine timemanager
 
             end if
           end if
+          
 
           outnum=0.
         endif
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)
         if (iflux.eq.1) call fluxoutput(itime)
+        if (mp_measure_time) call mpif_mtime('iotime',1)
+
         if (lroot) write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,&
              &wetgridtotalunc,drygridtotalunc
 !      if (lroot) write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np

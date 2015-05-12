@@ -89,7 +89,7 @@ module mpi_mod
 ! MPI tags/requests for send/receive operation
   integer :: tm1
   integer, parameter :: nvar_async=27 !29 :DBG:
-  !integer, dimension(:), allocatable :: tags
+!integer, dimension(:), allocatable :: tags
   integer, dimension(:), allocatable :: reqs
 
 
@@ -116,7 +116,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.true. 
+  logical, parameter :: mp_measure_time=.false. 
 
 ! for measuring CPU/Wall time
   real(sp) :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
@@ -138,6 +138,8 @@ module mpi_mod
   real(dp) :: mp_advance_wtime_beg, mp_advance_wtime_end, mp_advance_wtime_total=0.
   real(dp) :: mp_conccalc_time_beg, mp_conccalc_time_end, mp_conccalc_time_total=0.
   real(dp) :: mp_total_wtime_beg, mp_total_wtime_end, mp_total_wtime_total=0.
+  real(dp) :: mp_vt_wtime_beg, mp_vt_wtime_end, mp_vt_wtime_total
+  real(sp) :: mp_vt_time_beg, mp_vt_time_end, mp_vt_time_total
 
 ! dat_lun           logical unit number for i/o
   integer, private :: dat_lun 
@@ -417,7 +419,6 @@ contains
     end if
 
 
-
 ! redefine numpart as 'numpart per process' throughout the code
 !**************************************************************
     numpart = numpart_mpi
@@ -437,10 +438,6 @@ contains
     implicit none
 
     integer :: i
-
-
-!***********************************************************************
-
 
 ! Time for MPI communications
 !****************************
@@ -1242,7 +1239,7 @@ contains
 !*****************************************************
 
     do dest=0,mp_np-1 ! mp_np-2 will also work if last proc reserved for reading
-                      ! TODO: use mp_partgroup_np here
+! TODO: use mp_partgroup_np here
       if (dest.eq.id_read) cycle
       i=dest*nvar_async
       call MPI_Isend(uu(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
@@ -1338,8 +1335,8 @@ contains
         call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
              &MPI_COMM_WORLD,reqs(i),mp_ierr)
         if (mp_ierr /= 0) goto 600
-      ! else
-      !   i=i+2
+! else
+!   i=i+2
       end if
 
     end do
@@ -1388,10 +1385,10 @@ contains
 !*******************************************************************************
 
 ! :TODO: don't need these
-    ! d3s1=d3_size1
-    ! d3s2=d3_size2
-    ! d2s1=d2_size1 
-    ! d2s2=d2_size2
+! d3s1=d3_size1
+! d3s2=d3_size2
+! d2s1=d2_size1 
+! d2s2=d2_size2
 
 ! At the time this immediate receive is posted, memstat is the state of
 ! windfield indices at the previous/current time. From this, the future
@@ -1592,15 +1589,15 @@ contains
 !    if (readclouds) then
     call MPI_Waitall(n_req,reqs,MPI_STATUSES_IGNORE,mp_ierr)
 !    endif
-    ! else
-    !   do i = 0, nvar_async*mp_np-1
-    !     if (mod(i,27).eq.0 .or. mod(i,28).eq.0) then
-    !       call MPI_Cancel(reqs(i),mp_ierr)
-    !       cycle
-    !     end if
-    !     call MPI_Wait(reqs(i),MPI_STATUS_IGNORE,mp_ierr)
-    !   end do
-    ! end if
+! else
+!   do i = 0, nvar_async*mp_np-1
+!     if (mod(i,27).eq.0 .or. mod(i,28).eq.0) then
+!       call MPI_Cancel(reqs(i),mp_ierr)
+!       cycle
+!     end if
+!     call MPI_Wait(reqs(i),MPI_STATUS_IGNORE,mp_ierr)
+!   end do
+! end if
 
     if (mp_ierr /= 0) goto 600 
 
@@ -1733,7 +1730,6 @@ contains
            & mp_comm_used, mp_ierr)
     end if
 
-
     if ((WETDEP).and.(ldirect.gt.0)) then
       call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_pp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
@@ -1853,6 +1849,20 @@ contains
              & mp_io_time_beg)
       end if
 
+    case ('verttransform')
+      if (imode.eq.0) then
+        mp_vt_wtime_beg = mpi_wtime()
+        call cpu_time(mp_vt_time_beg)
+      else
+        mp_vt_wtime_end = mpi_wtime()
+        call cpu_time(mp_vt_time_end)
+
+        mp_vt_wtime_total = mp_vt_wtime_total + (mp_vt_wtime_end - &
+             & mp_vt_wtime_beg)
+        mp_vt_time_total = mp_vt_time_total + (mp_vt_time_end - &
+             & mp_vt_time_beg)
+      end if
+
     case ('readwind')
       if (imode.eq.0) then
         call cpu_time(mp_readwind_time_beg)
@@ -1908,7 +1918,7 @@ contains
 
 !***********************************************************************
 
-    if (mp_measure_time) then
+    IF (mp_measure_time) THEN
       do ip=0, mp_np-1
         call MPI_BARRIER(MPI_COMM_WORLD, mp_ierr)
 
@@ -1955,23 +1965,38 @@ contains
                & mp_wetdepo_time_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR CONCCALC:',&
                & mp_conccalc_time_total
+          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR VERTTRANSFORM:',&
+          !      & mp_vt_wtime_total
+          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR VERTTRANSFORM:',&
+          !      & mp_vt_time_total
 ! NB: the 'flush' function is possibly a gfortran-specific extension
           call flush()
         end if
       end do
     end if
 
+! This call to barrier is for correctly formatting output
+    call MPI_BARRIER(MPI_COMM_WORLD, mp_ierr)
+
+    if (lroot) then
+      write(*,FMT='(72("#"))')
+      WRITE(*,*) "To turn off output of time measurements, set "
+      WRITE(*,*) "    mp_measure_time=.false."
+      WRITE(*,*) "in file mpi_mod.f90"
+      write(*,FMT='(72("#"))')
+    end if
+
 ! j=mp_pid*nvar_async
 ! In the implementation with 3 fields, the processes may have posted
 ! MPI_Irecv requests that should be cancelled here
 !! TODO:
-    ! if (.not.lmp_sync) then
-    !   r=mp_pid*nvar_async
-    !   do j=r,r+nvar_async-1
-    !     call MPI_Cancel(j,mp_ierr)
-    !     if (mp_ierr /= 0) write(*,*) '#### mpif_finalize::MPI_Cancel> ERROR ####'
-    !   end do
-    ! end if
+! if (.not.lmp_sync) then
+!   r=mp_pid*nvar_async
+!   do j=r,r+nvar_async-1
+!     call MPI_Cancel(j,mp_ierr)
+!     if (mp_ierr /= 0) write(*,*) '#### mpif_finalize::MPI_Cancel> ERROR ####'
+!   end do
+! end if
 
     call MPI_FINALIZE(mp_ierr)
     if (mp_ierr /= 0) then
@@ -1980,61 +2005,61 @@ contains
     end if
 
 
-  end subroutine mpif_finalize
+    end subroutine mpif_finalize
 
 
-  subroutine get_lun(my_lun)
+    subroutine get_lun(my_lun)
 !***********************************************************************
 ! get_lun: 
 !   Starting from 100, get next free logical unit number
 !***********************************************************************
 
-    implicit none
+      implicit none
 
-    integer, intent(inout) :: my_lun
-    integer, save :: free_lun=100
-    logical :: exists, iopen
-
-!***********************************************************************
-
-    loop1: do
-      inquire(UNIT=free_lun, EXIST=exists, OPENED=iopen)
-      if (exists .and. .not.iopen) exit loop1
-      free_lun = free_lun+1
-    end do loop1
-    my_lun = free_lun
-
-  end subroutine get_lun
-
-
-  subroutine write_data_dbg(array_in, array_name, tstep, ident)
-!***********************************************************************
-! Write one-dimensional arrays to disk (for debugging purposes)
-!***********************************************************************
-    implicit none 
-
-    real, intent(in), dimension(:) :: array_in
-    integer, intent(in) :: tstep
-    integer :: lios
-    character(LEN=*), intent(in) :: ident, array_name
-
-    character(LEN=8) :: c_ts
-    character(LEN=40) :: fn_1, fn_2
+      integer, intent(inout) :: my_lun
+      integer, save :: free_lun=100
+      logical :: exists, iopen
 
 !***********************************************************************
 
-    write(c_ts, FMT='(I8.8,BZ)') tstep
-    fn_1='-'//trim(adjustl(c_ts))//'-'//trim(ident)
-    write(c_ts, FMT='(I2.2,BZ)') mp_np
-    fn_2= trim(adjustl(array_name))//trim(adjustl(fn_1))//'-np'//trim(adjustl(c_ts))//'.dat'
+      loop1: do
+        inquire(UNIT=free_lun, EXIST=exists, OPENED=iopen)
+        if (exists .and. .not.iopen) exit loop1
+        free_lun = free_lun+1
+      end do loop1
+      my_lun = free_lun
 
-    call get_lun(dat_lun)
-    open(UNIT=dat_lun, FILE=fn_2, IOSTAT=lios, ACTION='WRITE', &
-         FORM='UNFORMATTED', STATUS='REPLACE')
-    write(UNIT=dat_lun, IOSTAT=lios) array_in
-    close(UNIT=dat_lun)
+    end subroutine get_lun
 
-  end subroutine write_data_dbg
+
+    subroutine write_data_dbg(array_in, array_name, tstep, ident)
+!***********************************************************************
+! Write one-dimensional arrays to file (for debugging purposes)
+!***********************************************************************
+      implicit none 
+
+      real, intent(in), dimension(:) :: array_in
+      integer, intent(in) :: tstep
+      integer :: lios
+      character(LEN=*), intent(in) :: ident, array_name
+
+      character(LEN=8) :: c_ts
+      character(LEN=40) :: fn_1, fn_2
+
+!***********************************************************************
+
+      write(c_ts, FMT='(I8.8,BZ)') tstep
+      fn_1='-'//trim(adjustl(c_ts))//'-'//trim(ident)
+      write(c_ts, FMT='(I2.2,BZ)') mp_np
+      fn_2= trim(adjustl(array_name))//trim(adjustl(fn_1))//'-np'//trim(adjustl(c_ts))//'.dat'
+
+      call get_lun(dat_lun)
+      open(UNIT=dat_lun, FILE=fn_2, IOSTAT=lios, ACTION='WRITE', &
+           FORM='UNFORMATTED', STATUS='REPLACE')
+      write(UNIT=dat_lun, IOSTAT=lios) array_in
+      close(UNIT=dat_lun)
+
+    end subroutine write_data_dbg
 
 
 end module mpi_mod

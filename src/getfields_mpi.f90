@@ -42,10 +42,13 @@ subroutine getfields(itime,nstop,memstat)
 !   Function of nstop extended.
 !
 !  eso 2014:
-!    MPI version. 3 fields instead of 2, to allow reading the newest in
-!    the background.
-!    Only one process (lmpreader=.true.) does the actual reading, while the
-!    rest call this routine only to update memind, memstat etc.
+!    MPI version. 
+!    If running with number of processes >= mpi_mod::read_grp_min,
+!    only one process (mpi_mod::lmpreader=.true.) does the actual reading, while
+!    the rest call this routine only to update memind, memstat etc.
+!
+!    If mpi_mod::lmp_sync=.true., uses 3 fields instead of 2, to allow reading 
+!    the newest in the background.
 !
 !    Return memstat, which is the sum of 
 !    
@@ -60,8 +63,8 @@ subroutine getfields(itime,nstop,memstat)
 ! lwindinterval [s]    time difference between the two wind fields read in   *
 ! indj                 indicates the number of the wind field to be read in  *
 ! indmin               remembers the number of wind fields already treated   *
-! memind(2)            pointer, on which place the wind fields are stored    *
-! memtime(2) [s]       times of the wind fields, which are kept in memory    *
+! memind(2[3])         pointer, on which place the wind fields are stored    *
+! memtime(2[3]) [s]    times of the wind fields, which are kept in memory    *
 ! itime [s]            current time since start date of trajectory calcu-    *
 !                      lation                                                *
 ! nstop                > 0, if trajectory has to be terminated               *

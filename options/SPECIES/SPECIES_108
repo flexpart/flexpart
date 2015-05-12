@@ -2,7 +2,7 @@
 *                                                                          *
 *     Input file for the Lagrangian particle dispersion model FLEXPART     *
 *               Definition file of chemical species/radionuclides          *
-* ESO: edited to work with Rona's changes+Henrik                           *
+*     This file is on the format required by version 10 (05/2015)          *
 ****************************************************************************
 SO2                Tracer name
 -999.9             Species half life
@@ -13,12 +13,13 @@ SO2                Tracer name
 -9.9               Dry deposition (gases) - D
                    Dry deposition (gases) - Henrys const.
                    Dry deposition (gases) - f0 (reactivity)
-1.9E03            Dry deposition (particles) - rho
+1.9E+03            Dry deposition (particles) - rho
 4.0E-07            Dry deposition (particles) - dquer
 3.0E-01            Dry deposition (particles) - dsig
 -9.99              Alternative: dry deposition velocity
  64.00             molweight
--1.35E-12          OH Reaction rate - C
-1.0                OH Reaction rate - D
+1.35E-14           OH Reaction rate - C [cm^3/molecule/sec]
+120.0              OH Reaction rate - D [K]
+2.0                OH Reaction rate - N (no unit)
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning

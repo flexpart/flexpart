@@ -656,7 +656,7 @@ subroutine timemanager
 
   if (linit_cond.ge.1) call initial_cond_output(itime)   ! dump initial cond. field
 
-  close(104)
+  !close(104)
 
   ! De-allocate memory and end
   !***************************

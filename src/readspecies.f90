@@ -46,6 +46,7 @@ subroutine readspecies(id_spec,pos_spec)
   ! wetb_in              Parameter for determining in-cloud scavenging         *
   ! ohcconst             OH reaction rate constant C                           *
   ! ohdconst             OH reaction rate constant D                           *
+  ! ohnconst             OH reaction rate constant n                           *
   ! id_spec              SPECIES number as referenced in RELEASE file          *
   ! id_pos               position where SPECIES data shall be stored           *
   !                                                                            *
@@ -65,7 +66,7 @@ subroutine readspecies(id_spec,pos_spec)
 
   character(len=16) :: pspecies
   real :: pdecay, pweta, pwetb, preldiff, phenry, pf0, pdensity, pdquer
-  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pspec_ass, pkao
+  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
   real :: pweta_in, pwetb_in, pwetc_in, pwetd_in
   integer :: readerror
 
@@ -74,7 +75,7 @@ subroutine readspecies(id_spec,pos_spec)
        pspecies, pdecay, pweta, pwetb, &
        pweta_in, pwetb_in, pwetc_in, pwetd_in, &
        preldiff, phenry, pf0, pdensity, pdquer, &
-       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pspec_ass, pkao
+       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
 
   pspecies=" "
   pdecay=-999.9
@@ -93,6 +94,7 @@ subroutine readspecies(id_spec,pos_spec)
   pdryvel=-9.99
   pohcconst=-9.99
   pohdconst=-9.9E-09
+  pohnconst=2.0
   pspec_ass=-9
   pkao=-99.99
   pweightmolar=-789.0 ! read failure indicator value
@@ -159,6 +161,8 @@ subroutine readspecies(id_spec,pos_spec)
 !  write(*,*) ohcconst(pos_spec)
     read(unitspecies,'(f8.2)',end=22) ohdconst(pos_spec)
 !  write(*,*) ohdconst(pos_spec)
+    read(unitspecies,'(f8.2)',end=22) ohnconst(pos_spec)
+!  write(*,*) ohnconst(pos_spec)
     read(unitspecies,'(i18)',end=22) spec_ass(pos_spec)
 !  write(*,*) spec_ass(pos_spec)
     read(unitspecies,'(f18.2)',end=22) kao(pos_spec)
@@ -182,6 +186,7 @@ subroutine readspecies(id_spec,pos_spec)
     pweightmolar=weightmolar(pos_spec)
     pohcconst=ohcconst(pos_spec)
     pohdconst=ohdconst(pos_spec)
+    pohnconst=ohnconst(pos_spec)
     pspec_ass=spec_ass(pos_spec)
     pkao=kao(pos_spec)
 
@@ -205,6 +210,7 @@ subroutine readspecies(id_spec,pos_spec)
     weightmolar(pos_spec)=pweightmolar
     ohcconst(pos_spec)=pohcconst
     ohdconst(pos_spec)=pohdconst
+    ohnconst(pos_spec)=pohnconst
     spec_ass(pos_spec)=pspec_ass
     kao(pos_spec)=pkao
 

@@ -152,7 +152,7 @@ subroutine ohreaction(itime,ltsample,loutnext)
 
       do k=1,nspec                                
         if (ohcconst(k).gt.0.) then
-          ohrate=ohcconst(k)*temp**2*exp(-ohdconst(k)/temp)*oh_average
+          ohrate=ohcconst(k)*temp**ohnconst(k)*exp(-ohdconst(k)/temp)*oh_average
           ! new particle mass
           restmass = xmass1(jpart,k)*exp(-1*ohrate*abs(ltsample))
           if (restmass .gt. smallnum) then

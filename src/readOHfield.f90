@@ -45,7 +45,6 @@ subroutine readOHfield
   use par_mod
   use com_mod
 
-
   implicit none
 
   include 'netcdf.inc'
@@ -68,7 +67,8 @@ subroutine readOHfield
   
     ! open netcdf file
     write(mm,fmt='(i2.2)') m
-    thefile=trim(path(1))//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
+!    thefile=trim(path(1))//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
+    thefile=trim(ohfields_path)//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
     ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
     if(ierr.ne.0) then
       write(*,*) nf_strerror(ierr)
@@ -162,7 +162,8 @@ subroutine readOHfield
   !********************************  
 
   ! open netcdf file
-  thefile=trim(path(1))//'OH_FIELDS/jrate_average.nc'
+!  thefile=trim(path(1))//'OH_FIELDS/jrate_average.nc'
+  thefile=trim(ohfields_path)//'OH_FIELDS/jrate_average.nc'
   ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
   if(ierr.ne.0) then
     write(*,*) nf_strerror(ierr)
