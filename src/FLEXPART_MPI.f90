@@ -76,7 +76,7 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! FLEXPART version string
-  flexversion='Ver. 10.0pre MPI (2015-03-01)'
+  flexversion='Ver. 10 Beta MPI (2015-05-01)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -336,7 +336,6 @@ program flexpart
   !******************************************************************
 
   if (mp_measure_time) call mpif_mtime('iotime',0)
-! :DEV: was a bug here (all processes writing)?
   if (lroot) then ! MPI: this part root process only
 
   if (lnetcdfout.eq.1) then 

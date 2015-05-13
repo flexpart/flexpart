@@ -116,7 +116,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.true. 
+  logical, parameter :: mp_measure_time=.false. 
 
 ! for measuring CPU/Wall time
   real(sp) :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
@@ -138,6 +138,8 @@ module mpi_mod
   real(dp) :: mp_advance_wtime_beg, mp_advance_wtime_end, mp_advance_wtime_total=0.
   real(dp) :: mp_conccalc_time_beg, mp_conccalc_time_end, mp_conccalc_time_total=0.
   real(dp) :: mp_total_wtime_beg, mp_total_wtime_end, mp_total_wtime_total=0.
+  real(dp) :: mp_vt_wtime_beg, mp_vt_wtime_end, mp_vt_wtime_total
+  real(sp) :: mp_vt_time_beg, mp_vt_time_end, mp_vt_time_total
 
 ! dat_lun           logical unit number for i/o
   integer, private :: dat_lun 
@@ -417,7 +419,6 @@ contains
     end if
 
 
-
 ! redefine numpart as 'numpart per process' throughout the code
 !**************************************************************
     numpart = numpart_mpi
@@ -437,10 +438,6 @@ contains
     implicit none
 
     integer :: i
-
-
-!***********************************************************************
-
 
 ! Time for MPI communications
 !****************************
@@ -1733,7 +1730,6 @@ contains
            & mp_comm_used, mp_ierr)
     end if
 
-
     if ((WETDEP).and.(ldirect.gt.0)) then
       call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_pp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
@@ -1853,6 +1849,20 @@ contains
              & mp_io_time_beg)
       end if
 
+    case ('verttransform')
+      if (imode.eq.0) then
+        mp_vt_wtime_beg = mpi_wtime()
+        call cpu_time(mp_vt_time_beg)
+      else
+        mp_vt_wtime_end = mpi_wtime()
+        call cpu_time(mp_vt_time_end)
+
+        mp_vt_wtime_total = mp_vt_wtime_total + (mp_vt_wtime_end - &
+             & mp_vt_wtime_beg)
+        mp_vt_time_total = mp_vt_time_total + (mp_vt_time_end - &
+             & mp_vt_time_beg)
+      end if
+
     case ('readwind')
       if (imode.eq.0) then
         call cpu_time(mp_readwind_time_beg)
@@ -1955,6 +1965,10 @@ contains
                & mp_wetdepo_time_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR CONCCALC:',&
                & mp_conccalc_time_total
+          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR VERTTRANSFORM:',&
+          !      & mp_vt_wtime_total
+          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR VERTTRANSFORM:',&
+          !      & mp_vt_time_total
 ! NB: the 'flush' function is possibly a gfortran-specific extension
           call flush()
         end if
@@ -2020,7 +2034,7 @@ contains
 
     subroutine write_data_dbg(array_in, array_name, tstep, ident)
 !***********************************************************************
-! Write one-dimensional arrays to disk (for debugging purposes)
+! Write one-dimensional arrays to file (for debugging purposes)
 !***********************************************************************
       implicit none 
 

@@ -384,7 +384,7 @@ subroutine readreleases
 
     if (ohcconst(i).gt.0.) then
       OHREA=.true.
-      write (*,*) 'OHreaction switched on: ',ohcconst(i),i
+      if (lroot) write (*,*) 'OHreaction switched on: ',ohcconst(i),i
     endif
 
     if ((reldiff(i).gt.0.).or.(density(i).gt.0.).or.(dryvel(i).gt.0.)) then

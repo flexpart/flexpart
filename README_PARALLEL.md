@@ -119,7 +119,7 @@ Performance efficency considerations
   As the parallization is based on particles, it follows that if  
   FLEXPART-MPI is run with no (or just a few) particles, no performance 
   improvement is possible. In this case, most processing time is spent
-  in the 'getfields'-routine (ECMWF).
+  in the 'getfields'-routine.
 
   A) Running without dedicated reader process
   ----------------------------------------

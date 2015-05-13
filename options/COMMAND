@@ -11,7 +11,7 @@
  LSYNCTIME=        900,
  CTL= -5.0000000    ,
  IFINE=          4,
- IOUT=          1,
+ IOUT=          9,
  IPOUT=          0,
  LSUBGRID=          1,
  LCONVECTION=          1,
@@ -27,4 +27,5 @@
  LINIT_COND=          0,
  SURF_ONLY=          0,
  CBLFLAG=          0,
+ OHFIELDS_PATH=          "../../flexin/",
  /

@@ -25,12 +25,14 @@ module com_mod
   character :: path(numpath+2*maxnests)*120
   integer :: length(numpath+2*maxnests)
   character(len=256) :: pathfile, flexversion, arg1, arg2
+  character(len=256) :: ohfields_path
   
   ! path                    path names needed for trajectory model
   ! length                  length of path names needed for trajectory model
   ! pathfile                file where pathnames are stored
   ! flexversion             version of flexpart
   ! arg                     input arguments from launch at command line
+  ! ohfields_path           path to binary files for OH fields
 
   !********************************************************
   ! Variables defining the general model run specifications
