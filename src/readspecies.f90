@@ -261,7 +261,7 @@ subroutine readspecies(id_spec,pos_spec)
 
   else !is gas
     if (lroot) then
-      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
+      write(*,*) '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
       write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb(pos_spec)
       write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
     end if

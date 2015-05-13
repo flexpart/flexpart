@@ -509,7 +509,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !   total cloudheight is stored at level 0
 
   if (readclouds) write(*,*) 'using cloud water from ECMWF'
-  if (.not.readclouds) write(*,*) 'using cloud water from parameterization'
+!  if (.not.readclouds) write(*,*) 'using cloud water from parameterization'
 
   rcw(:,:)=0
   rpc(:,:)=0
