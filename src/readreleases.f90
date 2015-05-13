@@ -375,8 +375,8 @@ subroutine readreleases
       WETDEP=.true.
       if (lroot) then
         write (*,*) 'In-cloud scavenging: ON'
-        write (*,*) 'In-cloud scavenging coefficients: ',&
-           &weta_in(i),wetb_in(i),i !,wetc_in(i), wetd_in(i),i
+!        write (*,*) 'In-cloud scavenging coefficients: ',&
+!           &weta_in(i),wetb_in(i),i !,wetc_in(i), wetd_in(i),i
       end if
     else
       if (lroot) write (*,*) 'In-cloud scavenging: OFF' 

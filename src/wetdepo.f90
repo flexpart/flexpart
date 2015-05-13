@@ -263,8 +263,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
   !***********************  
       if (clouds_v.ge.4) then !below cloud
 
-        if (weta(ks).gt.0. .or. wetb(ks).gt.0) then !if positive below-cloud parameters given in SPECIES file (either A or B)
+        if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then !if positive below-cloud parameters given in SPECIES file (either A or B)
           blc_count=blc_count+1
+
 
 !GAS
           if (dquer(ks) .le. 0.) then  !is gas
@@ -278,13 +279,13 @@ subroutine wetdepo(itime,ltsample,loutnext)
             dquer_m=dquer(ks)/1000000. !conversion from um to m
            
   !ZHG snow or rain removal is applied based on the temperature.
-            if (act_temp .ge. 273)  then !Rain 
+            if (act_temp .ge. 273 .and. weta(ks).gt.0.)  then !Rain 
 
   !Particle RAIN scavenging coefficient based on Laakso et al 2003, the below-cloud scavenging (rain efficienty) parameter A (=weta) from SPECIES file
               wetscav= weta(ks)*10**(bclr(1)+ (bclr(2)*(log10(dquer_m))**(-4))+(bclr(3)*(log10(dquer_m))**(-3))+ (bclr(4)* &
                    (log10(dquer_m))**(-2))+ (bclr(5)*(log10(dquer_m))**(-1))+ bclr(6)* (prec(1))**(0.5))
 
-            elseif (act_temp .lt. 273)  then !snow
+            elseif (act_temp .lt. 273 .and. wetb(ks).gt.0.)  then !snow
 
   !Particle SNOW scavenging coefficient based on Kyro et al 2009, the below-cloud scavenging (Snow efficiency) parameter B (=wetb) from SPECIES file
               wetscav= wetb(ks)*10**(bcls(1)+ (bcls(2)*(log10(dquer_m))**(-4))+(bcls(3)*(log10(dquer_m))**(-3))+ (bcls(4)* &
@@ -304,46 +305,57 @@ subroutine wetdepo(itime,ltsample,loutnext)
   !********************
       if (clouds_v.lt.4) then !in-cloud
 
-        inc_count=inc_count+1
+! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are given in species file
+        if (weta_in(ks).gt.0. .or. wetb_in(ks).gt.0.) then !if positive in-cloud parameters given in SPECIES file (either Ai or Bi)
+
+! if negative coefficients (turned off) set to zero for use in equation
+          if (weta_in(ks).lt.0.) weta_in(ks)=0.
+          if (wetb_in(ks).lt.0.) wetb_in(ks)=0.
+
+          inc_count=inc_count+1
 
   !ZHG liquid water parameterization (CLWC+CIWC) 
-        if (readclouds) then !get cloud water clwc & ciwc units Kg/Kg
-          cl=clwc(ix,jy,hz,n)+ciwc(ix,jy,hz,n)
-        else !parameterize cloudwater
-          cl=2E-7*prec(1)**0.36
-        endif
-
-  ! AEROSOL
-        if (dquer(ks).gt. 0.) then ! is particle
-          if (act_temp .le. 253) then
-            liq_frac=0
-          else if (act_temp .ge. 273) then
-            liq_frac=1
-          else
-            liq_frac =((act_temp-273)/(273-253))**2
+          if (readclouds) then !get cloud water clwc & ciwc units Kg/Kg
+            cl=clwc(ix,jy,hz,n)+ciwc(ix,jy,hz,n)
+          else !parameterize cloudwater
+            cl=2E-7*prec(1)**0.36
           endif
+
+            if (act_temp .le. 253) then
+              liq_frac=0
+            else if (act_temp .ge. 273) then
+              liq_frac=1
+            else
+              liq_frac =((act_temp-273)/(273-253))**2
+            endif
 
 ! ZHG  calculate the activated fraction based on the In-cloud scavenging parameters Ai (=weta_in) and Bi (=wetb_in) from SPECIES file
 ! frac_act is the combined IN and CCN efficiency
 ! The default values are 0.9 for CCN and 0.1 IN
 ! This parameterization is based on Verheggen et al. (2007) & Cozich et al. (2006)
-          frac_act = liq_frac*weta_in(ks) +(1-liq_frac)*wetb_in(ks)
+            frac_act = liq_frac*weta_in(ks) +(1-liq_frac)*wetb_in(ks)
  
   !ZHG Use the activated fraction and the liqid water to calculate the washout
-          S_i= frac_act/cl
+
+  ! AEROSOL
+          if (dquer(ks).gt. 0.) then ! is particle
+
+            S_i= frac_act/cl
 
   ! GAS
-        else ! is gas
-          cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
-          S_i=1/cle
-        endif
+          else ! is gas
+               
+            cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
+            S_i=frac_act/cle
+
+          endif ! gas or particle
 
   ! scavenging coefficient based on Hertel et al 1995 - using the S_i for either gas or aerosol
-        wetscav=S_i*(prec(1)/3.6E6)/clouds_h
+          wetscav=S_i*(prec(1)/3.6E6)/clouds_h
 
 !          write(*,*) 'in-cloud, act_temp=',act_temp,',prec=',prec(1),',wetscav=',wetscav,',jpart=',jpart,',clouds_h=,', &
 !          clouds_h,',cl=',cl, 'diff to old scheme=', cl-2E-7*prec(1)**0.36
-
+        endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud
      
   !**************************************************

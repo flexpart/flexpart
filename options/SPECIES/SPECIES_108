@@ -4,7 +4,7 @@
 *               Definition file of chemical species/radionuclides          *
 *     This file is on the format required by version 10 (05/2015)          *
 ****************************************************************************
-SO2                Tracer name
+SO2_TEST           Tracer name
 -999.9             Species half life
 1.0                Below cloud scavenging - A
 1.0                Below cloud scavenging - B
