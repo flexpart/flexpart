@@ -1,5 +1,5 @@
 
-		FLEXPART VERSION 9.2.0 (MPI)
+		FLEXPART VERSION 10.0 beta (MPI)
 
 Description
 -----------
@@ -61,7 +61,7 @@ Implementation
   among the running processes. In the code, variables like 'maxpart' and 
   'numpart' are complemented by variables 'maxpart_mpi' and 'numpart_mpi'
   which are the run-time determined number of particles per process, i.e,
-  maxpart_mpi = maxpart/[number of processes]. The variable 'numpart' 
+  maxpart_mpi = maxpart/np, where np are the number of processes. The variable 'numpart' 
   is still used in the code, but redefined to mean 'number of particles
   per MPI process'
 
@@ -78,7 +78,7 @@ Implementation
   be faster than running with np=3 and no dedicated 'reader' process. 
   But it is also possible that the
   program will run even faster if the 4th process is participating in 
-  the calculation of particle trajectories. This will largely depend on
+  the calculation of particle trajectories instead. This will largely depend on
   the problem size (total number of particles in the simulation, resolution
   of grids etc) and hardware being used (disk speed/buffering, memory
   bandwidth etc).
@@ -119,7 +119,7 @@ Performance efficency considerations
   As the parallization is based on particles, it follows that if  
   FLEXPART-MPI is run with no (or just a few) particles, no performance 
   improvement is possible. In this case, most processing time is spent
-  in the 'getfields'-routine (ECMWF).
+  in the 'getfields'-routine.
 
   A) Running without dedicated reader process
   ----------------------------------------
@@ -172,7 +172,7 @@ What is implemented in the MPI version
     * Domain-filling trajectory calculations
     * Nested wind fields
 
- -The following will probably/possibly not work (untested/under developement): 
+ -The following will most probably not work (untested/under developement): 
 
     * Backward runs
 

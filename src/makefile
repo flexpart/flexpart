@@ -33,6 +33,7 @@ FLEXPART-ECMWF 		= FP_ecmwf_gfortran
 FLEXPART-GFS 		= FP_gfs_gfortran
 FLEXPART-GFS-MPI 	= FP_gfs_MPI
 
+
 ## COMPILERS
 F90       = /usr/bin/gfortran
 #F90	  = ${HOME}/gcc-4.9.1/bin/gfortran
@@ -49,19 +50,20 @@ O_LEV_DBG = 0 # [0,g]
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff   # -fopenmp # -llapack -lnetcdf
 
 ## 1) System libraries at NILU
-# INCPATH1 = /usr/include
-INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+INCPATH1 = /usr/include
+#INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
 LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
-# LIBPATH2 = /usr/lib/x86_64-linux-gnu
+#LIBPATH2 = /usr/lib/x86_64-linux-gnu
 
 ## 2) Home-made libraries
-#INCPATH2  = ${HOME}/include
-INCPATH2  = /homevip/flexpart/include
-LIBPATH2 = /homevip/flexpart/lib
-#INCPATH2 = ${HOME}/lib	
+# INCPATH1  = ${HOME}/include
+INCPATH2  = /homevip/flexpart/include/
+LIBPATH2 = /homevip/flexpart/lib/
+# LIBPATH1 = ${HOME}/lib
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native $(FUSER) # -march=native
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -Warray-bounds  -Wall -fcheck=all $(FUSER)  # -ffpe-trap=invalid,overflow,denormal,underflow,zero -fdump-core
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native -fuse-linker-plugin $(FUSER) # -march=native
+
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -Warray-bounds  -Wall -fcheck=all $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero -fdump-core
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)
@@ -187,6 +189,9 @@ cbl.o			netcdf_output_mod.o
 
 %.o: %.mod
 
+ecmwf: $(FLEXPART-ECMWF)
+ecmwf: FC := $(F90)
+
 ecmwf-mpi: $(FLEXPART-ECMWF-MPI)
 ecmwf-mpi: FC := $(MPIF90)
 
@@ -195,9 +200,6 @@ ecmwf-mpi-dbg: FFLAGS := $(DBGFLAGS)
 ecmwf-mpi-dbg: LDFLAGS:= $(LDDEBUG) 
 ecmwf-mpi-dbg: FC := $(MPIF90)
 
-ecmwf: $(FLEXPART-ECMWF)
-ecmwf: FC := $(F90)
-
 gfs: $(FLEXPART-GFS)
 gfs: FC := $(F90)
 gfs-mpi: $(FLEXPART-GFS-MPI)
@@ -205,6 +207,9 @@ gfs-mpi: FC := $(MPIF90)
 
 #all: $(FLEXPART-ECMWF)
 #all: $(FLEXPART-ECMWF-MPI)
+
+$(FLEXPART-ECMWF): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF)
+	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF) $(LDFLAGS)
 
 $(FLEXPART-ECMWF-MPI): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) $(OBJECTS_ECMWF_MPI)
 	+$(FC) -o $@ $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
@@ -215,9 +220,6 @@ $(FLEXPART-ECMWF-MPI-DBG): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
 	$(OBJECTS_ECMWF_MPI)
 	+$(FC) -o $@ $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
 	$(OBJECTS_ECMWF_MPI) $(LDFLAGS)
-
-$(FLEXPART-ECMWF): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF)
-	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF) $(LDFLAGS)
 
 $(FLEXPART-GFS): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_GFS)
 	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_GFS) $(LDFLAGS)
