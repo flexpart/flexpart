@@ -6,8 +6,10 @@
 ****************************************************************************
 G-HCH              Tracer name
 -999.9             Species half life
-3.5E-05            Wet deposition - A
-0.62               Wet deposition - B
+3.5E-05            Below-cloud scavenging (gases and particles) - A
+0.62               Below-cloud scavenging (gases and particles)- B
+1.0                In-cloud scavenging (gases and particles) - Ai
+1.0                In-cloud scavenging (gases and particles) - Bi
 4.3                Dry deposition (gases) - D
 4.22E+02           Dry deposition (gases) - Henrys const.
 0.1                Dry deposition (gases) - f0 (reactivity)
@@ -16,6 +18,8 @@ G-HCH              Tracer name
                    Dry deposition (particles) - dsig
 -9.99              Alternative: dry deposition velocity
 290.83             molweight
-1.9E-13            OH Reaction rate at 25 deg, [cm^3/sec]
+6.21E-11           OH Reaction rate - C [cm^3/molecule/sec]
+1203.0             OH reaction rate - D [K]
+2.0                OH Reaction rate - N (no unit)
 -9                 number of associated specias (neg. none)
 -99.99             KOA - organic matter air partitioning
