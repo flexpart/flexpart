@@ -71,6 +71,9 @@ subroutine readOHfield
     thefile=trim(ohfields_path)//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
     ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
     if(ierr.ne.0) then
+      write (*,*) 'The OH field at: '//thefile// ' could not be opened'
+      write (*,*) 'please copy the OH fields there, or change the path in the'
+      write (*,*) 'COMMAND namelist!'
       write(*,*) nf_strerror(ierr)
       stop
     endif

@@ -52,6 +52,7 @@ WET DEPOSITION
 Below-cloud scavenging
 - Gases:
 	A and B are the parameters for below-cloud scavenging defined by Eq. scavenging coefficient = A x precipitation-rate^B
+        If you migrate from FLEXPART version 9.2 and below this is equal to A and B as it was.
 - Particles: 
 	A "rain collection efficiency"  
 	B "snow collection efficiency" are both defined by Equations 46-47.
@@ -61,6 +62,7 @@ Below-cloud scavenging
 In-cloud scavenging
 - Gases:
     Is switched on if Ai or Bi are given greater than 0
+    If you migrate from FLEXPART version 9.2 and below this is equal to Ai and Bi should be set to 1
 - Particles:
 	Ai ("Cloud Condensation Nuclei (CCN) efficiency") 
 	Bi ("Ice Nuclei (IN) efficiency")                  are both from Eq. 51. 	
