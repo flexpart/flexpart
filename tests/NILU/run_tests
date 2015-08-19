@@ -1,0 +1,27 @@
+#!/bin/bash
+
+FLEXOUT_TMP=/home/ignacio/repos/flextest/
+
+suffix=$(date "+%y-%m-%d_%H%M%S")
+#test_tmp=${FLEXOUT_TMP}${base_dir}${test_dir}_${suffix}
+base_dir=${FLEXOUT_TMP}/tests_${suffix}/
+mkdir $base_dir
+
+FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran 
+
+#test_dir=$1
+#FP_exec=$2
+#base_dir=$3
+
+./run_test test_1  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+./run_test test_2  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+
+# 6 species
+./run_test test_Volc  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+
+
+#exit
+
+./run_test test_HelloWorld  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+./run_test test_Fwd1  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+./run_test test_Fwd2  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir

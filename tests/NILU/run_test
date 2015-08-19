@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#input FP exec
+test_dir=$1
+FP_exec=$2
+base_dir=$3
+
+echo FP_exec=$FP_exec
+echo $FLEXOUT_TMP
+
+#suffix=$(date "+%y-%m-%d_%H%M%S")
+test_tmp=${FLEXOUT_TMP}${base_dir}${test_dir}
+#_${suffix}
+
+current_dir=$(pwd)
+echo test_tmp=$test_tmp
+mkdir $test_tmp
+
+#copy default optios
+cp -r options_default $test_tmp/options
+#override default options
+cp -r ${test_dir}/options/* $test_tmp/options/
+# copy paths form repo source exec tmp dir 
+cp ${test_dir}/pathnames $test_tmp
+mkdir ${test_tmp}/output
+
+#cp test_1/run $test_tmp
+
+cd $test_tmp
+echo $(pwd)
+echo $FP_exec
+#  '&>' o is bash for both out and err
+echo run $FP_exec   to  out.log #&
+$FP_exec   &> out.log #&
+
+
+
