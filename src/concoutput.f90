@@ -96,11 +96,12 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real,parameter :: weightair=28.97
   logical :: sp_zer
+  LOGICAL,save :: init=.true.
   character :: adate*8,atime*6
   character(len=3) :: anspec
   integer :: mind
 ! mind        eso:added to ensure identical results between 2&3-fields versions
-
+  CHARACTER(LEN=8),save :: file_stat='REPLACE'
 
   ! Determine current calendar date, needed for the file name
   !**********************************************************
@@ -109,9 +110,20 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   call caldate(jul,jjjjmmdd,ihmmss)
   write(adate,'(i8.8)') jjjjmmdd
   write(atime,'(i6.6)') ihmmss
-  open(unitdates,file=path(2)(1:length(2))//'dates', ACCESS='APPEND')
+  OPEN(unitdates,file=path(2)(1:length(2))//'dates', ACCESS='APPEND', STATUS=file_stat)
   write(unitdates,'(a)') adate//atime
   close(unitdates)  
+
+  ! Overwrite existing dates file on first call, later append to it
+  ! This fixes a bug where the dates file kept growing across multiple runs
+  ! TODO check if the 'always APPEND'-behaviour is useful in other scenarioes
+  ! e.g. (restart?)
+  IF (init) THEN
+    file_stat='OLD'
+    init=.false.
+  END IF
+
+
 
   ! For forward simulations, output fields have dimension MAXSPEC,
   ! for backward simulations, output fields have dimension MAXPOINT.
