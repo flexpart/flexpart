@@ -112,11 +112,14 @@ module mpi_mod
 ! mp_dbg_out        write some arrays to data file for debugging
 ! mp_measure_time   Measure cpu/wall time, write out at end of run
 ! mp_time_barrier   Measure MPI barrier time
+! mp_exact_numpart  Use an extra MPI communication to give the exact number of particles
+!                   to standard output (this does *not* otherwise affect the simulation) 
   logical, parameter :: mp_dbg_mode = .false.
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.false. 
+  logical, parameter :: mp_measure_time=.false.
+  logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
   real(sp) :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
@@ -1978,7 +1981,7 @@ contains
 ! This call to barrier is for correctly formatting output
     call MPI_BARRIER(MPI_COMM_WORLD, mp_ierr)
 
-    if (lroot) then
+    if (lroot.and.mp_measure_time) then
       write(*,FMT='(72("#"))')
       WRITE(*,*) "To turn off output of time measurements, set "
       WRITE(*,*) "    mp_measure_time=.false."

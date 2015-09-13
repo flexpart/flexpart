@@ -110,6 +110,7 @@ subroutine timemanager
   integer :: loutnext,loutstart,loutend
   integer :: ix,jy,ldeltat,itage,nage
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
+  integer :: numpart_tot_mpi ! for summing particles on all processes
   real :: outnum,weight,prob(maxspec)
   real :: decfact
 
@@ -136,17 +137,6 @@ subroutine timemanager
 !**********************************************************************
 ! Loop over the whole modelling period in time steps of mintime seconds
 !**********************************************************************
-
-
-!  itime=0
-  if (lroot) then
-  !  write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
-    write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
-
-    if (verbosity.gt.0) then
-      write (*,*) 'timemanager> starting simulation'
-    end if
-  end if ! (lroot)
 
   do itime=0,ideltas,lsynctime
 
@@ -214,7 +204,6 @@ subroutine timemanager
     call getfields(itime,nstop1,memstat)
 
     if (mp_measure_time) call mpif_mtime('getfields',1)
-
 
 
 ! Broadcast fields to all MPI processes 
@@ -535,9 +524,24 @@ subroutine timemanager
         if (iflux.eq.1) call fluxoutput(itime)
         if (mp_measure_time) call mpif_mtime('iotime',1)
 
-        if (lroot) write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,&
-             &wetgridtotalunc,drygridtotalunc
-!      if (lroot) write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
+
+! Decide whether to write an estimate of the number of particles released, 
+! or exact number (require MPI reduce operation)
+        numpart_tot_mpi = numpart*mp_partgroup_np
+
+        if (mp_exact_numpart.and..not.(lmpreader.and.lmp_use_reader)) then
+          call MPI_Reduce(numpart, numpart_tot_mpi, 1, MPI_INTEGER, MPI_SUM, id_root, &
+               & mp_comm_used, mp_ierr)
+        endif
+        
+        if (lroot) then
+          write(*,45) itime,numpart_tot_mpi,gridtotalunc,&
+               &wetgridtotalunc,drygridtotalunc
+          if (verbosity.gt.0) then
+            write (*,*) 'timemanager> starting simulation'
+          end if
+        end if
+
 45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) then
@@ -555,7 +559,6 @@ subroutine timemanager
           outnum=outnum+weight
           call conccalc(itime,weight)
         endif
-
 
 
 ! Check, whether particles are to be split:
@@ -770,22 +773,6 @@ subroutine timemanager
 ! and if they are compromising the final result (or not):
     if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
 
-! TODO: delete for release version?
-!!-------------------------------------------------------------------------------
-! These lines below to test the well-mixed condition, modified by  mc, not to
-! be included in final release:
-! 
-! if (itime.eq.0) then
-! open(551,file='/home/mc/test_cbl/out/WELLMIXEDTEST_CBL_lonlat_9_33_100_3hours_3htp_cd.DAT')
-! open(552,file='/home/mc/test_cbl/out/avg_ol_h_wst_lonlat_9_33_100_3hours_3htp_cd.DAT')
-! end if
-! write(552,'(5F16.7)')itime*1./3600.,avg_wst/well_mixed_norm,avg_ol/well_mixed_norm,avg_h/well_mixed_norm
-! do j=1,25
-!      !write(551,*))itime*1.,h_well/50.*j,well_mixed_vector(j)/well_mixed_norm*50.
-!     avg_air_dens(j)=avg_air_dens(j)/well_mixed_vector(j)
-!     write(551,'(5F16.7)')itime*1.,h_well/25.*j,well_mixed_vector(j)/well_mixed_norm*25.,avg_air_dens(j),0.04*j
-! end do 
-!!------------------------------------------------------------------------------
 
   end do ! itime=0,ideltas,lsynctime
 
