@@ -54,7 +54,7 @@ subroutine releaseparticles(itime)
   use par_mod
   use com_mod
   use random_mod, only: ran1
-  use mpi_mod, only: mp_partid, maxpart_mpi, mp_partgroup_np, mp_seed
+  use mpi_mod, only: mp_partid, maxpart_mpi, mp_partgroup_np, mp_seed, mpif_mpi_barrier
 
   implicit none
 
@@ -77,7 +77,8 @@ subroutine releaseparticles(itime)
 
   logical :: first_call=.true.
 
-  ! Use different seed for each process
+  ! Use different seed for each process.
+  !****************************************************************************
   if (first_call) then
     idummy=idummy+mp_seed
     first_call=.false.
@@ -151,18 +152,24 @@ subroutine releaseparticles(itime)
   ! Also scale by number of MPI processes
   !**********************************************************************
 
-        if (mp_partid.lt.mod(npart(i),mp_partgroup_np)) then
+        rfraction=rfraction*average_timecorrect
+
+        rfraction=rfraction+xmasssave(i)  ! number to be released at this time
+
+        ! number to be released for one process
+        if (mp_partid.lt.mod(int(rfraction),mp_partgroup_np)) then
           addone=1
         else
           addone=0
         end if
 
-        rfraction=rfraction*average_timecorrect/real(mp_partgroup_np)
+        numrel=int(rfraction/mp_partgroup_np) + addone
 
-        rfraction=rfraction+xmasssave(i)  ! number to be released at this time
-        numrel=int(rfraction)+addone
-        xmasssave(i)=rfraction-real(numrel)
+        xmasssave(i)=rfraction-int(rfraction)
+
       else
+! All particles are released in this time interval
+! ************************************************
         if (mp_partid.lt.mod(npart(i),mp_partgroup_np)) then
           addone=1
         else
@@ -171,7 +178,7 @@ subroutine releaseparticles(itime)
 
         numrel=npart(i)/mp_partgroup_np+addone
       endif
-
+     
       xaux=xpoint2(i)-xpoint1(i)
       yaux=ypoint2(i)-ypoint1(i)
       zaux=zpoint2(i)-zpoint1(i)
@@ -207,7 +214,7 @@ subroutine releaseparticles(itime)
             do k=1,nspec
                xmass1(ipart,k)=xmass(i,k)/real(npart(i)) &
                     *timecorrect(k)/average_timecorrect
-  !            write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
+  !             write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
   ! Assign certain properties to particle
   !**************************************
             end do
