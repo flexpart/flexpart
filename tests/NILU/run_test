@@ -1,11 +1,12 @@
 #!/bin/bash
 
 #input FP exec
-test_dir=$1
-FP_exec=$2
-base_dir=$3
-
-echo FP_exec=$FP_exec
+test_dir=$1  # name of dir with pathname and options to be used 
+FP_exec=$2   # path to executable to be run
+base_dir=$3  # base for the output
+options_default=$4
+ 
+#echo FP_exec=$FP_exec
 echo $FLEXOUT_TMP
 
 #suffix=$(date "+%y-%m-%d_%H%M%S")
@@ -13,13 +14,16 @@ test_tmp=${FLEXOUT_TMP}${base_dir}${test_dir}
 #_${suffix}
 
 current_dir=$(pwd)
-echo test_tmp=$test_tmp
+#echo test_tmp=$test_tmp
 mkdir $test_tmp
 
-#copy default optios
-cp -r options_default $test_tmp/options
+echo copy default options $options_default  to temp dir $test_tmp/options
+cp -r $options_default $test_tmp/options
 #override default options
-cp -r ${test_dir}/options/* $test_tmp/options/
+echo copy this test option files to temp dir
+cp  ${test_dir}/options/* $test_tmp/options/
+echo copy SPECIES from ${test_dir}/options/SPECIES/* to $test_tmp/options/SPECIES/
+cp  ${test_dir}/options/SPECIES/* $test_tmp/options/SPECIES/
 # copy paths form repo source exec tmp dir 
 cp ${test_dir}/pathnames $test_tmp
 mkdir ${test_tmp}/output
@@ -27,11 +31,12 @@ mkdir ${test_tmp}/output
 #cp test_1/run $test_tmp
 
 cd $test_tmp
-echo $(pwd)
-echo $FP_exec
+#echo $(pwd)
+#echo $FP_exec
 #  '&>' o is bash for both out and err
-echo run $FP_exec   to  out.log #&
-$FP_exec   &> out.log #&
+#echo run $FP_exec   to  out.log #&
+#$FP_exec   &> out.log #&
+$FP_exec > stdout.log 2> stderr.log #&
 
 
 

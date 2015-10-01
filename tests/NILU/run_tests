@@ -1,27 +1,92 @@
 #!/bin/bash
 
-FLEXOUT_TMP=/home/ignacio/repos/flextest/
+#input:
+# FP_exec : path to flexpart executable  
+# path_flextest: directory  path to output base directory
+# test_names (bash array): list of tests to be run
+
+# defaults
+FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran
+path_flextest=/home/ignacio/repos/flextest/
+options_default=/home/ignacio/repos/flexpart/options/
+#declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
+#test_names[0]='1' 
+test_names[0]='HelloWorld' 
+
+group_name=tests
+
+source ./$1
+
 
 suffix=$(date "+%y-%m-%d_%H%M%S")
-#test_tmp=${FLEXOUT_TMP}${base_dir}${test_dir}_${suffix}
-base_dir=${FLEXOUT_TMP}/tests_${suffix}/
-mkdir $base_dir
+#tests_dir=tests_${suffix}/
+tests_dir=${group_name}_${suffix}/
+path_tests=${path_flextest}/$tests_dir
+mkdir $path_tests
 
-FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran 
 
-#test_dir=$1
-#FP_exec=$2
-#base_dir=$3
+#declare Bash Array
+#declare -a test_names=('1' '2' 'HelloWorld')
+#declare -a test_names=('1' '2' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc')
+#declare -a test_names=('2' 'Volc')
+#declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
 
-./run_test test_1  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
-./run_test test_2  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+#blabla
+#Print the Whole Bash Array
+s_test_names=${test_names[@]}
+# Length of the Bash Array
+n_tests=${#test_names[@]}
+#echo n_tests=$n_tests
+echo run $n_tests  tests:  $s_test_names
 
+#test
+#tests_dir='tests_15-08-19_113139/'
+#path_tests=${path_flextest}/$tests_dir
+
+
+outlog=stdout.log
+i=0
+i_end=$n_tests
+while [ $i -lt $i_end ] ;
+do
+  let j=i+1
+  name=${test_names[i]};
+  echo test no. $j name= $name
+  echo in $path_tests/test_$name
+  ./run_test test_$name  $FP_exec $path_tests $options_default
+  echo terminated
+  success="$(cat $path_tests/test_$name/$outlog  | grep CONGRATULATIONS  | wc -l)"
+  echo success=$success
+let i=i+1;
+done
+ 
+tot_successes="$(cat $path_tests/test_*/$outlog  | grep CONGRATULATIONS  | wc -l)"
+tot_runs="$(ls -1 $path_tests | wc -l)"
+
+echo ' '
+echo finished  $tot_runs tests of $n_tests 
+echo $tot_successes seccessful
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+./run_test test_1  $FP_exec $path_tests
+./run_test test_2  $FP_exec $path_tests
 # 6 species
-./run_test test_Volc  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
+./run_test test_Volc  $FP_exec $path_tests
+./run_test test_HelloWorld  $FP_exec $path_tests
+./run_test test_Fwd1  $FP_exec $path_tests
+./run_test test_Fwd2  $FP_exec $path_tests
+./run_test test_Bwd1  $FP_exec $path_tests
 
 
-#exit
-
-./run_test test_HelloWorld  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
-./run_test test_Fwd1  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
-./run_test test_Fwd2  /home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran $base_dir
