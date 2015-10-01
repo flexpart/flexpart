@@ -200,7 +200,7 @@ module par_mod
   !**************************************************
 
   integer,parameter :: maxpart=4000000
-  integer,parameter :: maxspec=1
+  integer,parameter :: maxspec=6
 
 
   ! maxpart                 Maximum number of particles
