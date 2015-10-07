@@ -1,4 +1,4 @@
-FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran
-path_flextest=/home/ignacio/repos/flextest/
+FP_exec=/xnilu_wrk/flexbuild/src/FP_ecmwf_gfortran
+path_flextest=/xnilu_wrk/flexbuild/flextest/
 declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
 
