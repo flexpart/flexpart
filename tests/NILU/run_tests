@@ -7,10 +7,13 @@
 
 # defaults
 #FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran
-FP_exec=/xnilu_wrk/flexbuild/tests/NILU/FP_ecmwf_gfortran
+#FP_exec=/xnilu_wrk/flexbuild/tests/NILU/FP_ecmwf_gfortran
+FP_exec=$WORKSPACE/src/FP_ecmwf_gfortran
 #path_flextest=/home/ignacio/repos/flextest/
-path_flextest=/xnilu_wrk/flexbuild/flextest/
-options_default=/xnilu_wrk/flexbuild/flexpart/options/
+#path_flextest=/xnilu_wrk/flexbuild/flextest/
+path_flextest=$WORKSPACE/flextest/
+#options_default=/xnilu_wrk/flexbuild/flexpart/options/
+options_default=$WORKSPACE/options/
 #declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
 #test_names[0]='1' 
 test_names[0]='HelloWorld' 
