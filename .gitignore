@@ -1,5 +1,8 @@
 FP_ecmwf_gfortran*
 *.o
-*_mod.mod
+*.mod
 .DS_Store
 output
+src/FLEXPART_*
+fort.*
+CONVERT2
