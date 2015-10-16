@@ -48,7 +48,7 @@ module netcdf_output_mod
                        wetgrid,wetgridsigma,drygrid,drygridsigma,grid,gridsigma,&
                        area,arean,volumen, orooutn
   use par_mod,   only: dp, maxspec, maxreceptor, nclassunc,&
-                       unitoutrecept,unitoutreceptppt, nxmax
+                       unitoutrecept,unitoutreceptppt, nxmax,unittmp
   use com_mod,   only: path,length,ldirect,ibdate,ibtime,iedate,ietime, &
                        loutstep,loutaver,loutsample,outlon0,outlat0,&
                        numxgrid,numygrid,dxout,dyout,numzgrid, height, &
@@ -260,6 +260,26 @@ subroutine writeheader_netcdf(lnest)
   integer, dimension(5)       :: dep_chunksizes
 
   integer                     :: i,ix,jy
+  integer                     :: test_unit
+
+
+  ! Check if output directory exists (the netcdf library will
+  ! otherwise give an error which can look confusing). 
+  ! *********************************************************************
+  ! open(newunit=test_unit,file=trim(path(2)(1:length(2)))//'test_dir.txt',status='replace',&
+  !      &err=100)
+  !  close (test_unit, status='delete')
+  open(unit=unittmp,file=trim(path(2)(1:length(2)))//'test_dir.txt',status='replace',&
+       &err=100)
+  close (unittmp, status='delete')
+  goto 101
+100 write(*,FMT='(80("#"))') 
+  write(*,*) 'ERROR: output directory ', trim(path(2)(1:length(2))), ' does not exist&
+       & (or failed to write there).' 
+  write(*,*) 'EXITING' 
+  write(*,FMT='(80("#"))')
+  stop
+101 continue
 
   !************************
   ! Create netcdf file
