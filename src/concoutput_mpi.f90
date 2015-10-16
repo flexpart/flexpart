@@ -105,12 +105,15 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   character :: adate*8,atime*6
   character(len=3) :: anspec
   integer :: mind
-! mind        eso:added to ensure identical results between 2&3-fields versions
-  CHARACTER(LEN=8),save :: file_stat='REPLACE'
+! mind        eso: added to ensure identical results between 2&3-fields versions
+  character(LEN=8),save :: file_stat='REPLACE'
+  logical :: ldates_file
+  integer :: ierr
+  character(LEN=100) :: dates_char
+!  character :: dates_char
 
 ! Measure execution time
   if (mp_measure_time) call mpif_mtime('rootonly',0)
-
 
 ! Determine current calendar date, needed for the file name
 !**********************************************************
@@ -119,14 +122,33 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   call caldate(jul,jjjjmmdd,ihmmss)
   write(adate,'(i8.8)') jjjjmmdd
   write(atime,'(i6.6)') ihmmss
-  OPEN(unitdates,file=path(2)(1:length(2))//'dates', ACCESS='APPEND', STATUS=file_stat)
+
+! Overwrite existing dates file on first call, later append to it
+! This fixes a bug where the dates file kept growing across multiple runs
+
+! If 'dates' file exists, make a backup
+  inquire(file=path(2)(1:length(2))//'dates', exist=ldates_file)
+  if (ldates_file.and.init) then
+    open(unit=unitdates, file=path(2)(1:length(2))//'dates',form='formatted', &
+         &access='sequential', status='old', action='read', iostat=ierr)
+    open(unit=unittmp, file=path(2)(1:length(2))//'dates.bak', access='sequential', &
+         &status='replace', action='write', form='formatted', iostat=ierr)
+    do while (.true.)
+      read(unitdates, '(a)', iostat=ierr) dates_char
+      if (ierr.ne.0) exit
+      write(unit=unittmp, fmt='(a)', iostat=ierr, advance='yes') trim(dates_char)
+!      if (ierr.ne.0) write(*,*) "Write error, ", ierr
+    end do
+    close(unit=unitdates)
+    close(unit=unittmp)
+  end if
+
+  open(unitdates,file=path(2)(1:length(2))//'dates', ACCESS='APPEND', STATUS=file_stat)
   write(unitdates,'(a)') adate//atime
   close(unitdates)  
 
   ! Overwrite existing dates file on first call, later append to it
   ! This fixes a bug where the dates file kept growing across multiple runs
-  ! TODO check if the 'always APPEND'-behaviour is useful in other scenarioes
-  ! e.g. (restart?)
   IF (init) THEN
     file_stat='OLD'
     init=.false.
