@@ -71,7 +71,7 @@ module com_mod
   integer :: mquasilag,nested_output,ind_source,ind_receptor
   integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond,surf_only
   logical :: turbswitch
-  integer :: cblflag  !added by mc for cbl
+  integer :: cblflag !added by mc for cbl
 
   ! ctl      factor, by which time step must be smaller than Lagrangian time scale
   ! ifine    reduction factor for time step used for vertical wind
@@ -742,14 +742,19 @@ module com_mod
   contains
       subroutine com_mod_allocate(nmpart)
 !*******************************************************************************    
-! Dynamic allocation of arrays 
+! Dynamic allocation of arrays
+!
+! For FLEXPART version 9.2 and earlier these arrays were statically declared
+! with size maxpart. This function is introduced so that the MPI version
+! can declare these arrays with smaller size ("maxpart per process"), while
+! the serial version allocate at run-time with size maxpart
 !
 !*******************************************************************************
     implicit none 
 
-    integer, intent(in) :: nmpart
+    integer, intent(in) :: nmpart ! maximum number of particles (per process)
     
-! Arrays previously static of size maxpart
+! Arrays, previously static of size maxpart
     allocate(itra1(nmpart),npoint(nmpart),nclass(nmpart),&
          & idt(nmpart),itramem(nmpart),itrasplit(nmpart),&
          & xtra1(nmpart),ytra1(nmpart),ztra1(nmpart),&
@@ -758,8 +763,6 @@ module com_mod
     allocate(uap(nmpart),ucp(nmpart),uzp(nmpart),us(nmpart),&
          & vs(nmpart),ws(nmpart),cbt(nmpart))
     
-!    allocate(memind(
-
   end subroutine com_mod_allocate
    
 
