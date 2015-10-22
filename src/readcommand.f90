@@ -142,7 +142,7 @@ subroutine readcommand
   linit_cond=0
   lnetcdfout=0
   surf_only=0 
-  cblflag=0
+  cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
   ohfields_path="../../flexin/"
 
   ! Open the command file and read user options
@@ -231,8 +231,9 @@ subroutine readcommand
     read(unitcommand,*) linit_cond
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) surf_only
-    if (old) call skplin(3,unitcommand)  !added by mc
-    read(unitcommand,*) cblflag          !added by mc
+    ! Removed for backwards compatibility.
+    ! if (old) call skplin(3,unitcommand)  !added by mc
+    ! read(unitcommand,*) cblflag          !added by mc
 
     close(unitcommand)
 
