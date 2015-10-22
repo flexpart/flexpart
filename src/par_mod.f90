@@ -33,6 +33,10 @@
 
 module par_mod
 
+! wind_mod: is gfs_mod.f90 for target gfs, ecmwf_mod.f90 for target ecmwf
+!************************************************************************
+  use wind_mod 
+
   implicit none
 
   !****************************************************************
@@ -121,20 +125,25 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
+  ! nxmax,nymax,nuvzmax,nwzmax,nzmax:
+  ! Moved to ecmwf.f90 (for ECMWF) / gfs.f90 (GFS)
+  
+
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
+  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=26,nwzmax=26,nzmax=26
   !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
   !integer,parameter :: nxmax=1201,nymax=235,nuvzmax=58,nwzmax=58,nzmax=58
 
-  integer,parameter :: nxshift=359 ! for ECMWF
+!  integer,parameter :: nxshift=359 ! for ECMWF
   !integer,parameter :: nxshift=0     ! for GFS or FNL
 
   integer,parameter :: nconvlevmax = nuvzmax-1
   integer,parameter :: na = nconvlevmax+1
 
-
+  ! moved to gfs_mod.f90 / ecmwf_mod.f90
+  !
   ! nxmax,nymax        maximum dimension of wind fields in x and y
   !                    direction, respectively
   ! nuvzmax,nwzmax     maximum dimension of (u,v) and (w) wind fields in z
@@ -145,6 +154,7 @@ module par_mod
   !                    nxshift grid points, in order to accomodate nested
   !                    grids, and output grids overlapping the domain "boundary"
   !                    nxshift must not be negative; "normal" setting would be 0
+
   ! ntracermax         maximum number of tracer species in convection
   ! nconvlevmax        maximum number of levels for convection
   ! na                 parameter used in Emanuel's convect subroutine
@@ -155,7 +165,7 @@ module par_mod
   !*********************************************
 
   !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  integer,parameter :: maxnests=1,nxmaxn=351,nymaxn=351 !ECMWF
+  integer,parameter :: maxnests=0,nxmaxn=351,nymaxn=351 !ECMWF
 
   !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
   ! maxnests                maximum number of nested grids
@@ -199,10 +209,10 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=50000000
+  integer,parameter :: maxpart=60000000
 !  integer,parameter :: maxpart=60000000
 !  integer,parameter :: maxpart=120000000
-  integer,parameter :: maxspec=1
+  integer,parameter :: maxspec=6
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
@@ -270,6 +280,7 @@ module par_mod
   integer,parameter :: unitOH=1
   integer,parameter :: unitdates=94, unitheader=90,unitheader_txt=100, unitshortpart=95
   integer,parameter :: unitboundcond=89
+  integer,parameter :: unittmp=101
 
 !******************************************************
 ! integer code for missing values, used in wet scavenging (PS, 2012)

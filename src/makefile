@@ -5,6 +5,12 @@ SHELL = /bin/bash
 #
 #    Dependencies are resolved in this makefile, so parallel make is
 #    possible ("make -j")
+#
+#    At NILU we have installed gcc-4.9.1 and libraries under user /homevip/flexpart
+#    ("ROOT_DIR")
+#    To use gfortran version 4.9, add "gcc=4.9" to the make command, e.g.
+#       'make -j ecmwf gcc=4.9',
+#    also set environment variable LD_LIBRARY_FLAGS=
 # 
 #  USAGE
 #    Compile serial FLEXPART (ECMWF)
@@ -24,8 +30,6 @@ SHELL = /bin/bash
 #
 ################################################################################
 
-
-
 ## PROGRAMS
 FLEXPART-ECMWF-MPI 	= FP_ecmwf_MPI
 FLEXPART-ECMWF-MPI-DBG 	= DBG_FP_ecmwf_MPI
@@ -33,40 +37,44 @@ FLEXPART-ECMWF 		= FP_ecmwf_gfortran
 FLEXPART-GFS 		= FP_gfs_gfortran
 FLEXPART-GFS-MPI 	= FP_gfs_MPI
 
+ifeq ($(gcc), 4.9)
+# Compiled libraries under user user ~flexpart, gfortran v4.9
+	ROOT_DIR = /homevip/flexpart/
+#	ROOT_DIR = /homevip/espen/
 
-## COMPILERS
-F90       = /usr/bin/gfortran
-#F90	  = ${HOME}/gcc-4.9.1/bin/gfortran
-#MPIF90    = ${HOME}/opt/bin/mpifort
-#MPIF90    = mpif90.mpich
-MPIF90    = mpif90.openmpi
-#MPIF90    = mpifort
+	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
+	MPIF90    = ${ROOT_DIR}/bin/mpifort
+
+	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
+	INCPATH2  = ${ROOT_DIR}/include
+	LIBPATH1 = ${ROOT_DIR}/lib
+#	LIBPATH2 = ${ROOT_DIR}/gcc-4.9.1/lib
+#	LIBPATH2 = /lib
+else
+# Default: System libraries at NILU, gfortran v4.6
+	F90       = /usr/bin/gfortran
+	MPIF90    = /usr/bin/mpif90.openmpi
+
+	INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+	INCPATH2 = /usr/include
+	LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+#	LIBPATH2 = /usr/lib/x86_64-linux-gnu
+endif
+
 
 ## OPTIMIZATION LEVEL
 O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = 0 # [0,g]
 
 ## LIBRARIES
-LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff   # -fopenmp # -llapack -lnetcdf
+LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff -llapack  # -fopenmp # -llapack
 
-## 1) System libraries at NILU
-INCPATH1 = /usr/include
-#INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
-LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
-#LIBPATH2 = /usr/lib/x86_64-linux-gnu
-
-## 2) Home-made libraries
-# INCPATH1  = ${HOME}/include
-INCPATH2  = /homevip/flexpart/include/
-LIBPATH2 = /homevip/flexpart/lib/
-# LIBPATH1 = ${HOME}/lib
-
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native -fuse-linker-plugin $(FUSER) # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) -mtune=native $(FUSER) # -march=native
 
 DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -Warray-bounds  -Wall -fcheck=all $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero -fdump-core
 
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)
-LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) -L$(LIBPATH2) $(LIBS)
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
+LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 
 MODOBJS = \
 par_mod.o    		com_mod.o \
@@ -113,7 +121,8 @@ OBJECTS_ECMWF = \
 	calcpar.o          readwind.o \
 	richardson.o       verttransform.o \
 	obukhov.o          gridcheck.o  \
-	convmix.o          calcmatrix.o
+	convmix.o          calcmatrix.o \
+	ecmwf_mod.o
 
 
 ## For ECMWF MPI version:
@@ -122,14 +131,16 @@ OBJECTS_ECMWF_MPI = \
 	calcpar.o          \
 	richardson.o       verttransform.o \
 	obukhov.o          \
-	convmix.o      calcmatrix.o
+	convmix.o	   calcmatrix.o \
+	ecmwf_mod.o
 
 ## For GFS (serial) version:
 OBJECTS_GFS = \
 	calcpar_gfs.o          readwind_gfs.o \
 	richardson_gfs.o       verttransform_gfs.o \
 	obukhov_gfs.o          gridcheck_gfs.o  \
-	convmix_gfs.o          calcmatrix_gfs.o
+	convmix_gfs.o          calcmatrix_gfs.o \
+	gfs_mod.o
 
 OBJECTS = \
 advance.o		initialize.o		\
@@ -202,11 +213,31 @@ ecmwf-mpi-dbg: FC := $(MPIF90)
 
 gfs: $(FLEXPART-GFS)
 gfs: FC := $(F90)
+
 gfs-mpi: $(FLEXPART-GFS-MPI)
 gfs-mpi: FC := $(MPIF90)
 
 #all: $(FLEXPART-ECMWF)
 #all: $(FLEXPART-ECMWF-MPI)
+
+## This allows for switching between ECMWF/GFS without editing source code.
+wind_mod = ecmwf_mod.o # default wind
+# ifeq ($(MAKECMDGOALS),ecmwf)
+# wind_mod = ecmwf_mod.o
+# endif
+# ifeq ($(MAKECMDGOALS),ecmwf-mpi)
+# wind_mod = ecmwf_mod.o
+# endif
+# ifeq ($(MAKECMDGOALS),ecmwf-mpi-dbg)
+# wind_mod = ecmwf_mod.o
+# endif
+
+ifeq ($(MAKECMDGOALS),gfs)
+wind_mod = gfs_mod.o
+endif
+ifeq ($(MAKECMDGOALS),gfs-mpi)
+wind_mod = gfs_mod.o
+endif
 
 $(FLEXPART-ECMWF): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF)
 	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF) $(LDFLAGS)
@@ -338,6 +369,7 @@ openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
 outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
+par_mod.o : $(wind_mod)
 part0.o: par_mod.o
 partdep.o: par_mod.o
 partoutput.o: com_mod.o par_mod.o
