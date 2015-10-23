@@ -1,0 +1,21 @@
+*******************************
+*******************************
+*******************************
+*******************************
+*******************************
+*******************************
+ASH-103           Tracer name
+-999.9            Species half life
+5.0E-06           Wet deposition - A
+0.62              Wet deposition - B
+-9.9              Dry deposition (gases) - D
+1.0E-09           Dry deposition(gases)-Henrys
+                  Dry deposition (gases) - f0
+   2500.000    
+  2.0000000E-06
+8.0E-1            Dry deposit (particles)-dsig
+-9.99             Alternative: dry dep vel
+-9.99             molweight
+-9.9E-09          OH Reaction rate at 25 deg
+-9                number of associated specias
+-99.99            KOA-organic matter air part.

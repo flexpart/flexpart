@@ -1,0 +1,32 @@
+*************************************************************************
+*                                                                        
+*   Input file for the Lagrangian particle dispersion model FLEXPART    *
+*                        Please select your options                     *
+*                                                                        
+*************************************************************************
+
+ 1              DIRECTION
+20070127 120000 YYYYMMDD HHMISS   BEGINNING DATE OF SIMULATION
+20070129 120000 YYYYMMDD HHMISS   ENDING DATE OF SIMULATION
+ 10800         SSSSS             OUTPUT EVERY SSSSS SECONDS
+ 10800         SSSSS             TIME AVERAGE OF OUTPUT
+  900         SSSSS             SAMPLING RATE OF OUTPUT
+9999999         SSSSSSS           TIME CONSTANT FOR PARTICLE SPLITTING (IN SECONDS)
+900             SSSSS             SYNCHRONISATION INTERVAL OF FLEXPART (IN SECONDS)
+5.0             CTL               FACTOR, BY WHICH TIME STEP MUST BE SMALLER THAN TL
+4               IFINE             DECREASE OF TIME STEP FOR VERTICAL MOTION BY FACTOR IFINE
+5               IOUT              1 CONC, 2 MIXING RATIO, 3 BOTH 4 PLUME TRAJECT.,5=1+4
+1               IPOUT             PARTICLE DUMP: 0 NO, 1 EVERY OUTPUT INTERVAL, 2 ONLY AT END
+1               LSUBGRID          SUBGRID TERRAIN EFFECT PARAMETERIZATION: 1 YES, 0 NO
+1               LCONVECTION       CONVECTION: 1 YES, 0 NO
+1               LAGESPECTRA       AGE SPECTRA: 1 YES, 0 NO
+0               IPIN              CONTINUE SIMULATION WITH DUMPED PARTICLE DATA: 1 YES, 0 NO
+0               IOFRWRITE OUTPUT FOR EACH RELEASE LOCATION: 1 YES, 0 NO
+0               IFLUX             CALCULATE FLUXES: 1 YES, 0 NO
+0               MDOMAINFILL       DOMAIN-FILLING TRAJECTORY OPTION: 1 YES, 0 NO
+1               IND_SOURCE1=MASS UNIT, 2=MASS MIXING RATIO UNIT
+1               IND_RECEPTOR1=MASS UNIT, 2=MASS MIXING RATIO UNIT
+0               MQUASILAGQUASILAGR. MODE TO TRACK INDIVIDUAL PARTICLES: 1 YES, 0 NO
+0               NESTED_OUTPUTSHALL NESTED OUTPUT BE USED? 1 YES, 0 NO
+0               INITIAL_CONDUSE INITIAL CONDITIONS FOR BACKWARD RUN? 1 YES, 0 NO
+0               SURF
