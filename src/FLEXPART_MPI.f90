@@ -157,8 +157,19 @@ program flexpart
     if (verbosity.gt.1) then   
       CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
       write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
-    endif     
+    endif
   endif
+
+  ! Exit if trying to run backwards
+  if (ldirect.le.0) then
+    write(*,FMT='(80("#"))')
+    write(*,*) '#### FLEXPART_MPI> ERROR: ', &
+         & 'MPI version not (yet) working with backward runs. ',&
+         & 'Use the serial version instead.'
+    write(*,FMT='(80("#"))')
+    stop
+  end if
+
 
 
 ! Read the age classes to be used
@@ -416,12 +427,15 @@ program flexpart
       CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
       WRITE(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
     endif
-    if (info_flag.eq.1) then
-      print*, 'info only mode (stop)'    
-      stop
-    endif
     print*,'call timemanager'
   endif
+  if (info_flag.eq.1) then
+    print*, 'info only mode (stop)'    
+    call mpif_finalize
+    stop
+  endif
+    
+
 
   call timemanager
 
