@@ -1,6 +1,9 @@
-To run this test, just execute FLEXPART in the current directory. 
-Contains the options directory from relese 9.2 
-The pathfile was modified
+To run this test, execute FLEXPART in the current directory after creating an output directory or
+
+./run path-to-flexpart-executable 
+ 
+This should create a temporary output dir and link output to it.
+Contains the options directory from releiase 9.2.0.2 
 The feature tested are the new SPECIES file.
 
 2014-10-16, tested on nordre@nilu (Ubuntu 12.04):

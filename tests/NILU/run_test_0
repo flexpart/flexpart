@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#input 
+# - FP_exec: path to flexpart executable to test 
+
+FP_exec=$1
+
+# diplay path
+echo FP_exec=$FP_exec
+
+# :
+suffix=$(date "+%y-%m-%d_%H%M%S")
+#test_tmp=$FLEXOUT_TMP/test_1_$suffix
+test_tmp=test_0_$suffix
+
+echo test_tmp=$test_tmp
+mkdir $test_tmp
+
+
+#cp -r test_1/options $test_tmp
+cp -r /home/ignacio/repos/flexpart/options $test_tmp
+cp test_1/pathnames $test_tmp
+cp test_1/run $test_tmp
+#echo exit
+#exit
+
+cd $test_tmp
+
+./run $FP_exec
+
+

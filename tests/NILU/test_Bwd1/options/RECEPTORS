@@ -1,0 +1,79 @@
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        *
+*                       Please specify your receptor points                    *
+*     For the receptor points, ground level concentrations are calculated      *
+*                                                                              *
+********************************************************************************
+1.  ----------------  4X,A16
+    F15               NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         6.1333       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        49.0833       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
+1.  ----------------  4X,A16
+    NL01              NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         5.7833       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        50.9167       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
+1.  ----------------  4X,A16
+    B05               NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         4.3500       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        50.8000       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
+1.  ----------------  4X,A16
+    D27               NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+        11.1333       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        52.9667       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
+1.  ----------------  4X,A16
+    D08               NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         8.7000       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        53.8667       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
+1.  ----------------  4X,A16
+    DK05              NAME OF RECEPTOR POINT
+    RECEPTORNAME
+
+2.  ------.----       4X,F11.4
+         8.1333       GEOGRAFICAL LONGITUDE
+    XRECEPTOR 
+
+3.  ------.----       4X,F11.4
+        56.0000       GEOGRAFICAL LATITUDE
+    YRECEPTOR  
+================================================================================
