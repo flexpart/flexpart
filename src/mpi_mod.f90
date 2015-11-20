@@ -104,7 +104,7 @@ module mpi_mod
 ! true if only using synchronous MPI send/recv:
 ! If setting this to .false., numwfmem must be set to 3
 !===============================================================================
-  logical :: lmp_sync=.true. 
+  logical :: lmp_sync=.false. 
 !===============================================================================
 
 ! mp_dbg_mode       Used for debugging MPI.
@@ -118,7 +118,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.false.
+  logical, parameter :: mp_measure_time=.true.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
@@ -213,7 +213,8 @@ contains
       end if
       lmp_sync=.true. ! :DBG: eso fix this...
     end if
-! TODO: Add warnings for unimplemented flexpart features
+
+! TODO: Add more warnings for unimplemented flexpart features
 
 ! Set ID of process that calls getfield/readwind. 
 ! Using the last process in the group ensures statistical identical results
@@ -433,7 +434,7 @@ contains
 !***********************************************************************
 ! Distribute particle variables from pid0 to all processes.
 ! Called from timemanager
-!
+! *NOT IN USE* at the moment, but can be useful for debugging
 !
 !***********************************************************************
     use com_mod
@@ -587,14 +588,14 @@ contains
 ! This can be called from timemanager_mpi, before caclulating                  *
 ! concentrations/writing output grids.                                         *
 !                                                                              *
-! Currently not in use, as each process calculates concentrations              *
-! separately.                                                                  *
+! Currently *not in use*, as each process calculates concentrations            *
+! separately, but can be useful for debugging                                  *
 !                                                                              *
 ! To use this routine (together with mpif_tm_send_vars) to transfer data       *
 ! to the MPI root process (useful for debugging), insert code like this        *
 ! (in timemanager_mpi.f90)                                                     *
 !                                                                              *
-!      if (lroot) tot_numpart=numpart ! root stores total numpart            *
+!      if (lroot) tot_numpart=numpart ! root stores total numpart              *
 !      call mpif_tm_send_dims                                                  *
 !      if (numpart>1) then                                                     *
 !        call mpif_tm_send_vars                                                *
@@ -604,12 +605,12 @@ contains
 !    region:                                                                   *
 !                                                                              *
 !      if (numpart>0) then                                                     *
-!          if (lroot) numpart = tot_numpart                                  *
+!          if (lroot) numpart = tot_numpart                                    *
 !       call mpif_tm_collect_vars                                              *
 !      end if                                                                  *
 !                                                                              *
-!    Then a section that begins with "if (lroot) ..." will behave like       *
-!    serial flexpart                                                           *
+! Then a section that begins with "if (lroot) ..." will behave like            *
+! serial flexpart                                                              *
 !                                                                              *
 !*******************************************************************************
     use com_mod !, only: numpart, nspec, itra1, npoint, nclass
@@ -2064,5 +2065,79 @@ contains
 
     end subroutine write_data_dbg
 
+
+  subroutine set_fields_synthetic()
+!*******************************************************************************
+! DESCRIPTION
+!   Set all meteorological fields to synthetic (usually constant/homogeneous)
+!   values.
+!   Used for validation and error-checking
+!
+! NOTE
+!   This version uses asynchronious communications.
+!
+! VARIABLES
+!   
+!
+! TODO
+!
+!*******************************************************************************
+    use com_mod
+
+    implicit none
+
+    integer, parameter :: li=1, ui=3 ! wfmem indices (i.e, operate on entire field)
+
+
+! Variables transferred at initialization only
+!*********************************************
+!    readclouds=readclouds_
+    oro(:,:)=0.0
+    excessoro(:,:)=0.0
+    lsm(:,:)=0.0
+    xlanduse(:,:,:)=0.0
+!    wftime
+!    numbwf
+!    nmixz
+!    height
+
+! Time-varying fields:
+    uu(:,:,:,li:ui) = 10.0
+    vv(:,:,:,li:ui) = 0.0
+    uupol(:,:,:,li:ui) = 10.0 ! TODO check if ok
+    vvpol(:,:,:,li:ui)=0.0
+    ww(:,:,:,li:ui)=0.
+    tt(:,:,:,li:ui)=300.
+    rho(:,:,:,li:ui)=1.3
+    drhodz(:,:,:,li:ui)=.0
+    tth(:,:,:,li:ui)=0.0
+    qvh(:,:,:,li:ui)=1.0
+    qv(:,:,:,li:ui)=1.0
+
+    pv(:,:,:,li:ui)=1.0
+    clouds(:,:,:,li:ui)=0.0
+
+    clwc(:,:,:,li:ui)=0.0
+    ciwc(:,:,:,li:ui)=0.0
+  
+! 2D fields
+
+    cloudsh(:,:,li:ui)=0.0
+    vdep(:,:,:,li:ui)=0.0
+    ps(:,:,:,li:ui)=1.0e5
+    sd(:,:,:,li:ui)=0.0
+    tcc(:,:,:,li:ui)=0.0
+    tt2(:,:,:,li:ui)=300.
+    td2(:,:,:,li:ui)=250.
+    lsprec(:,:,:,li:ui)=0.0
+    convprec(:,:,:,li:ui)=0.0
+    ustar(:,:,:,li:ui)=1.0
+    wstar(:,:,:,li:ui)=1.0
+    hmix(:,:,:,li:ui)=10000.
+    tropopause(:,:,:,li:ui)=10000.
+    oli(:,:,:,li:ui)=0.01
+    z0=1.0
+ 
+  end subroutine set_fields_synthetic
 
 end module mpi_mod

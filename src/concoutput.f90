@@ -117,7 +117,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! Overwrite existing dates file on first call, later append to it
 ! This fixes a bug where the dates file kept growing across multiple runs
 
-! If 'dates' file exists, make a backup
+! If 'dates' file exists in output directory, make a backup
   inquire(file=path(2)(1:length(2))//'dates', exist=ldates_file)
   if (ldates_file.and.init) then
     open(unit=unitdates, file=path(2)(1:length(2))//'dates',form='formatted', &
@@ -128,7 +128,6 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
       read(unitdates, '(a)', iostat=ierr) dates_char
       if (ierr.ne.0) exit
       write(unit=unittmp, fmt='(a)', iostat=ierr, advance='yes') trim(dates_char)
-!      if (ierr.ne.0) write(*,*) "Write error, ", ierr
     end do
     close(unit=unitdates)
     close(unit=unittmp)

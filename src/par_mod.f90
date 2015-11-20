@@ -209,10 +209,10 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=60000000
+  integer,parameter :: maxpart=40000000
 !  integer,parameter :: maxpart=60000000
 !  integer,parameter :: maxpart=120000000
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxspec=1
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
@@ -225,8 +225,8 @@ module par_mod
   ! Sabine Eckhardt: change of landuse inventary numclass=13
   ! ---------
   integer,parameter :: maxwf=50000, maxtable=1000, numclass=13, ni=11
-  integer,parameter :: numwfmem=2 ! Serial version/MPI with 2 fields
-  !integer,parameter :: numwfmem=3 ! MPI with 3 fields
+  !integer,parameter :: numwfmem=2 ! Serial version/MPI with 2 fields
+  integer,parameter :: numwfmem=3 ! MPI with 3 fields
 
   ! maxwf                   maximum number of wind fields to be used for simulation
   ! maxtable                Maximum number of chemical species that can be
@@ -253,10 +253,9 @@ module par_mod
   ! Dimension of random number field
   !*********************************
 
-  integer,parameter :: maxrand=120000000
-!  integer,parameter :: maxrand=2000000
-!  integer,parameter :: maxrand=20
-
+!  integer,parameter :: maxrand=120000000
+  integer,parameter :: maxrand=200000000
+!
   ! maxrand                 number of random numbers used
   
 

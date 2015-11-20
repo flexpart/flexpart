@@ -217,8 +217,8 @@ subroutine timemanager
     if (lmp_sync.and.lmp_use_reader.and.memstat.gt.0) then
       call mpif_gf_send_vars(memstat)
       call mpif_gf_send_vars_nest(memstat)
-! Version 2  (lmp_sync=.false.) is also used whenever 2 new fields are read (in which
-! case async send/recv is impossible.
+! Version 2  (lmp_sync=.false., see below) is also used whenever 2 new fields are
+! read (as at first time step), in which case async send/recv is impossible.
     else if (.not.lmp_sync.and.lmp_use_reader.and.memstat.ge.32) then
       call mpif_gf_send_vars(memstat)
       call mpif_gf_send_vars_nest(memstat)
@@ -232,6 +232,7 @@ subroutine timemanager
     
 ! READER PROCESS:
       if (memstat.gt.0..and.memstat.lt.32.and.lmp_use_reader.and.lmpreader) then
+        if (mp_dev_mode) write(*,*) 'Reader process: calling mpif_gf_send_vars_async' 
         call mpif_gf_send_vars_async(memstat)
       end if
 
@@ -248,6 +249,7 @@ subroutine timemanager
       ! eso TODO: at this point we do not know if clwc/ciwc will be available
       ! at next time step. Issue receive request anyway, cancel at mpif_gf_request
       if (memstat.gt.0.and.lmp_use_reader.and..not.lmpreader) then
+        if (mp_dev_mode) write(*,*) 'Receiving process: calling mpif_gf_send_vars_async. PID: ', mp_pid
         call mpif_gf_recv_vars_async(memstat)
       end if
 
@@ -255,6 +257,9 @@ subroutine timemanager
 
     if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',1)
 
+! For validation and tests: call the function below to set all fields to simple
+! homogeneous values
+    if (mp_dev_mode) call set_fields_synthetic
 
 !*******************************************************************************
 
