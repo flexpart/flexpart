@@ -212,7 +212,7 @@ module par_mod
   integer,parameter :: maxpart=40000000
 !  integer,parameter :: maxpart=60000000
 !  integer,parameter :: maxpart=120000000
-  integer,parameter :: maxspec=1
+  integer,parameter :: maxspec=6
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
