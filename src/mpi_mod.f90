@@ -104,7 +104,7 @@ module mpi_mod
 ! true if only using synchronous MPI send/recv:
 ! If setting this to .false., numwfmem must be set to 3
 !===============================================================================
-  logical :: lmp_sync=.false. 
+  logical :: lmp_sync=.true. 
 !===============================================================================
 
 ! mp_dbg_mode       Used for debugging MPI.
@@ -201,7 +201,9 @@ contains
     else if (lmp_sync.and.numwfmem.ne.2.and.lroot) then
       write(*,FMT='(80("#"))')
       write(*,*) '#### mpi_mod::mpif_init> WARNING: ', &
-           & 'numwfmem should be set to 2 for syncronous reading'
+           & 'numwfmem should be set to 2 for syncronous'
+      write(*,*) ' reading. Results will still be valid, but unneccesary '
+      write(*,*) 'amount of memory is being allocated.'
       write(*,FMT='(80("#"))')
 ! Force "syncronized" version if all processes will call getfields
     else if (.not.lmp_sync.and.mp_np.lt.read_grp_min) then
