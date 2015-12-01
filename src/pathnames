@@ -1,12 +1,8 @@
 ../options/
-../out_clwc_leo/
+../output/
 /
-/xnilu_wrk/flex_wrk/zhg/ECMWF_CLWC/Availables
+/xnilu_wrk/flex_wrk/WIND_FIELDS/AVAILABLE_ECMWF_OPER_fields_global/
 ============================================
-
-../options_nikos_backwards/
-/xnilu_wrk/flex_wrk/WIND_FIELDS/AVAILABLE_ECMWF_OPER_fields_global
-/xnilu_wrk/flex_wrk/WIND_FIELDS/NCEP/2010_data_05/AVAILABLE
 
 
  
