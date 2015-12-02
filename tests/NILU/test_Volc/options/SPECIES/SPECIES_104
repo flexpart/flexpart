@@ -6,16 +6,20 @@
 *******************************
 ASH-104           Tracer name
 -999.9            Species half life
-5.0E-06           Wet deposition - A
-0.62              Wet deposition - B
+1.0               Below-cloud scavenging (gases and particles) - A
+1.0               Below-cloud scavenging (gases and particles)- B
+0.9               In-cloud scavenging (gases and particles) - Ai
+0.1               In-cloud scavenging (gases and particles) - Bi
 -9.9              Dry deposition (gases) - D
 1.0E-09           Dry deposition(gases)-Henrys
                   Dry deposition (gases) - f0
-   2500.000    
-  6.4999999E-06
+2.6E03            Dry deposit (particles)-rho
+10.0E-06          Dry deposition (particles) - dquer
 8.0E-1            Dry deposit (particles)-dsig
 -9.99             Alternative: dry dep vel
 -9.99             molweight
--9.9E-09          OH Reaction rate at 25 deg
+-9.99E-09         OH Reaction rate - C [cm^3/molecule/sec]
+-9.9              OH reaction rate - D [K]
+-9.9              OH Reaction rate - N (no unit)
 -9                number of associated specias
 -99.99            KOA-organic matter air part.

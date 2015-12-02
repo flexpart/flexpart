@@ -48,8 +48,7 @@ ifeq ($(gcc), 4.9)
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
-#	LIBPATH2 = ${ROOT_DIR}/gcc-4.9.1/lib
-#	LIBPATH2 = /lib
+
 else
 # Default: System libraries at NILU, gfortran v4.6
 	F90       = /usr/bin/gfortran
@@ -58,7 +57,6 @@ else
 	INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
 	INCPATH2 = /usr/include
 	LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
-#	LIBPATH2 = /usr/lib/x86_64-linux-gnu
 endif
 
 

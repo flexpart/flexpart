@@ -4,7 +4,7 @@
 *******************************
 *******************************
 *******************************
-ASH-102           Tracer name
+ASH-107           Tracer name
 -999.9            Species half life
 1.0               Below-cloud scavenging (gases and particles) - A
 1.0               Below-cloud scavenging (gases and particles)- B
@@ -14,7 +14,7 @@ ASH-102           Tracer name
 1.0E-09           Dry deposition(gases)-Henrys
                   Dry deposition (gases) - f0
 2.6E03            Dry deposit (particles)-rho
-6.0E-06           Dry deposition (particles) - dquer
+16.0E-06          Dry deposition (particles) - dquer
 8.0E-1            Dry deposit (particles)-dsig
 -9.99             Alternative: dry dep vel
 -9.99             molweight
