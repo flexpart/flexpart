@@ -135,6 +135,14 @@ subroutine timemanager
   ! Loop over the whole modelling period in time steps of mintime seconds
   !**********************************************************************
 
+!ZHG 2015
+!CGZ-lifetime: set lifetime to 0
+  checklifetime(:,:)=0
+  species_lifetime(:,:)=0
+  print*, 'Initialized lifetime'
+!CGZ-lifetime: set lifetime to 0
+  
+
 
   if (verbosity.gt.0) then
     write (*,*) 'timemanager> starting simulation'
@@ -410,6 +418,15 @@ subroutine timemanager
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)
         if (iflux.eq.1) call fluxoutput(itime)
         write(*,45) itime,numpart,gridtotalunc,wetgridtotalunc,drygridtotalunc
+ 
+        !CGZ-lifetime: output species lifetime
+!ZHG
+        write(*,*) 'Overview species lifetime in days', &
+             real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
+        write(*,*) 'all info:',species_lifetime
+!ZHG
+        !CGZ-lifetime: output species lifetime
+
         !write(*,46) float(itime)/3600,itime,numpart
 45      format(i9,' SECONDS SIMULATED: ',i8, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i9,' s), ',i8, ' particles')
@@ -574,6 +591,16 @@ subroutine timemanager
               if (xmass(npoint(j),ks).gt.0.) &
                    xmassfract=max(xmassfract,real(npart(npoint(j)))* &
                    xmass1(j,ks)/xmass(npoint(j),ks))
+!ZHG 2015
+                  !CGZ-lifetime: Check mass fraction left/save lifetime
+                   if(real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.0.01.and.checklifetime(j,ks).eq.0.)then
+                       !Mass below 1% of initial >register lifetime
+                       checklifetime(j,ks)=abs(itra1(j)-itramem(j))
+                       species_lifetime(ks,1)=species_lifetime(ks,1)+abs(itra1(j)-itramem(j))
+                       species_lifetime(ks,2)= species_lifetime(ks,2)+1
+                   endif
+                   !CGZ-lifetime: Check mass fraction left/save lifetime
+!ZHG 2015
             else
               xmassfract=1.
             endif

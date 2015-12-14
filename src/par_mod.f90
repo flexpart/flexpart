@@ -75,7 +75,7 @@ module par_mod
   real,parameter :: karman=0.40, href=15., convke=2.0
   real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
   real,parameter :: d_trop=50., d_strat=0.1
-
+  real,parameter :: rho_water=1000 !ZHG 2015 [kg/m3]
   ! karman                  Karman's constant
   ! href [m]                Reference height for dry deposition
   ! konvke                  Relative share of kinetic energy used for parcel lifting
@@ -225,8 +225,8 @@ module par_mod
   ! Sabine Eckhardt: change of landuse inventary numclass=13
   ! ---------
   integer,parameter :: maxwf=50000, maxtable=1000, numclass=13, ni=11
-  !integer,parameter :: numwfmem=2 ! Serial version/MPI with 2 fields
-  integer,parameter :: numwfmem=3 ! MPI with 3 fields
+  integer,parameter :: numwfmem=2 ! Serial version/MPI with 2 fields
+  !integer,parameter :: numwfmem=3 ! MPI with 3 fields
 
   ! maxwf                   maximum number of wind fields to be used for simulation
   ! maxtable                Maximum number of chemical species that can be

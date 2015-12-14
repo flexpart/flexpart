@@ -89,6 +89,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   real :: frac_act, liq_frac, dquer_m
 
   integer :: blc_count, inc_count
+  real    :: Si_dummy, wetscav_dummy
 
 
 
@@ -189,6 +190,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
       clouds_v=clouds(ix,jy,hz,n)
       clouds_h=cloudsh(ix,jy,n)
     else
+      ! new removal not implemented for nests yet 
       clouds_v=cloudsn(ix,jy,hz,n,ngrid)
       clouds_h=cloudsnh(ix,jy,n,ngrid)
     endif
@@ -230,7 +232,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
     endif
 
 
-  !ZHG calculated for 1) both 2) lsp 3) convp 
+  !ZHG oct 2014 : Calculated for 1) both 2) lsp 3) convp 
+  ! Tentatively differentiate the grfraction for lsp and convp for treating differently the two forms
+  ! for now they are treated the same
     grfraction(1)=max(0.05,cc*(lsp*lfr(i)+convp*cfr(j))/(lsp+convp))
     grfraction(2)=max(0.05,cc*(lfr(i)))
     grfraction(3)=max(0.05,cc*(cfr(j)))
@@ -251,6 +255,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
       wetdeposit(ks)=0. 
       wetscav=0.   
 
+      !ZHG test if it nested?
       if (ngrid.gt.0) then
         act_temp=ttn(ix,jy,hz,n,ngrid)
       else
@@ -258,7 +263,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
       endif
      
 
-  !****i*******************
+  !***********************
   ! BELOW CLOUD SCAVENGING
   !***********************  
       if (clouds_v.ge.4) then !below cloud
@@ -266,28 +271,27 @@ subroutine wetdepo(itime,ltsample,loutnext)
         if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then !if positive below-cloud parameters given in SPECIES file (either A or B)
           blc_count=blc_count+1
 
-
 !GAS
           if (dquer(ks) .le. 0.) then  !is gas
-  ! Gas scavenging coefficient based on Hertel et al 1995 using the below-cloud scavenging parameters A (=weta) and B (=wetb) from SPECIES file
-            wetscav=weta(ks)*prec(1)**wetb(ks) 
-
-  !AEROSOL
+            wetscav=weta(ks)*prec(1)**wetb(ks)
+            
+!AEROSOL
           else !is particle
-  !NIK 17.02.2015
-  ! For the calculation here particle size needs to be in meter and not um as dquer is changed to in readreleases
-            dquer_m=dquer(ks)/1000000. !conversion from um to m
-           
-  !ZHG snow or rain removal is applied based on the temperature.
+!NIK 17.02.2015
+! For the calculation here particle size needs to be in meter and not um as dquer is changed to in readreleases
+! for particles larger than 10 um use the largest size defined in the parameterizations (10um)
+            dquer_m=min(10.,dquer(ks))/1000000. !conversion from um to m
             if (act_temp .ge. 273 .and. weta(ks).gt.0.)  then !Rain 
-
-  !Particle RAIN scavenging coefficient based on Laakso et al 2003, the below-cloud scavenging (rain efficienty) parameter A (=weta) from SPECIES file
+              ! ZHG 2014 : Particle RAIN scavenging coefficient based on Laakso et al 2003, 
+              ! the below-cloud scavenging (rain efficienty) 
+              ! parameter A (=weta) from SPECIES file
               wetscav= weta(ks)*10**(bclr(1)+ (bclr(2)*(log10(dquer_m))**(-4))+(bclr(3)*(log10(dquer_m))**(-3))+ (bclr(4)* &
                    (log10(dquer_m))**(-2))+ (bclr(5)*(log10(dquer_m))**(-1))+ bclr(6)* (prec(1))**(0.5))
 
-            elseif (act_temp .lt. 273 .and. wetb(ks).gt.0.)  then !snow
-
-  !Particle SNOW scavenging coefficient based on Kyro et al 2009, the below-cloud scavenging (Snow efficiency) parameter B (=wetb) from SPECIES file
+            elseif (act_temp .lt. 273 .and. wetb(ks).gt.0.)  then ! Snow
+              ! ZHG 2014 : Particle SNOW scavenging coefficient based on Kyro et al 2009, 
+              ! the below-cloud scavenging (Snow efficiency) 
+              ! parameter B (=wetb) from SPECIES file
               wetscav= wetb(ks)*10**(bcls(1)+ (bcls(2)*(log10(dquer_m))**(-4))+(bcls(3)*(log10(dquer_m))**(-3))+ (bcls(4)* &
                    (log10(dquer_m))**(-2))+ (bcls(5)*(log10(dquer_m))**(-1))+ bcls(6)* (prec(1))**(0.5))
 
@@ -297,30 +301,28 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
           endif !gas or particle
         endif ! positive below-cloud scavenging parameters given in Species file
-      endif !end below-cloud
+      endif !end BELOW
 
 
   !********************
   ! IN CLOUD SCAVENGING
-  !********************
-      if (clouds_v.lt.4) then !in-cloud
-
+      !******************************************************
+      if (clouds_v.lt.4) then ! In-cloud
 ! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are given in species file
-        if (weta_in(ks).gt.0. .or. wetb_in(ks).gt.0.) then !if positive in-cloud parameters given in SPECIES file (either Ai or Bi)
-
+        if (weta_in(ks).gt.0. .or. wetb_in(ks).gt.0.) then 
 ! if negative coefficients (turned off) set to zero for use in equation
           if (weta_in(ks).lt.0.) weta_in(ks)=0.
           if (wetb_in(ks).lt.0.) wetb_in(ks)=0.
 
-          inc_count=inc_count+1
-
-  !ZHG liquid water parameterization (CLWC+CIWC) 
-          if (readclouds) then !get cloud water clwc & ciwc units Kg/Kg
-            cl=clwc(ix,jy,hz,n)+ciwc(ix,jy,hz,n)
-          else !parameterize cloudwater
-            cl=2E-7*prec(1)**0.36
+          !ZHG 2015 Cloud liquid & ice water (CLWC+CIWC) from ECMWF
+          if (readclouds) then                  !icloud_stats(ix,jy,4,n) has units kg/m2
+            cl =icloud_stats(ix,jy,4,n)*(grfraction(1)/cc)
+          else                                  !parameterize cloudwater m2/m3
+            !ZHG updated parameterization of cloud water to better reproduce the values coming from ECMWF
+            cl=1.6E-6*prec(1)**0.36
           endif
 
+            !ZHG: Calculate the partition between liquid and water phase water. 
             if (act_temp .le. 253) then
               liq_frac=0
             else if (act_temp .ge. 273) then
@@ -328,35 +330,68 @@ subroutine wetdepo(itime,ltsample,loutnext)
             else
               liq_frac =((act_temp-273)/(273-253))**2
             endif
-
-! ZHG  calculate the activated fraction based on the In-cloud scavenging parameters Ai (=weta_in) and Bi (=wetb_in) from SPECIES file
-! frac_act is the combined IN and CCN efficiency
-! The default values are 0.9 for CCN and 0.1 IN
-! This parameterization is based on Verheggen et al. (2007) & Cozich et al. (2006)
+           ! ZHG: Calculate the aerosol partition based on cloud phase and Ai and Bi
             frac_act = liq_frac*weta_in(ks) +(1-liq_frac)*wetb_in(ks)
  
   !ZHG Use the activated fraction and the liqid water to calculate the washout
 
   ! AEROSOL
+          !**************************************************
           if (dquer(ks).gt. 0.) then ! is particle
 
             S_i= frac_act/cl
 
+          !*********************
   ! GAS
           else ! is gas
                
             cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
-            S_i=frac_act/cle
-
+            !REPLACE to switch old/ new scheme 
+            ! S_i=frac_act/cle
+            S_i=1/cle
           endif ! gas or particle
 
   ! scavenging coefficient based on Hertel et al 1995 - using the S_i for either gas or aerosol
+           !OLD 
+          if (readclouds) then
+           wetscav=S_i*(prec(1)/3.6E6)
+          else
           wetscav=S_i*(prec(1)/3.6E6)/clouds_h
+          endif
 
-!          write(*,*) 'in-cloud, act_temp=',act_temp,',prec=',prec(1),',wetscav=',wetscav,',jpart=',jpart,',clouds_h=,', &
-!          clouds_h,',cl=',cl, 'diff to old scheme=', cl-2E-7*prec(1)**0.36
+!ZHG 2015 TEST
+!          Si_dummy=frac_act/2E-7*prec(1)**0.36
+!           wetscav_dummy=Si_dummy*(prec(1)/3.6E6)/clouds_h
+!           if (clouds_v.lt.4) then
+!           talltest=talltest+1
+!if(talltest .eq. 1) OPEN(UNIT=199, FILE=utfil,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!if(talltest .lt. 100001)  write(199,*) prec(1)/3.6E6, cl, clouds_h*2E-7*prec(1)**0.36,clouds_v,ytra1(jpart)-90
+!if(talltest .lt. 100001)  write(199,*) wetscav, wetscav_dummy,prec(1),ytra1(jpart)-90,clouds_v,cl
+!if(talltest .eq. 100001) CLOSE(199)
+!if(talltest .eq. 100001) STOP
+!
+!write(*,*)  'PREC kg/m2s CLOUD kg/m2', (prec(1)/3.6E6), cl !, '2E-7*prec(1)**0.36',  2E-7*prec(1)**0.36,'2E-7*prec(1)**0.36*clouds_h',2E-7*prec(1)**0.36*clouds_h
+!write(*,*)  'PREC kg/m2s LSP+convp kg/m2', prec(1), convp+lsp
+!write(*,*)  wetscav, wetscav_dummy
+!write(*,*) cc, grfraction(1), cc/grfraction(1)
+
+!write(*,*)  'Lmbda_old', (prec(1)/3.6E6)/(clouds_h*2E-7*prec(1)**0.36)
+
+
+!write(*,*) '**************************************************'
+!write(*,*)  'clouds_h', clouds_h, 'clouds_v',clouds_v,'abs(ltsample)', abs(ltsample)
+!write(*,*)  'readclouds', readclouds, 'wetscav',wetscav, 'wetscav_dummy', wetscav_dummy
+!write(*,*)  'S_i', S_i , 'Si_dummy', Si_dummy, 'prec(1)', prec(1) 
+
+
+!           write(*,*) 'PRECIPITATION ,cl  ECMWF , cl PARAMETIZED, clouds_v, lat' &
+!                      ,prec(1)/3.6E6, cl, clouds_h*2E-7*prec(1)**0.36,clouds_v,ytra1(jpart)-90
+
+!endif 
+
         endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud
+!END ZHG TEST
      
   !**************************************************
   ! CALCULATE DEPOSITION 
@@ -367,6 +402,10 @@ subroutine wetdepo(itime,ltsample,loutnext)
       if (wetscav.gt.0.) then
         wetdeposit(ks)=xmass1(jpart,ks)* &
              (1.-exp(-wetscav*abs(ltsample)))*grfraction(1)  ! wet deposition
+!write(*,*) 'MASS DEPOSITED: PREC, WETSCAV, WETSCAVP', prec(1), wetdeposit(ks), xmass1(jpart,ks)* & 
+!             (1.-exp(-wetscav_dummy*abs(ltsample)))*grfraction(1), clouds_v
+
+
       else ! if no scavenging
         wetdeposit(ks)=0.
       endif

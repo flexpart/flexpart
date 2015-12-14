@@ -194,12 +194,12 @@ subroutine gridcheck
     isec1(6)=132         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
     isec1(6)=133         ! indicatorOfParameter
-!hg
+!ZHG FOR CLOUDS FROM GRIB
   elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
     isec1(6)=246         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
     isec1(6)=247         ! indicatorOfParameter
-!hg end
+!ZHG end
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot

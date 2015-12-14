@@ -96,13 +96,19 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
   logical :: init = .true.
 
-!hg 
+  !ZHG SEP 2014 tests  
   integer :: cloud_ver,cloud_min, cloud_max 
+  integer ::teller(5), convpteller=0, lspteller=0
   real :: cloud_col_wat, cloud_water
-!hg temporary variables for testing
+  !ZHG 2015 temporary variables for testing
   real :: rcw(0:nxmax-1,0:nymax-1)
   real :: rpc(0:nxmax-1,0:nymax-1)
-!hg 
+  character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
+  character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
+  CHARACTER(LEN=3)  :: aspec
+  integer :: virr=0
+  real :: tot_cloud_h
+!ZHG
 
 !*************************************************************************
 ! If verttransform is called the first time, initialize heights of the   *
@@ -560,12 +566,75 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   endif
 
 
+!***********************************************************************************  
+if (readclouds) then !HG METHOD
+! The method is loops all grids vertically and constructs the 3D matrix for clouds
+! Cloud top and cloud bottom gid cells are assigned as well as the total column 
+! cloud water. For precipitating grids, the type and whether it is in or below 
+! cloud scavenging are assigned with numbers 2-5 (following the old metod).
+! Distinction is done for lsp and convp though they are treated the same in regards
+! to scavenging. Also clouds that are not precipitating are defined which may be 
+! to include future cloud processing by non-precipitating-clouds. 
+!***********************************************************************************
   if (readclouds) write(*,*) 'using cloud water from ECMWF'
-!  if (.not.readclouds) write(*,*) 'using cloud water from parameterization'
+  clw(:,:,:,n)=0
+  icloud_stats(:,:,:,n)=0
+  clouds(:,:,:,n)=0
+  do jy=0,nymin1
+   do ix=0,nxmin1
+    lsp=lsprec(ix,jy,1,n)
+    convp=convprec(ix,jy,1,n)
+    prec=lsp+convp
+    tot_cloud_h=0
+    ! Find clouds in the vertical
+    do kz=1, nz-1 !go from top to bottom
+     if (clwc(ix,jy,kz,n).gt.0) then      
+      ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
+      clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
+      tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
+      icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
+      icloud_stats(ix,jy,3,n)= min(height(kz+1),height(kz))                     ! Cloud BOT height stats      [m]
+!ZHG 2015 extra for testing
+      clh(ix,jy,kz,n)=height(kz+1)-height(kz)
+      icloud_stats(ix,jy,1,n)=icloud_stats(ix,jy,1,n)+(height(kz+1)-height(kz)) ! Cloud total vertical extent [m]
+      icloud_stats(ix,jy,2,n)= max(icloud_stats(ix,jy,2,n),height(kz))          ! Cloud TOP height            [m]
+!ZHG
+    endif
+    end do
 
-  rcw(:,:)=0
-  rpc(:,:)=0
+   ! If Precipitation. Define removal type in the vertical
+  if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
 
+    do kz=nz,1,-1 !go Bottom up!
+     if (clw(ix,jy,kz,n).gt. 0) then ! is in cloud
+        cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+height(kz)-height(kz-1) 
+        clouds(ix,jy,kz,n)=1                               ! is a cloud
+        if (lsp.ge.convp) then
+           clouds(ix,jy,kz,n)=3                            ! lsp in-cloud
+        else
+          clouds(ix,jy,kz,n)=2                             ! convp in-cloud
+        endif                                              ! convective or large scale
+     elseif((clw(ix,jy,kz,n).le.0) .and. (icloud_stats(ix,jy,3,n).ge.height(kz)) ) then ! is below cloud
+        if (lsp.ge.convp) then
+          clouds(ix,jy,kz,n)=5                             ! lsp dominated washout
+        else
+          clouds(ix,jy,kz,n)=4                             ! convp dominated washout
+        endif                                              ! convective or large scale 
+     endif
+
+     if (height(kz).ge. 19000) then                        ! set a max height for removal
+        clouds(ix,jy,kz,n)=0
+     endif !clw>0
+    end do !nz
+   endif ! precipitation
+  end do
+ end do
+!**************************************************************************
+ else       ! use old definitions
+!**************************************************************************
+!   create a cloud and rainout/washout field, clouds occur where rh>80%
+!   total cloudheight is stored at level 0
+ if (.not.readclouds) write(*,*) 'using cloud water from Parameterization'
   do jy=0,nymin1
     do ix=0,nxmin1
 ! OLD METHOD
@@ -602,6 +671,91 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         endif
       end do
 !END OLD METHOD
+      end do
+     end do
+endif !readclouds
+
+     !********* TEST ***************
+     ! WRITE OUT SOME TEST VARIABLES
+     !********* TEST ************'**
+!teller(:)=0
+!virr=virr+1
+!WRITE(aspec, '(i3.3)'), virr
+
+!if (readclouds) then
+!fnameH=trim(zhgpath)//trim(aspec)//'Vertical_placement.txt'
+!else
+!fnameH=trim(zhgpath)//trim(aspec)//'Vertical_placement_old.txt'
+!endif
+!
+!OPEN(UNIT=118, FILE=fnameH,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!do kz_inv=1,nz-1
+!  kz=nz-kz_inv+1
+!  !kz=91
+!  do jy=0,nymin1
+!     do ix=0,nxmin1
+!          if (clouds(ix,jy,kz,n).eq.1) teller(1)=teller(1)+1 ! no precipitation cloud
+!          if (clouds(ix,jy,kz,n).eq.2) teller(2)=teller(2)+1 ! convp dominated rainout
+!          if (clouds(ix,jy,kz,n).eq.3) teller(3)=teller(3)+1 ! lsp dominated rainout
+!          if (clouds(ix,jy,kz,n).eq.4) teller(4)=teller(4)+1 ! convp dominated washout
+!          if (clouds(ix,jy,kz,n).eq.5) teller(5)=teller(5)+1 ! lsp dominated washout
+!          
+!        !  write(*,*) height(kz),teller
+!     end do
+!  end do
+!  write(118,*) height(kz),teller
+!  teller(:)=0
+!end do
+!teller(:)=0
+!write(*,*) teller 
+!write(*,*) aspec
+!
+!fnameA=trim(zhgpath)//trim(aspec)//'cloudV.txt'
+!fnameB=trim(zhgpath)//trim(aspec)//'cloudT.txt'
+!fnameC=trim(zhgpath)//trim(aspec)//'cloudB.txt'
+!fnameD=trim(zhgpath)//trim(aspec)//'cloudW.txt'
+!fnameE=trim(zhgpath)//trim(aspec)//'old_cloudV.txt'
+!fnameF=trim(zhgpath)//trim(aspec)//'lsp.txt'
+!fnameG=trim(zhgpath)//trim(aspec)//'convp.txt'
+!if (readclouds) then
+!OPEN(UNIT=111, FILE=fnameA,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=112, FILE=fnameB,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=113, FILE=fnameC,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=114, FILE=fnameD,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!else
+!OPEN(UNIT=115, FILE=fnameE,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=116, FILE=fnameF,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=117, FILE=fnameG,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!endif
+!
+!do ix=0,nxmin1
+!if (readclouds) then
+!write(111,*) (icloud_stats(ix,jy,1,n),jy=0,nymin1)
+!write(112,*) (icloud_stats(ix,jy,2,n),jy=0,nymin1)
+!write(113,*) (icloud_stats(ix,jy,3,n),jy=0,nymin1)
+!write(114,*) (icloud_stats(ix,jy,4,n),jy=0,nymin1)
+!else
+!write(115,*) (cloudsh(ix,jy,n),jy=0,nymin1)    !integer
+!write(116,*) (lsprec(ix,jy,1,n),jy=0,nymin1)   !7.83691406E-02 
+!write(117,*) (convprec(ix,jy,1,n),jy=0,nymin1) !5.38330078E-02
+!endif
+!end do
+!
+!if (readclouds) then
+!CLOSE(111)
+!CLOSE(112)
+!CLOSE(113)
+!CLOSE(114)
+!else
+!CLOSE(115)
+!CLOSE(116)
+!CLOSE(117)
+!endif
+!
+!END ********* TEST *************** END
+! WRITE OUT SOME TEST VARIABLES
+!END ********* TEST *************** END
+
 
 ! PS 2012
 !      lsp=lsprec(ix,jy,1,n)
@@ -612,34 +766,6 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !          else ! prectype='cp '
 !            lconvectprec = .true.
 !           endif
-!HG METHOD
-!readclouds =.true.
-!      if (readclouds) then 
-!hg added APR 2014  Cloud Water=clwc(ix,jy,kz,n)  Cloud Ice=ciwc(ix,jy,kz,n)
-!hg Use the cloud water variables to determine existence of clouds. This makes the PS code obsolete 
-!        cloud_min=99999
-!        cloud_max=-1
-!        cloud_col_wat=0
-
-!        do kz=1, nz
-!         !clw & ciw are given in kg/kg  
-          ! cloud_water=clwc(ix,jy,kz,n)+ciwc(ix,jy,kz,n)
-          ! if (cloud_water .gt. 0) then
-          !   cloud_min=min(nint(height(kz)),cloud_min) !hg needs reset each grid
-          !   cloud_max=max(nint(height(kz)),cloud_max) !hg needs reset each grid
-          !   cloud_col_wat=cloud_col_wat+cloud_water !hg needs reset each grid 
-          ! endif
-          ! cloud_ver=max(0,cloud_max-cloud_min)
-
-          ! icloudbot(ix,jy,n)=cloud_min
-          ! icloudthck(ix,jy,n)=cloud_ver
-          ! rcw(ix,jy)=cloud_col_wat
-          ! rpc(ix,jy)=prec
-!write(*,*) 'Using clouds from ECMWF' !hg END Henrik Code
-!END HG METHOD
-
-
-
 !      else ! windfields does not contain cloud data 
 !          rhmin = 0.90 ! standard condition for presence of clouds
 !PS       note that original by Sabine Eckhart was 80%
@@ -697,32 +823,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
 !      endif !hg read clouds
 
-    end do
-  end do
 
-!do 102 kz=1,nuvz
-!write(an,'(i02)') kz+10
-!write(*,*) nuvz,nymin1,nxmin1,'--',an,'--'
-!open(4,file='/nilu_wrk2/sec/cloudtest/cloud'//an,form='formatted')
-!do 101 jy=0,nymin1
-!    write(4,*) (clouds(ix,jy,kz,n),ix=1,nxmin1)
-!101   continue
-! close(4)
-!102   continue
 
-! open(4,file='/nilu_wrk2/sec/cloudtest/height',form='formatted')
-! do 103 jy=0,nymin1
-!     write (4,*)
-!+       (height(kz),kz=1,nuvz)
-!103   continue
-! close(4)
-
-!open(4,file='/nilu_wrk2/sec/cloudtest/p',form='formatted')
-! do 104 jy=0,nymin1
-!     write (4,*)
-!+       (r_air*tt(ix,jy,1,n)*rho(ix,jy,1,n),ix=1,nxmin1)
-!104   continue
-! close(4)
 
 !eso measure CPU time
 !  call mpif_mtime('verttransform',1)

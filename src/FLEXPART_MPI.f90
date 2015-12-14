@@ -164,10 +164,11 @@ program flexpart
   if (ldirect.le.0) then
     write(*,FMT='(80("#"))')
     write(*,*) '#### FLEXPART_MPI> ERROR: ', &
-         & 'MPI version not (yet) working with backward runs. ',&
-         & 'Use the serial version instead.'
+         & 'MPI version not (yet) working with backward runs. '
+    write(*,*) '#### Use the serial version instead.'
     write(*,FMT='(80("#"))')
-    stop
+    ! call mpif_finalize
+    ! stop
   end if
 
 

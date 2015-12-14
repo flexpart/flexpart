@@ -129,7 +129,7 @@ module com_mod
 
   ! gdomainfill             .T., if domain-filling is global, .F. if not
 
-!hg
+!ZHG SEP 2015 wheather or not to read clouds from GRIB
   logical :: readclouds
 
 !NIK 16.02.2015
@@ -346,9 +346,11 @@ module com_mod
   real :: ww(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: tt(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: qv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
-!hg adding cloud water 
-  real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
-  real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+!ZHG adding cloud water 
+  real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem) !liquid   [kg/kg]
+  real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem) !ice      [kg/kg]
+  real :: clw(0:nxmax-1,0:nymax-1,nzmax,numwfmem)  !combined [m3/m3]
+
   real :: pv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: rho(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
@@ -361,8 +363,10 @@ module com_mod
   !scavenging NIK, PS
   integer(kind=1) :: clouds(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   integer :: cloudsh(0:nxmax-1,0:nymax-1,numwfmem)
-  ! integer :: icloudbot(0:nxmax-1,0:nymax-1,numwfmem)
-  ! integer :: icloudthck(0:nxmax-1,0:nymax-1,numwfmem)
+
+!ZHG Sep 2015  
+   real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
+   real :: clh(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
@@ -404,8 +408,8 @@ module com_mod
   real :: hmix(0:nxmax-1,0:nymax-1,1,numwfmem)
   real :: tropopause(0:nxmax-1,0:nymax-1,1,numwfmem)
   real :: oli(0:nxmax-1,0:nymax-1,1,numwfmem)
-! real :: diffk(0:nxmax-1,0:nymax-1,1,numwfmem) this is not in use?
-
+! real :: diffk(0:nxmax-1,0:nymax-1,1,numwfmem) ESO: this is not in use?
+! logical :: beneath_cloud=.true.
   ! ps                   surface pressure
   ! sd                   snow depth
   ! msl                  mean sea level pressure
@@ -666,6 +670,10 @@ module com_mod
   integer(kind=2), allocatable, dimension(:) :: cbt
 
 
+  !CGZ-lifetime
+  real, allocatable, dimension(:,:) ::checklifetime, species_lifetime
+  !CGZ-lifetime
+
   ! numpart                 actual number of particles in memory
   ! itra1 (maxpart) [s]     temporal positions of the particles
   ! npoint(maxpart)         indicates the release point of each particle
@@ -758,7 +766,9 @@ module com_mod
     allocate(itra1(nmpart),npoint(nmpart),nclass(nmpart),&
          & idt(nmpart),itramem(nmpart),itrasplit(nmpart),&
          & xtra1(nmpart),ytra1(nmpart),ztra1(nmpart),&
-         & xmass1(nmpart, maxspec))
+         & xmass1(nmpart, maxspec),&
+         & checklifetime(nmpart,maxspec), species_lifetime(maxspec,2))!CGZ-lifetime
+
 
     allocate(uap(nmpart),ucp(nmpart),uzp(nmpart),us(nmpart),&
          & vs(nmpart),ws(nmpart),cbt(nmpart))

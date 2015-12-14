@@ -88,7 +88,7 @@ module mpi_mod
 
 ! MPI tags/requests for send/receive operation
   integer :: tm1
-  integer, parameter :: nvar_async=27 !29 :DBG:
+  integer, parameter :: nvar_async=26 !27 !29 :DBG:
 !integer, dimension(:), allocatable :: tags
   integer, dimension(:), allocatable :: reqs
 
@@ -118,7 +118,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.true.
+  logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
@@ -206,7 +206,7 @@ contains
       write(*,*) 'amount of memory is being allocated.'
       write(*,FMT='(80("#"))')
 ! Force "syncronized" version if all processes will call getfields
-    else if (.not.lmp_sync.and.mp_np.lt.read_grp_min) then
+    else if ((.not.lmp_sync.and.mp_np.lt.read_grp_min).or.(mp_np.eq.1)) then
       if (lroot) then
         write(*,FMT='(80("#"))')
         write(*,*) '#### mpi_mod::mpif_init> WARNING: ', &
@@ -962,10 +962,13 @@ contains
 
 ! cloud water/ice:
     if (readclouds) then
-      call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2_size1*5,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
-      if (mp_ierr /= 0) goto 600
+
+      ! call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! if (mp_ierr /= 0) goto 600
+      ! call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! if (mp_ierr /= 0) goto 600
     end if
 
 ! 2D fields
@@ -1188,7 +1191,6 @@ contains
 !   mind    -- index where to place new fields
 !
 ! TODO
-!   Transfer cloud water/ice
 !
 !*******************************************************************************
     use com_mod
@@ -1333,18 +1335,20 @@ contains
 ! Send cloud water if it exists. Increment counter always (as on receiving end)
       if (readclouds) then
         i=i+1
-        call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+        call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,dest,tm1,&
              &MPI_COMM_WORLD,reqs(i),mp_ierr)
         if (mp_ierr /= 0) goto 600
-        i=i+1
 
-        call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
-             &MPI_COMM_WORLD,reqs(i),mp_ierr)
-        if (mp_ierr /= 0) goto 600
-! else
-!   i=i+2
+        ! call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+        !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
+        ! if (mp_ierr /= 0) goto 600
+        ! i=i+1
+
+        ! call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+        !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
+        ! if (mp_ierr /= 0) goto 600
+
       end if
-
     end do
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
@@ -1370,7 +1374,6 @@ contains
 !   memstat -- input, used to resolve windfield index being received
 !
 ! TODO
-!   Transfer cloud water/ice
 !
 !*******************************************************************************
     use com_mod
@@ -1389,12 +1392,6 @@ contains
 
 !    integer :: d3s1,d3s2,d2s1,d2s2
 !*******************************************************************************
-
-! :TODO: don't need these
-! d3s1=d3_size1
-! d3s2=d3_size2
-! d2s1=d2_size1 
-! d2s2=d2_size2
 
 ! At the time this immediate receive is posted, memstat is the state of
 ! windfield indices at the previous/current time. From this, the future
@@ -1544,13 +1541,19 @@ contains
 ! For now assume that data at all steps either have or do not have water 
     if (readclouds) then
       j=j+1
-      call MPI_Irecv(clwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
-           &MPI_COMM_WORLD,reqs(j),mp_ierr)    
-      if (mp_ierr /= 0) goto 600 
-      j=j+1
-      call MPI_Irecv(ciwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
-           &MPI_COMM_WORLD,reqs(j),mp_ierr)    
-      if (mp_ierr /= 0) goto 600 
+
+      call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+
+      ! call MPI_Irecv(clwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+      !      &MPI_COMM_WORLD,reqs(j),mp_ierr)    
+      ! if (mp_ierr /= 0) goto 600 
+      ! j=j+1
+      ! call MPI_Irecv(ciwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+      !      &MPI_COMM_WORLD,reqs(j),mp_ierr)    
+      ! if (mp_ierr /= 0) goto 600 
+
     end if
 
 
@@ -2088,7 +2091,9 @@ contains
 
     implicit none
 
-    integer, parameter :: li=1, ui=3 ! wfmem indices (i.e, operate on entire field)
+    integer :: li=1, ui=2 ! wfmem indices (i.e, operate on entire field)
+
+    if (.not.lmp_sync) ui=3
 
 
 ! Variables transferred at initialization only

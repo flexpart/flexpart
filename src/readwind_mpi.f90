@@ -199,12 +199,13 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       isec1(6)=132         ! indicatorOfParameter
     elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
       isec1(6)=133         ! indicatorOfParameter
-!hg
+!ZHG ! READ CLOUD FIELD : assume these to be added together to one variable
     elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
       isec1(6)=246         ! indicatorOfParameter
-    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
-      isec1(6)=247         ! indicatorOfParameter
- !hg end
+! ICE AND WATER IS ADDED TOGETHER IN NEW WINDFIELDS
+!    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
+!      isec1(6)=247         ! indicatorOfParameter
+!ZHG end
     elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
       isec1(6)=134         ! indicatorOfParameter
     elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
@@ -367,18 +368,17 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
            zsec4(nxfield*(ny-j-1)+i+1)
       if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
       if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
-!hg READING CLOUD FIELDS ASWELL
-      if(isec1(6).eq.246) then  !! CLWC  Cloud liquid water content
+!ZHG READING CLOUD FIELDS ASWELL
+      if(isec1(6).eq.246) then  !! CLWC  Cloud liquid water content [kg/kg]
         clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
         readclouds = .true.
-        !write(*,*) 'found water!'
+!if (clwch(i,j,nlev_ec-k+2,n) .gt. 0)        write(*,*) 'readwind: found water!', clwch(i,j,nlev_ec-k+2,n)
       endif
-
-      if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
-        ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+!      if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
+!        ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
         !write(*,*) 'found ice!'
-      endif
-!hg end
+!      endif
+!ZHG end
 
     end do
   end do

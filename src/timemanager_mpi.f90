@@ -138,6 +138,25 @@ subroutine timemanager
 ! Loop over the whole modelling period in time steps of mintime seconds
 !**********************************************************************
 
+
+!  itime=0
+  if (lroot) then
+  !  write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
+    write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
+    
+    if (verbosity.gt.0) then
+      write (*,*) 'timemanager> starting simulation'
+    end if
+  end if ! (lroot)
+
+!CGZ-lifetime: set lifetime to 0
+  checklifetime(:,:)=0
+  species_lifetime(:,:)=0
+  print*, 'Initialized lifetime'
+!CGZ-lifetime: set lifetime to 0
+
+
+
   do itime=0,ideltas,lsynctime
 
 ! Computation of wet deposition, OH reaction and mass transfer
@@ -543,13 +562,17 @@ subroutine timemanager
                & mp_comm_used, mp_ierr)
         endif
         
-        if (lroot) then
+        !CGZ-lifetime: output species lifetime
+        ! if (lroot) then
+        !   write(*,*) 'Overview species lifetime in days', &
+        !        real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
+        !   write(*,*) 'all info:',species_lifetime
           write(*,45) itime,numpart_tot_mpi,gridtotalunc,&
                &wetgridtotalunc,drygridtotalunc
-          if (verbosity.gt.0) then
-            write (*,*) 'timemanager> starting simulation'
-          end if
-        end if
+        !   if (verbosity.gt.0) then
+        !     write (*,*) 'timemanager> starting simulation'
+        !   end if
+        ! end if
 
 45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
@@ -728,15 +751,29 @@ subroutine timemanager
 
 
             if (mdomainfill.eq.0) then
-              if (xmass(npoint(j),ks).gt.0.) &
+              if (xmass(npoint(j),ks).gt.0.)then 
                    xmassfract=max(xmassfract,real(npart(npoint(j)))* &
                    xmass1(j,ks)/xmass(npoint(j),ks))
+                   
+                   !CGZ-lifetime: Check mass fraction left/save lifetime
+                   if(lroot.and.real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.0.01.and.checklifetime(j,ks).eq.0.)then
+                       !Mass below 1% of initial >register lifetime
+                       checklifetime(j,ks)=abs(itra1(j)-itramem(j))
+
+                       species_lifetime(ks,1)=species_lifetime(ks,1)+abs(itra1(j)-itramem(j))
+                       species_lifetime(ks,2)= species_lifetime(ks,2)+1
+                   endif
+                   !CGZ-lifetime: Check mass fraction left/save lifetime
+                   
+              endif
             else
               xmassfract=1.
             endif
           end do
 
-          if (xmassfract.lt.0.0001) then   ! terminate all particles carrying less mass
+          if (xmassfract.lt.0.00005 .and. sum(real(npart(npoint(j)))*xmass1(j,:)).lt.1.0) then   ! terminate all particles carrying less mass
+          !            print*,'terminated particle ',j,' for small mass (', sum(real(npart(npoint(j)))* &
+          !         xmass1(j,:)), ' of ', sum(xmass(npoint(j),:)),')'
             itra1(j)=-999999999
           endif
 
@@ -757,6 +794,7 @@ subroutine timemanager
             if (linit_cond.ge.1) &
                  call initial_cond_calc(itime+lsynctime,j)
             itra1(j)=-999999999
+            !print*, 'terminated particle ',j,'for age'
           endif
         endif
 
@@ -827,7 +865,7 @@ subroutine timemanager
     deallocate(drygridunc,wetgridunc)
   endif
   deallocate(gridunc)
-  deallocate(xpoint1,xpoint2,ypoint1,ypoint2,zpoint1,zpoint2,xmass)
+  deallocate(xpoint1,xpoint2,ypoint1,ypoint2,zpoint1,zpoint2,xmass, checklifetime)
   deallocate(ireleasestart,ireleaseend,npart,kindz)
   deallocate(xmasssave)
   if (nested_output.eq.1) then
