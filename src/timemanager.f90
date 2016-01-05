@@ -137,9 +137,9 @@ subroutine timemanager
 
 !ZHG 2015
 !CGZ-lifetime: set lifetime to 0
-  checklifetime(:,:)=0
-  species_lifetime(:,:)=0
-  print*, 'Initialized lifetime'
+  ! checklifetime(:,:)=0
+  ! species_lifetime(:,:)=0
+  ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
   
 
@@ -421,9 +421,9 @@ subroutine timemanager
  
         !CGZ-lifetime: output species lifetime
 !ZHG
-        write(*,*) 'Overview species lifetime in days', &
-             real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
-        write(*,*) 'all info:',species_lifetime
+        ! write(*,*) 'Overview species lifetime in days', &
+        !      real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
+        ! write(*,*) 'all info:',species_lifetime
 !ZHG
         !CGZ-lifetime: output species lifetime
 
@@ -593,12 +593,12 @@ subroutine timemanager
                    xmass1(j,ks)/xmass(npoint(j),ks))
 !ZHG 2015
                   !CGZ-lifetime: Check mass fraction left/save lifetime
-                   if(real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.0.01.and.checklifetime(j,ks).eq.0.)then
+                   ! if(real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.0.01.and.checklifetime(j,ks).eq.0.)then
                        !Mass below 1% of initial >register lifetime
-                       checklifetime(j,ks)=abs(itra1(j)-itramem(j))
-                       species_lifetime(ks,1)=species_lifetime(ks,1)+abs(itra1(j)-itramem(j))
-                       species_lifetime(ks,2)= species_lifetime(ks,2)+1
-                   endif
+                       ! checklifetime(j,ks)=abs(itra1(j)-itramem(j))
+                       ! species_lifetime(ks,1)=species_lifetime(ks,1)+abs(itra1(j)-itramem(j))
+                       ! species_lifetime(ks,2)= species_lifetime(ks,2)+1
+                   ! endif
                    !CGZ-lifetime: Check mass fraction left/save lifetime
 !ZHG 2015
             else

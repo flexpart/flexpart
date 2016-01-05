@@ -72,7 +72,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   integer :: jpart,itime,ltsample,loutnext,ldeltat,i,j,ix,jy
   integer :: ngrid,itage,nage,hz,il,interp_time, n, clouds_v
   integer :: ks, kp
-  integer :: n1,n2, icbot,ictop, indcloud !TEST
+!  integer :: n1,n2, icbot,ictop, indcloud !TEST
   real :: S_i, act_temp, cl, cle ! in cloud scavenging
   real :: clouds_h ! cloud height for the specific grid point
   real :: xtn,ytn,lsp,convp,cc,grfraction(3),prec(3),wetscav,totprec
@@ -104,7 +104,6 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
   ! Loop over all particles
   !************************
-
 
   blc_count=0
   inc_count=0
@@ -184,7 +183,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
     n=memind(2)
     if (abs(memtime(1)-interp_time).lt.abs(memtime(2)-interp_time)) &
-    n=memind(1)
+         n=memind(1)
 
     if (ngrid.eq.0) then
       clouds_v=clouds(ix,jy,hz,n)
@@ -198,7 +197,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   ! if there is no precipitation or the particle is above the clouds no
   ! scavenging is done
 
-     if (clouds_v.le.1) goto 20
+    if (clouds_v.le.1) goto 20
   
   ! 1) Parameterization of the the area fraction of the grid cell where the
   !    precipitation occurs: the absolute limit is the total cloud cover, but
@@ -310,6 +309,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
       if (clouds_v.lt.4) then ! In-cloud
 ! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are given in species file
         if (weta_in(ks).gt.0. .or. wetb_in(ks).gt.0.) then 
+          inc_count=inc_count+1
 ! if negative coefficients (turned off) set to zero for use in equation
           if (weta_in(ks).lt.0.) weta_in(ks)=0.
           if (wetb_in(ks).lt.0.) wetb_in(ks)=0.
@@ -354,9 +354,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
   ! scavenging coefficient based on Hertel et al 1995 - using the S_i for either gas or aerosol
            !OLD 
           if (readclouds) then
-           wetscav=S_i*(prec(1)/3.6E6)
+            wetscav=S_i*(prec(1)/3.6E6)
           else
-          wetscav=S_i*(prec(1)/3.6E6)/clouds_h
+            wetscav=S_i*(prec(1)/3.6E6)/clouds_h
           endif
 
 !ZHG 2015 TEST

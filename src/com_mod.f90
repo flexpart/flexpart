@@ -131,9 +131,12 @@ module com_mod
 
 !ZHG SEP 2015 wheather or not to read clouds from GRIB
   logical :: readclouds
+!ESO DEC 2015 whether or not both clwc and ciwc are present (if so they are summed)
+  logical :: sumclouds 
+  
 
 !NIK 16.02.2015
-  integer :: tot_blc_count, tot_inc_count
+  integer :: tot_blc_count=0, tot_inc_count=0
 
 
 
@@ -745,7 +748,7 @@ module com_mod
   ! files in cases where differences with MPI version is minor (eso)
   !*****************************************************************
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
-  logical :: lroot=.true. ! true if serial version, or if MPI and root process
+  logical :: lroot=.true. ! true if serial version, or if MPI .and. root process
 
   contains
       subroutine com_mod_allocate(nmpart)

@@ -435,22 +435,22 @@ program flexpart
     call mpif_finalize
     stop
   endif
-    
 
 
   call timemanager
 
+
 ! NIK 16.02.2005 
   if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
   else
     if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, tot_blc_count, 1, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_blc_count, tot_blc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, tot_inc_count, 1, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_inc_count, tot_inc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
   end if
