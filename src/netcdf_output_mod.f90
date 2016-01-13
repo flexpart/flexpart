@@ -243,6 +243,7 @@ subroutine writeheader_netcdf(lnest)
   integer :: timeDimID, latDimID, lonDimID, levDimID
   integer :: nspecDimID, npointDimID, nageclassDimID, ncharDimID, pointspecDimID
   integer :: tID, lonID, latID, levID, poleID, lageID, oroID
+  integer :: volID, areaID
   integer :: rellng1ID, rellng2ID, rellat1ID, rellat2ID, relzz1ID, relzz2ID
   integer :: relcomID, relkindzID, relstartID, relendID, relpartID, relxmassID
   integer :: nnx, nny 
@@ -266,9 +267,6 @@ subroutine writeheader_netcdf(lnest)
   ! Check if output directory exists (the netcdf library will
   ! otherwise give an error which can look confusing). 
   ! *********************************************************************
-  ! open(newunit=test_unit,file=trim(path(2)(1:length(2)))//'test_dir.txt',status='replace',&
-  !      &err=100)
-  !  close (test_unit, status='delete')
   open(unit=unittmp,file=trim(path(2)(1:length(2)))//'test_dir.txt',status='replace',&
        &err=100)
   close (unittmp, status='delete')
@@ -340,6 +338,7 @@ subroutine writeheader_netcdf(lnest)
   ! number of actual release points
   call nf90_err(nf90_def_dim(ncid, 'numpoint', numpoint, npointDimID))
 
+
   ! create variables
   !*************************
 
@@ -377,6 +376,15 @@ subroutine writeheader_netcdf(lnest)
   call nf90_err(nf90_put_att(ncid, levID, 'positive', 'up'))
   call nf90_err(nf90_put_att(ncid, levID, 'standard_name', 'height'))
   call nf90_err(nf90_put_att(ncid, levID, 'long_name', 'height above ground'))
+
+  ! volume
+  call nf90_err(nf90_def_var(ncid, 'volume', nf90_float, (/ lonDimID, latDimID, levDimID /), &
+       volID))
+
+  ! area 
+  call nf90_err(nf90_def_var(ncid, 'area', nf90_float, (/ lonDimID, latDimID /), &
+       areaID))
+
 
   if (write_releases.eqv..true.) then
     ! release comment
@@ -611,7 +619,13 @@ subroutine writeheader_netcdf(lnest)
   endif
   ! levels
   call nf90_err(nf90_put_var(ncid, levID, outheight(1:numzgrid)))
-  
+
+  ! volume
+  call nf90_err(nf90_put_var(ncid, volID, volume(:,:,:)))
+
+  ! area
+  call nf90_err(nf90_put_var(ncid, areaID, area(:,:)))
+
   if (write_releases.eqv..true.) then
     ! release point information
     do i = 1,numpoint
@@ -888,7 +902,7 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
             if ((drydep).and.(ldirect.gt.0)) then
               if (mpi_mode.gt.0) then
                 do l=1,nclassunc
-                  auxgrid(l)=drygridunc(ix,jy,ks,kp,l,nage)
+                  auxgrid(l)=drygridunc0(ix,jy,ks,kp,l,nage)
                 end do
               else
                 do l=1,nclassunc
