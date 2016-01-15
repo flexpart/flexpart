@@ -102,7 +102,6 @@ subroutine timemanager
 
   implicit none
 
-  logical :: fc_mp=.true., fc_sync=.true.
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0,mind
 ! integer :: ksp
@@ -351,7 +350,7 @@ subroutine timemanager
     if (DEP.and.(itime.eq.loutnext).and.(ldirect.gt.0)) then
       do ks=1,nspec
         do kp=1,maxpointspec_act
-          if (decay(ks).gt.0.) then
+          if (decay(ks).gt.0.) then ! TODO move this statement up 2 levels
             do nage=1,nageclass
               do l=1,nclassunc
 ! Mother output grid
@@ -484,7 +483,6 @@ subroutine timemanager
           else 
             if (lroot) then
               if (lnetcdfout.eq.1) then
-
                 call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,&
                      &drygridtotalunc)
               else
@@ -771,7 +769,7 @@ subroutine timemanager
             endif
           end do
 
-          if (xmassfract.lt.0.00005 .and. sum(real(npart(npoint(j)))*xmass1(j,:)).lt.1.0) then   ! terminate all particles carrying less mass
+          if (xmassfract.lt.minmass) then ! .and. sum(real(npart(npoint(j)))*xmass1(j,:)).lt.1.0) then   ! terminate all particles carrying less mass
           !            print*,'terminated particle ',j,' for small mass (', sum(real(npart(npoint(j)))* &
           !         xmass1(j,:)), ' of ', sum(xmass(npoint(j),:)),')'
             itra1(j)=-999999999

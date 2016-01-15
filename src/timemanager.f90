@@ -606,7 +606,7 @@ subroutine timemanager
             endif
           end do
 
-          if (xmassfract.lt.0.0001) then   ! terminate all particles carrying less mass
+          if (xmassfract.lt.minmass) then   ! terminate all particles carrying less mass
             itra1(j)=-999999999
             if (verbosity.gt.0) then
               print*,'terminated particle ',j,' for small mass'
@@ -643,32 +643,17 @@ subroutine timemanager
   ! maximumtl=20 minutes (defined in com_mod)
   !***************************************************************
     
-          total_nan_intl=0
-          i_nan=i_nan+1 ! added by mc to count nan during a time of maxtl (i.e. maximum tl fixed here to 20 minutes, see com_mod)
-          sum_nan_count(i_nan)=nan_count
-          if (i_nan > maxtl/lsynctime) i_nan=1 !lsynctime must be <= maxtl
-          do ii_nan=1, (maxtl/lsynctime) 
-              total_nan_intl=total_nan_intl+sum_nan_count(ii_nan)
-          end do
+    total_nan_intl=0
+    i_nan=i_nan+1 ! added by mc to count nan during a time of maxtl (i.e. maximum tl fixed here to 20 minutes, see com_mod)
+    sum_nan_count(i_nan)=nan_count
+    if (i_nan > maxtl/lsynctime) i_nan=1 !lsynctime must be <= maxtl
+    do ii_nan=1, (maxtl/lsynctime) 
+      total_nan_intl=total_nan_intl+sum_nan_count(ii_nan)
+    end do
   ! Output to keep track of the numerical instabilities in CBL simulation and if
   ! they are compromising the final result (or not)
-          if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
+    if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
           
-!!------------------------------------------------------------------------------
-! these lines below to test the well-mixed condition, modified by  mc, not to be
-! included in final release:
-    ! if (itime.eq.0) then
-    ! open(551,file='/home/mc/test_cbl/out/WELLMIXEDTEST_CBL_lonlat_9_33_100_3hours_3htp_cd.DAT')
-    ! open(552,file='/home/mc/test_cbl/out/avg_ol_h_wst_lonlat_9_33_100_3hours_3htp_cd.DAT')
-    ! end if
-    ! write(552,'(5F16.7)')itime*1./3600.,avg_wst/well_mixed_norm,avg_ol/well_mixed_norm,avg_h/well_mixed_norm
-    ! do j=1,25
-    !      !write(551,*))itime*1.,h_well/50.*j,well_mixed_vector(j)/well_mixed_norm*50.
-    !     avg_air_dens(j)=avg_air_dens(j)/well_mixed_vector(j)
-    !     write(551,'(5F16.7)')itime*1.,h_well/25.*j,well_mixed_vector(j)/well_mixed_norm*25.,avg_air_dens(j),0.04*j
-    ! end do 
-!!------------------------------------------------------------------------------
-
   end do
 
 

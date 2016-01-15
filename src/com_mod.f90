@@ -350,17 +350,17 @@ module com_mod
   real :: tt(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: qv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
 !ZHG adding cloud water 
-  real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem) !liquid   [kg/kg]
-  real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem) !ice      [kg/kg]
-  real :: clw(0:nxmax-1,0:nymax-1,nzmax,numwfmem)  !combined [m3/m3]
+  real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !liquid   [kg/kg]
+  real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !ice      [kg/kg]
+  real :: clw(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0  !combined [m3/m3]
 
   real :: pv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: rho(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: tth(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
   real :: qvh(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
-  real :: clwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
-  real :: ciwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+  real :: clwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)=0.0
+  real :: ciwch(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)=0.0
 
   real :: pplev(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
   !scavenging NIK, PS
@@ -370,6 +370,7 @@ module com_mod
 !ZHG Sep 2015  
    real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
    real :: clh(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
+   real :: clw4(0:nxmax-1,0:nymax-1,numwfmem) ! eso: =icloud_stats(:,:,4,:)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction

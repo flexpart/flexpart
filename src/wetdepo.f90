@@ -316,7 +316,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
           !ZHG 2015 Cloud liquid & ice water (CLWC+CIWC) from ECMWF
           if (readclouds) then                  !icloud_stats(ix,jy,4,n) has units kg/m2
-            cl =icloud_stats(ix,jy,4,n)*(grfraction(1)/cc)
+!            cl =icloud_stats(ix,jy,4,n)*(grfraction(1)/cc)
+! ESO: stop using icloud_stats
+            cl =clw4(ix,jy,n)*(grfraction(1)/cc)
           else                                  !parameterize cloudwater m2/m3
             !ZHG updated parameterization of cloud water to better reproduce the values coming from ECMWF
             cl=1.6E-6*prec(1)**0.36

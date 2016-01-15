@@ -250,7 +250,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   qv(:,:,1,n)=qvh(:,:,1,n)
 !hg adding the cloud water 
   clwc(:,:,1,n)=clwch(:,:,1,n)
-  ciwc(:,:,1,n)=ciwch(:,:,1,n)   
+  if (.not.sumclouds) ciwc(:,:,1,n)=ciwch(:,:,1,n)   
 !hg 
   pv(:,:,1,n)=pvh(:,:,1)
   rho(:,:,1,n)=rhoh(:,:,1)
@@ -261,7 +261,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
 !hg adding the cloud water
   clwc(:,:,nz,n)=clwch(:,:,nuvz,n)
-  ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
+  if (.not.sumclouds) ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
 !hg
   pv(:,:,nz,n)=pvh(:,:,nuvz)
   rho(:,:,nz,n)=rhoh(:,:,nuvz)
@@ -279,7 +279,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
           qv(ix,jy,iz,n)=qv(ix,jy,nz,n)
 !hg adding the cloud water
           clwc(ix,jy,iz,n)=clwc(ix,jy,nz,n)
-          ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
+          if (.not.sumclouds) ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
 !hg
           pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
           rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
@@ -309,7 +309,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
                +qvh(ix,jy,kz,n)*dz1)/dz
 !hg adding the cloud water
           clwc(ix,jy,iz,n)=(clwch(ix,jy,kz-1,n)*dz2+clwch(ix,jy,kz,n)*dz1)/dz
-          ciwc(ix,jy,iz,n)=(ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
+          if (.not.sumclouds) &
+               &ciwc(ix,jy,iz,n)=(ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
 !hg
           pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
           rho(ix,jy,iz,n)=(rhoh(ix,jy,kz-1)*dz2+rhoh(ix,jy,kz)*dz1)/dz
@@ -577,9 +578,13 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 ! to include future cloud processing by non-precipitating-clouds. 
 !***********************************************************************************
     write(*,*) 'using cloud water from ECMWF'
-    clw(:,:,:,n)=0
-    icloud_stats(:,:,:,n)=0
+    clw(:,:,:,n)=0.0
+    icloud_stats(:,:,:,n)=0.0
     clouds(:,:,:,n)=0
+! If water/ice are read separately into clwc and ciwc, store sum in clwc
+    if (.not.sumclouds) then 
+      clwc(:,:,:,n) = clwc(:,:,:,n) + ciwc(:,:,:,n)
+    end if
     do jy=0,nymin1
       do ix=0,nxmin1
         lsp=lsprec(ix,jy,1,n)
@@ -634,7 +639,6 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !**************************************************************************
 !   create a cloud and rainout/washout field, clouds occur where rh>80%
 !   total cloudheight is stored at level 0
-! if (.not.readclouds) write(*,*) 'using cloud water from Parameterization'
     write(*,*) 'using cloud water from Parameterization'
     do jy=0,nymin1
       do ix=0,nxmin1
@@ -675,6 +679,9 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       end do
     end do
   endif !readclouds
+
+! eso: copy the relevant data to clw4 to reduce amount of communicated data for MPI
+  clw4(:,:,n) = icloud_stats(:,:,4,n)
 
      !********* TEST ***************
      ! WRITE OUT SOME TEST VARIABLES

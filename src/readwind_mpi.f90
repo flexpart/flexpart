@@ -82,9 +82,9 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   integer :: gotGrid
 !HSO  end
 
-  real(kind=4), intent(inout) :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real(kind=4), intent(inout) :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real(kind=4), intent(inout) :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
+  real(sp), intent(inout) :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
+  real(sp), intent(inout) :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
+  real(sp), intent(inout) :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
   integer, intent(in) :: indj,n
   integer :: i,j,k,levdiff2,ifield,iumax,iwmax
 
@@ -115,7 +115,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
 
   hflswitch=.false.
   strswitch=.false.
-!hg
+!ZHG test the grib fields that have lcwc without using them
 !  readcloud=.false.
 !hg end
   levdiff2=nlev_ec-nwz+1
@@ -199,13 +199,14 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       isec1(6)=132         ! indicatorOfParameter
     elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
       isec1(6)=133         ! indicatorOfParameter
-!ZHG ! READ CLOUD FIELD : assume these to be added together to one variable
+! ESO Cloud water is in a) fields CLWC and CIWC, *or* b) field qc 
     elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
       isec1(6)=246         ! indicatorOfParameter
-! ICE AND WATER IS ADDED TOGETHER IN NEW WINDFIELDS
-!    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
-!      isec1(6)=247         ! indicatorOfParameter
-!ZHG end
+    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
+      isec1(6)=247         ! indicatorOfParameter
+! ESO qc(=clwc+ciwc):
+    elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
+      isec1(6)=201031         ! indicatorOfParameter
     elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
       isec1(6)=134         ! indicatorOfParameter
     elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
@@ -372,13 +373,18 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       if(isec1(6).eq.246) then  !! CLWC  Cloud liquid water content [kg/kg]
         clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
         readclouds = .true.
-!if (clwch(i,j,nlev_ec-k+2,n) .gt. 0)        write(*,*) 'readwind: found water!', clwch(i,j,nlev_ec-k+2,n)
+        sumclouds=.false.
       endif
-!      if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
-!        ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
-        !write(*,*) 'found ice!'
-!      endif
+      if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
+        ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+      endif
 !ZHG end
+!ESO read qc (=clwc+ciwc)
+      if(isec1(6).eq.201031) then  !! QC  Cloud liquid water content [kg/kg]
+        clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+        readclouds=.true.
+        sumclouds=.true.
+      endif
 
     end do
   end do

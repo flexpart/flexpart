@@ -118,7 +118,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.false.
+  logical, parameter :: mp_measure_time=.true.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
@@ -906,7 +906,7 @@ contains
 ! Send variables from getfield process (id_read) to other processes
 !**********************************************************************
 
-! The non-reader processes need to know if clouds were read.
+! The non-reader processes need to know if cloud water were read.
 ! TODO: only at first step or always?
     call MPI_Bcast(readclouds,1,MPI_LOGICAL,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
@@ -962,9 +962,10 @@ contains
 
 ! cloud water/ice:
     if (readclouds) then
-      call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2_size1*5,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! if (mp_ierr /= 0) goto 600
+      call MPI_Bcast(clw4(:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-
       ! call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
       ! call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -1335,8 +1336,11 @@ contains
 ! Send cloud water if it exists. Increment counter always (as on receiving end)
       if (readclouds) then
         i=i+1
-        call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,dest,tm1,&
+        ! call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,dest,tm1,&
+        !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
+        call MPI_Isend(clw4(:,:,mind),d2s1,mp_pp,dest,tm1,&
              &MPI_COMM_WORLD,reqs(i),mp_ierr)
+
         if (mp_ierr /= 0) goto 600
 
         ! call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
@@ -1542,7 +1546,9 @@ contains
     if (readclouds) then
       j=j+1
 
-      call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
+      ! call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
+      !      &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      call MPI_Irecv(clw4(:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
 
