@@ -457,7 +457,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
     call shift_field(qvh,nxfield,ny,nuvzmax,nuvz,numwfmem,n)
 !hg
     call shift_field(clwch,nxfield,ny,nuvzmax,nuvz,numwfmem,n)
-    call shift_field(ciwch,nxfield,ny,nuvzmax,nuvz,numwfmem,n)
+    if (.not.sumclouds) call shift_field(ciwch,nxfield,ny,nuvzmax,nuvz,numwfmem,n)
 !hg end
 
   endif

@@ -549,19 +549,6 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !if (mod(itime,10800).ne.0) dump=.true.
   !!! CHANGE
       
-  !!!----- TEST OF THE WELL-MIXED CRITERION: modified by mc,  not to be included in final version mc
-      ! if (zt.lt.h) then
-      !     i_well=int(zt/h*25.)+1
-      !     well_mixed_vector(i_well)=well_mixed_vector(i_well)+dt
-      !     well_mixed_norm=well_mixed_norm+dt
-      !     avg_air_dens(i_well)=avg_air_dens(i_well)+rhoa*dt
-      !     avg_wst=avg_wst+wst*dt
-      !     avg_ol=avg_ol+ol*dt
-      !     avg_h=avg_h+h*dt
-      ! end if
-      ! h_well=h
-  !------- END TEST
-      
   ! Determine probability of deposition
   !************************************
 

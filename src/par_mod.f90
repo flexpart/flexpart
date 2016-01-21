@@ -41,11 +41,14 @@ module par_mod
 
   !****************************************************************
   ! Parameter defining KIND parameter for double/single precision
+  ! 'cp' sets the precision for some internal calculations (sp or dp),
+  ! sp is default but dp can be used for increased precision.
+  ! WARNING: for now, do not use 'dp'
   !****************************************************************
 
   integer,parameter :: dp=selected_real_kind(P=15)
   integer,parameter :: sp=selected_real_kind(6)
-
+  integer,parameter :: cp=sp ! sp is default
 
   !***********************************************************
   ! Number of directories/files used for FLEXPART input/output

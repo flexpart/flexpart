@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine conccalc(itime,weight)
-  !                      i     i
+  !                 i     i
   !*****************************************************************************
   !                                                                            *
   !     Calculation of the concentrations on a regular grid using volume       *

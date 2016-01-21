@@ -83,7 +83,7 @@ subroutine gridcheck
   integer :: gotGrid
   real(kind=4) :: xaux1,xaux2,yaux1,yaux2
   real(kind=8) :: xaux1in,xaux2in,yaux1in,yaux2in
-  integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl,parID
+  integer :: gribVer,parCat,parNum,typSurf,valSurf,discipl,parId
   !HSO  end
   integer :: ix,jy,i,ifn,ifield,j,k,iumax,iwmax,numskip
   real :: sizesouth,sizenorth,xauxa,pint,conversion_factor
@@ -197,9 +197,16 @@ subroutine gridcheck
 !ZHG FOR CLOUDS FROM GRIB
   elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
     isec1(6)=246         ! indicatorOfParameter
+    ! readclouds=.true.
+    ! sumclouds=.false.
   elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
     isec1(6)=247         ! indicatorOfParameter
 !ZHG end
+! ESO qc(=clwc+ciwc)
+  elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
+    isec1(6)=201031      ! indicatorOfParameter
+    ! readclouds=.true.
+    ! sumclouds=.true.
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot

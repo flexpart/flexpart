@@ -115,6 +115,7 @@ subroutine timemanager
 
   real :: drydeposit(maxspec),gridtotalunc,wetgridtotalunc
   real :: drygridtotalunc,xold,yold,zold,xmassfract
+  real, parameter :: e_inv = 1.0/exp(1.0)
 !double precision xm(maxspec,maxpointspec_act),
 !    +                 xm_depw(maxspec,maxpointspec_act),
 !    +                 xm_depd(maxspec,maxpointspec_act)
@@ -754,7 +755,7 @@ subroutine timemanager
                    xmass1(j,ks)/xmass(npoint(j),ks))
                    
                    !CGZ-lifetime: Check mass fraction left/save lifetime
-                   ! if(lroot.and.real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.0.01.and.checklifetime(j,ks).eq.0.)then
+                   ! if(lroot.and.real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.inv_e.and.checklifetime(j,ks).eq.0.)then
                        !Mass below 1% of initial >register lifetime
                    !     checklifetime(j,ks)=abs(itra1(j)-itramem(j))
 

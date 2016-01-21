@@ -118,7 +118,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.true.
+  logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
@@ -476,24 +476,24 @@ contains
       if (mp_ierr /= 0) goto 600
 
 ! real
-      call MPI_SCATTER(uap,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(uap,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(ucp,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ucp,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(uzp,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(uzp,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
-      call MPI_SCATTER(us,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(us,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(vs,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(vs,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(ws,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ws,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(xtra1,numpart_mpi,mp_dp,MPI_IN_PLACE,&
@@ -502,13 +502,13 @@ contains
       call MPI_SCATTER(ytra1,numpart_mpi,mp_dp,MPI_IN_PLACE,&
            &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_SCATTER(ztra1,numpart_mpi,mp_pp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ztra1,numpart_mpi,mp_sp,MPI_IN_PLACE,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
       do i=1,nspec
-        call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_pp,MPI_IN_PLACE,&
-             &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+        call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_sp,MPI_IN_PLACE,&
+             &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
         if (mp_ierr /= 0) goto 600 
       end do
 
@@ -536,24 +536,24 @@ contains
       if (mp_ierr /= 0) goto 600
 
 ! reals
-      call MPI_SCATTER(uap,numpart_mpi,mp_pp,uap,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(uap,numpart_mpi,mp_sp,uap,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(ucp,numpart_mpi,mp_pp,ucp,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ucp,numpart_mpi,mp_sp,ucp,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(uzp,numpart_mpi,mp_pp,uzp,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(uzp,numpart_mpi,mp_sp,uzp,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
-      call MPI_SCATTER(us,numpart_mpi,mp_pp,us,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(us,numpart_mpi,mp_sp,us,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(vs,numpart_mpi,mp_pp,vs,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(vs,numpart_mpi,mp_sp,vs,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_SCATTER(ws,numpart_mpi,mp_pp,ws,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ws,numpart_mpi,mp_sp,ws,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(xtra1,numpart_mpi,mp_dp,xtra1,&
@@ -562,13 +562,13 @@ contains
       call MPI_SCATTER(ytra1,numpart_mpi,mp_dp,ytra1,&
            &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_SCATTER(ztra1,numpart_mpi,mp_pp,ztra1,&
-           &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+      call MPI_SCATTER(ztra1,numpart_mpi,mp_sp,ztra1,&
+           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
       do i=1,nspec
-        call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_pp,xmass1(:,i),&
-             &numpart_mpi,mp_pp,id_root,mp_comm_used,mp_ierr)
+        call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_sp,xmass1(:,i),&
+             &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
         if (mp_ierr /= 0) goto 600 
       end do
 
@@ -656,24 +656,24 @@ contains
       if (mp_ierr /= 0) goto 600 
 
 ! Reals:
-      call MPI_GATHER(uap, numpart_mpi, mp_pp, uap, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(uap, numpart_mpi, mp_sp, uap, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_GATHER(ucp, numpart_mpi, mp_pp, ucp, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(ucp, numpart_mpi, mp_sp, ucp, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_GATHER(uzp, numpart_mpi, mp_pp, uzp, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(uzp, numpart_mpi, mp_sp, uzp, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
-      call MPI_GATHER(us, numpart_mpi, mp_pp, us, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(us, numpart_mpi, mp_sp, us, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_GATHER(vs, numpart_mpi, mp_pp, vs, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(vs, numpart_mpi, mp_sp, vs, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_GATHER(ws, numpart_mpi, mp_pp, ws, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(ws, numpart_mpi, mp_sp, ws, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
 
 
@@ -683,13 +683,13 @@ contains
       call MPI_GATHER(ytra1, numpart_mpi, mp_dp, ytra1, &
            &numpart_mpi, mp_dp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_GATHER(ztra1, numpart_mpi, mp_pp, ztra1, &
-           &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+      call MPI_GATHER(ztra1, numpart_mpi, mp_sp, ztra1, &
+           &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
       do i=1, nspec
-        call MPI_GATHER(xmass1(:,i), numpart_mpi, mp_pp, xmass1(:,i), &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(xmass1(:,i), numpart_mpi, mp_sp, xmass1(:,i), &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
 
       end do
@@ -721,24 +721,24 @@ contains
         if (mp_ierr /= 0) goto 600 
 
 ! Reals:
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, uap, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, uap, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, ucp, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, ucp, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, uzp, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, uzp, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
 
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, us, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, us, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, vs, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, vs, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, ws, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, ws, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600
 
 
@@ -748,13 +748,13 @@ contains
         call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_dp, ytra1, &
              &numpart_mpi, mp_dp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, ztra1, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, ztra1, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
 
         do i=1, nspec
-          call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_pp, xmass1(:,i), &
-               &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+          call MPI_GATHER(MPI_IN_PLACE, numpart_mpi, mp_sp, xmass1(:,i), &
+               &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
           if (mp_ierr /= 0) goto 600 
         end do
 
@@ -783,24 +783,24 @@ contains
         if (mp_ierr /= 0) goto 600 
 
 ! Reals:
-        call MPI_GATHER(uap, numpart_mpi, mp_pp, uap, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(uap, numpart_mpi, mp_sp, uap, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(ucp, numpart_mpi, mp_pp, ucp, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(ucp, numpart_mpi, mp_sp, ucp, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(uzp, numpart_mpi, mp_pp, uzp, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(uzp, numpart_mpi, mp_sp, uzp, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
 
-        call MPI_GATHER(us, numpart_mpi, mp_pp, us, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(us, numpart_mpi, mp_sp, us, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600
-        call MPI_GATHER(vs, numpart_mpi, mp_pp, vs, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(vs, numpart_mpi, mp_sp, vs, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(ws, numpart_mpi, mp_pp, ws, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(ws, numpart_mpi, mp_sp, ws, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600
 
 
@@ -810,13 +810,13 @@ contains
         call MPI_GATHER(ytra1, numpart_mpi, mp_dp, ytra1, &
              &numpart_mpi, mp_dp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
-        call MPI_GATHER(ztra1, numpart_mpi, mp_pp, ztra1, &
-             &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+        call MPI_GATHER(ztra1, numpart_mpi, mp_sp, ztra1, &
+             &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
         if (mp_ierr /= 0) goto 600 
 
         do i=1, nspec
-          call MPI_GATHER(xmass1(:,i), numpart_mpi, mp_pp, xmass1(:,i), &
-               &numpart_mpi, mp_pp, id_root, mp_comm_used, mp_ierr)
+          call MPI_GATHER(xmass1(:,i), numpart_mpi, mp_sp, xmass1(:,i), &
+               &numpart_mpi, mp_sp, id_root, mp_comm_used, mp_ierr)
           if (mp_ierr /= 0) goto 600 
         end do
       end if ! (lroot)
@@ -913,13 +913,13 @@ contains
 
 ! Static fields/variables sent only at startup
     if (first_call) then
-      call MPI_Bcast(oro(:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(oro(:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(excessoro(:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(excessoro(:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(lsm(:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(lsm(:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(xlanduse(:,:,:),d2_size3*numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(xlanduse(:,:,:),d2_size3*numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_Bcast(wftime,d1_size1,MPI_INTEGER,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
@@ -933,76 +933,76 @@ contains
       first_call=.false.
     endif
 
-    call MPI_Bcast(uu(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(uu(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(vv(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(vv(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(uupol(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(uupol(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(vvpol(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(vvpol(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(ww(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(ww(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(tt(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(tt(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(rho(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(rho(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(drhodz(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(drhodz(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(tth(:,:,:,li:ui),d3s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(tth(:,:,:,li:ui),d3s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(qvh(:,:,:,li:ui),d3s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(qvh(:,:,:,li:ui),d3s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(qv(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(qv(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(pv(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(pv(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
     call MPI_Bcast(clouds(:,:,:,li:ui),d3s1,MPI_INTEGER1,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
 
 ! cloud water/ice:
     if (readclouds) then
-      ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(clw4(:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(clw4(:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      ! call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
-      ! call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! call MPI_Bcast(ciwc(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
     end if
 
 ! 2D fields
-    call MPI_Bcast(cloudsh(:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(cloudsh(:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(vdep(:,:,:,li:ui),d2s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(vdep(:,:,:,li:ui),d2s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(ps(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(ps(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(sd(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(sd(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(tcc(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(tcc(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(tt2(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(tt2(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(td2(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(td2(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(lsprec(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(lsprec(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(convprec(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(convprec(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(ustar(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(ustar(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(wstar(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(wstar(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(hmix(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(hmix(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
-    call MPI_Bcast(tropopause(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(tropopause(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600
-    call MPI_Bcast(oli(:,:,:,li:ui),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(oli(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
-    call MPI_Bcast(z0,numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+    call MPI_Bcast(z0,numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
@@ -1093,13 +1093,13 @@ contains
 
 ! Static fields/variables sent only at startup
     if (first_call) then
-      call MPI_Bcast(oron(:,:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(oron(:,:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(excessoron(:,:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(excessoron(:,:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(lsmn(:,:,:),d2_size3,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(lsmn(:,:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(xlandusen(:,:,:,:),d2_size3*numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(xlandusen(:,:,:,:),d2_size3*numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
       first_call=.false.
     end if
@@ -1109,57 +1109,57 @@ contains
 
     do i=1, numbnests 
 ! 3D fields
-      call MPI_Bcast(uun(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(uun(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(vvn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(vvn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(wwn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(wwn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(ttn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(ttn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(rhon(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(rhon(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(drhodzn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(drhodzn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(tthn(:,:,:,li:ui,i),d3s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(tthn(:,:,:,li:ui,i),d3s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(qvhn(:,:,:,li:ui,i),d3s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(qvhn(:,:,:,li:ui,i),d3s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(qvn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(qvn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(pvn(:,:,:,li:ui,i),d3s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(pvn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_Bcast(cloudsn(:,:,:,li:ui,i),d3s1,MPI_INTEGER1,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
 ! 2D fields
-      call MPI_Bcast(cloudsnh(:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(cloudsnh(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(vdepn(:,:,:,li:ui,i),d2s2,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(vdepn(:,:,:,li:ui,i),d2s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(psn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(psn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(sdn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(sdn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(tccn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(tccn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(tt2n(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(tt2n(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(td2n(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(td2n(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(lsprecn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(lsprecn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(convprecn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(convprecn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(ustarn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(ustarn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(wstarn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(wstarn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(olin(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(olin(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(hmixn(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(hmixn(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
-      call MPI_Bcast(tropopausen(:,:,:,li:ui,i),d2s1,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(tropopausen(:,:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
     end do
 
@@ -1251,104 +1251,104 @@ contains
 ! TODO: use mp_partgroup_np here
       if (dest.eq.id_read) cycle
       i=dest*nvar_async
-      call MPI_Isend(uu(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(uu(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(vv(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(vv(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(uupol(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(uupol(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(vvpol(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(vvpol(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(ww(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(ww(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(tt(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(tt(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(rho(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(rho(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(drhodz(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(drhodz(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(tth(:,:,:,mind),d3s2,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(tth(:,:,:,mind),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(qvh(:,:,:,mind),d3s2,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(qvh(:,:,:,mind),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(qv(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(qv(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(pv(:,:,:,mind),d3s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(pv(:,:,:,mind),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
       call MPI_Isend(clouds(:,:,:,mind),d3s1,MPI_INTEGER1,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       i=i+1
       if (mp_ierr /= 0) goto 600 
 
-      call MPI_Isend(cloudsh(:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(cloudsh(:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(vdep(:,:,:,mind),d2s2,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(vdep(:,:,:,mind),d2s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(ps(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(ps(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(sd(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(sd(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(tcc(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(tcc(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(tt2(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(tt2(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(td2(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(td2(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(lsprec(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(lsprec(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(convprec(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(convprec(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(ustar(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(ustar(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(wstar(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(wstar(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(hmix(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(hmix(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
       i=i+1
-      call MPI_Isend(tropopause(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(tropopause(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600
       i=i+1
-      call MPI_Isend(oli(:,:,:,mind),d2s1,mp_pp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+      call MPI_Isend(oli(:,:,:,mind),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
 ! Send cloud water if it exists. Increment counter always (as on receiving end)
       if (readclouds) then
         i=i+1
-        ! call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,dest,tm1,&
+        ! call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_sp,dest,tm1,&
         !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
-        call MPI_Isend(clw4(:,:,mind),d2s1,mp_pp,dest,tm1,&
+        call MPI_Isend(clw4(:,:,mind),d2s1,mp_sp,dest,tm1,&
              &MPI_COMM_WORLD,reqs(i),mp_ierr)
 
         if (mp_ierr /= 0) goto 600
 
-        ! call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+        ! call MPI_Isend(clwc(:,:,:,mind),d3s1,mp_sp,dest,tm1,&
         !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
         ! if (mp_ierr /= 0) goto 600
         ! i=i+1
 
-        ! call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_pp,dest,tm1,&
+        ! call MPI_Isend(ciwc(:,:,:,mind),d3s1,mp_sp,dest,tm1,&
         !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
         ! if (mp_ierr /= 0) goto 600
 
@@ -1430,52 +1430,52 @@ contains
 
 ! Get MPI tags/requests for communications
     j=mp_pid*nvar_async
-    call MPI_Irecv(uu(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(uu(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(vv(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(uupol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(uupol(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vvpol(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(vvpol(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(ww(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(ww(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(tt(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(tt(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(rho(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(rho(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(drhodz(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(drhodz(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(tth(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(tth(:,:,:,mind),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(qvh(:,:,:,mind),d3s2,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(qvh(:,:,:,mind),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
 
-    call MPI_Irecv(qv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(qv(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(pv(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(pv(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
@@ -1484,59 +1484,59 @@ contains
     if (mp_ierr /= 0) goto 600 
     j=j+1
 
-    call MPI_Irecv(cloudsh(:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(cloudsh(:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(vdep(:,:,:,mind),d2s2,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(vdep(:,:,:,mind),d2s2,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(ps(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(ps(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(sd(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(sd(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(tcc(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(tcc(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(tt2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(tt2(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(td2(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(td2(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(lsprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(lsprec(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(convprec(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(convprec(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
-    call MPI_Irecv(ustar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(ustar(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(wstar(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(wstar(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(hmix(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(hmix(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
     j=j+1
-    call MPI_Irecv(tropopause(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(tropopause(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600
     j=j+1
-    call MPI_Irecv(oli(:,:,:,mind),d2s1,mp_pp,id_read,MPI_ANY_TAG,&
+    call MPI_Irecv(oli(:,:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
          &MPI_COMM_WORLD,reqs(j),mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
@@ -1546,17 +1546,17 @@ contains
     if (readclouds) then
       j=j+1
 
-      ! call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
+      ! call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
       !      &MPI_COMM_WORLD,reqs(j),mp_ierr)
-      call MPI_Irecv(clw4(:,:,mind),d2s1*5,mp_pp,id_read,MPI_ANY_TAG,&
+      call MPI_Irecv(clw4(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
 
-      ! call MPI_Irecv(clwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+      ! call MPI_Irecv(clwc(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
       !      &MPI_COMM_WORLD,reqs(j),mp_ierr)    
       ! if (mp_ierr /= 0) goto 600 
       ! j=j+1
-      ! call MPI_Irecv(ciwc(:,:,:,mind),d3s1,mp_pp,id_read,MPI_ANY_TAG,&
+      ! call MPI_Irecv(ciwc(:,:,:,mind),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
       !      &MPI_COMM_WORLD,reqs(j),mp_ierr)    
       ! if (mp_ierr /= 0) goto 600 
 
@@ -1655,39 +1655,39 @@ contains
     if (mp_measure_time) call mpif_mtime('commtime',0)
 
 ! 1) Using a separate grid (gridunc0) for received values
-! call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_pp, MPI_SUM, id_root, &
+! call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_sp, MPI_SUM, id_root, &
 !      & mp_comm_used, mp_ierr)
 ! if (mp_ierr /= 0) goto 600
 
 ! 2) Using in-place reduction
     if (lroot) then
-      call MPI_Reduce(MPI_IN_PLACE, gridunc, grid_size3d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(MPI_IN_PLACE, gridunc, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(gridunc, gridunc, grid_size3d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(gridunc, gridunc, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
 
     if ((WETDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(wetgridunc, wetgridunc0, grid_size2d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(wetgridunc, wetgridunc0, grid_size2d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
     if ((DRYDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(drygridunc, drygridunc0, grid_size2d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(drygridunc, drygridunc0, grid_size2d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
 ! Receptor concentrations    
     if (lroot) then
-      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_pp,MPI_SUM,id_root, &
+      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
            & mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(creceptor,creceptor,rcpt_size,mp_pp,MPI_SUM,id_root, &
+      call MPI_Reduce(creceptor,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
            & mp_comm_used,mp_ierr)
     end if
 
@@ -1731,28 +1731,28 @@ contains
     if (mp_measure_time) call mpif_mtime('commtime',0)
 
 ! Using a separate grid (gridunc0) for received values, for debugging
-! call MPI_Reduce(griduncn, griduncn0, grid_size3d, mp_pp, MPI_SUM, id_root, &
+! call MPI_Reduce(griduncn, griduncn0, grid_size3d, mp_sp, MPI_SUM, id_root, &
 !      & mp_comm_used, mp_ierr)
 ! if (mp_ierr /= 0) goto 600
 
 ! Using in-place reduction
     if (lroot) then
-      call MPI_Reduce(MPI_IN_PLACE, griduncn, grid_size3d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(MPI_IN_PLACE, griduncn, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(griduncn, griduncn, grid_size3d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(griduncn, griduncn, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
 
     if ((WETDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
     if ((DRYDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(drygriduncn, drygriduncn0, grid_size2d, mp_pp, MPI_SUM, id_root, &
+      call MPI_Reduce(drygriduncn, drygriduncn0, grid_size2d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if

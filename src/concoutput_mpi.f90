@@ -320,7 +320,6 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! CONCENTRATION OR MIXING RATIO
             do kz=1,numzgrid
               do l=1,nclassunc
-!                auxgrid(l)=gridunc0(ix,jy,kz,ks,kp,l,nage)
                 auxgrid(l)=gridunc(ix,jy,kz,ks,kp,l,nage)
               end do
               call mean(auxgrid,grid(ix,jy,kz), &
