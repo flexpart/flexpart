@@ -58,7 +58,6 @@ program flexpart
   call com_mod_allocate(maxpart)
 
 
-
   ! Generate a large number of random numbers
   !******************************************
 
@@ -68,7 +67,8 @@ program flexpart
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
   ! FLEXPART version string
-  flexversion='Version 10.0beta (2015-05-01)'
+  flexversion_major = '10' ! Major version number, also used for species file names
+  flexversion='Version '//trim(flexversion_major)//'.0beta (2015-05-01)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
