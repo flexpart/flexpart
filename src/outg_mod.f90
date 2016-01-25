@@ -21,6 +21,8 @@
 
 module outg_mod
 
+  use par_mod, only: dep_prec
+
   implicit none
 
   real,allocatable, dimension (:) :: outheight
@@ -36,11 +38,11 @@ module outg_mod
   real,allocatable, dimension (:,:,:) :: densityoutgrid
   real,allocatable, dimension (:,:,:) :: factor3d
   real,allocatable, dimension (:,:,:) :: grid
-  real,allocatable, dimension (:,:) :: wetgrid
-  real,allocatable, dimension (:,:) :: drygrid
+  real(dep_prec),allocatable, dimension (:,:) :: wetgrid
+  real(dep_prec),allocatable, dimension (:,:) :: drygrid
   real,allocatable, dimension (:,:,:) :: gridsigma
-  real,allocatable, dimension (:,:) :: drygridsigma
-  real,allocatable, dimension (:,:) :: wetgridsigma
+  real(dep_prec),allocatable, dimension (:,:) :: drygridsigma
+  real(dep_prec),allocatable, dimension (:,:) :: wetgridsigma
   real,allocatable, dimension (:) :: sparse_dump_r
   real,allocatable, dimension (:) :: sparse_dump_u
   integer,allocatable, dimension (:) :: sparse_dump_i

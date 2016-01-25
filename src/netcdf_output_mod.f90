@@ -35,6 +35,10 @@
   !  - added option to not writeout releases information by changing 
   !    switch write_releases
   !  - additional updates for FLEXPART 9.x
+  ! 
+  ! ESO 2016
+  !  - Deposition fields can be calculated in double precision, see variable
+  !    'dep_prec' in par_mod
   !*****************************************************************************
 
 
@@ -47,7 +51,7 @@ module netcdf_output_mod
   use outg_mod,  only: outheight,oroout,densityoutgrid,factor3d,volume,&
                        wetgrid,wetgridsigma,drygrid,drygridsigma,grid,gridsigma,&
                        area,arean,volumen, orooutn
-  use par_mod,   only: dp, maxspec, maxreceptor, nclassunc,&
+  use par_mod,   only: dep_prec, sp, dp, maxspec, maxreceptor, nclassunc,&
                        unitoutrecept,unitoutreceptppt, nxmax,unittmp
   use com_mod,   only: path,length,ldirect,ibdate,ibtime,iedate,ietime, &
                        loutstep,loutaver,loutsample,outlon0,outlat0,&
@@ -69,6 +73,8 @@ module netcdf_output_mod
                        ioutputforeachrelease, iflux, mdomainfill, mquasilag, & 
                        nested_output, ipout, surf_only, linit_cond, &
                        flexversion,mpi_mode
+
+  use mean_mod
 
   implicit none
 
@@ -722,16 +728,21 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
 
   integer, intent(in) :: itime
   real, intent(in)    :: outnum
-  real, intent(out)   :: gridtotalunc,wetgridtotalunc,drygridtotalunc
+  real(dep_prec),intent(out):: wetgridtotalunc,drygridtotalunc
+  real, intent(out)   :: gridtotalunc
   real                :: densityoutrecept(maxreceptor)
   integer             :: ncid,kp,ks,kz,ix,jy,iix,jjy,kzz,kzzm1,ngrid
-  integer             :: nage,i,l, jj
+  integer             :: nage,i,l,jj
   real                :: tot_mu(maxspec,maxpointspec_act)
   real                :: halfheight,dz,dz1,dz2
   real                :: xl,yl,xlrot,ylrot,zagnd,zagndprev
-  real                :: auxgrid(nclassunc),gridtotal,gridsigmatotal
-  real                :: wetgridtotal,wetgridsigmatotal
-  real                :: drygridtotal,drygridsigmatotal
+  real(dep_prec)      :: auxgrid(nclassunc)
+  real(dep_prec)      :: gridtotal,gridsigmatotal
+  real(dep_prec)      :: wetgridtotal,wetgridsigmatotal
+  real(dep_prec)      :: drygridtotal,drygridsigmatotal
+  ! real(sp)            :: gridtotal,gridsigmatotal
+  ! real(sp)            :: wetgridtotal,wetgridsigmatotal
+  ! real(sp)            :: drygridtotal,drygridsigmatotal
 
   real, parameter     :: weightair=28.97
 
@@ -888,12 +899,12 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
               call mean(auxgrid,wetgrid(ix,jy), &
                    wetgridsigma(ix,jy),nclassunc)
               ! Multiply by number of classes to get total concentration
-              wetgrid(ix,jy)=wetgrid(ix,jy)*real(nclassunc)
+              wetgrid(ix,jy)=wetgrid(ix,jy)*real(nclassunc,kind=dep_prec)
               wetgridtotal=wetgridtotal+wetgrid(ix,jy)
               ! Calculate standard deviation of the mean
               wetgridsigma(ix,jy)= &
                    wetgridsigma(ix,jy)* &
-                   sqrt(real(nclassunc))
+                   sqrt(real(nclassunc,kind=dep_prec))
               wetgridsigmatotal=wetgridsigmatotal+ &
                    wetgridsigma(ix,jy)
             endif
@@ -1060,7 +1071,8 @@ subroutine concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,dryg
 
   integer, intent(in) :: itime
   real, intent(in)    :: outnum
-  real, intent(out)   :: gridtotalunc,wetgridtotalunc,drygridtotalunc
+  real(sp), intent(out)   :: gridtotalunc
+  real(dep_prec), intent(out)   :: wetgridtotalunc,drygridtotalunc
 
   print*,'Netcdf output for surface only not yet implemented'
 
@@ -1116,7 +1128,8 @@ subroutine concoutput_nest_netcdf(itime,outnum)
   real                :: tot_mu(maxspec,maxpointspec_act)
   real                :: halfheight,dz,dz1,dz2
   real                :: xl,yl,xlrot,ylrot,zagnd,zagndprev
-  real                :: auxgrid(nclassunc),gridtotal
+  real(dep_prec)      :: auxgrid(nclassunc)
+  real                :: gridtotal
   real, parameter     :: weightair=28.97
 
   ! open output file

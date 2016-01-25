@@ -40,15 +40,18 @@ module par_mod
   implicit none
 
   !****************************************************************
-  ! Parameter defining KIND parameter for double/single precision
-  ! 'cp' sets the precision for some internal calculations (sp or dp),
-  ! sp is default but dp can be used for increased precision.
-  ! WARNING: for now, do not use 'dp'
+  ! Parameters defining KIND parameter for double/single precision
   !****************************************************************
 
   integer,parameter :: dp=selected_real_kind(P=15)
   integer,parameter :: sp=selected_real_kind(6)
-  integer,parameter :: cp=sp ! sp is default
+
+  !****************************************************************
+  ! dep_prec sets the precision for deposition calculations (sp or 
+  ! dp). sp is default, dp can be used for increased precision.
+  !****************************************************************
+
+  integer,parameter :: dep_prec=dp
 
   !***********************************************************
   ! Number of directories/files used for FLEXPART input/output
@@ -78,7 +81,7 @@ module par_mod
   real,parameter :: karman=0.40, href=15., convke=2.0
   real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
   real,parameter :: d_trop=50., d_strat=0.1
-  real,parameter :: rho_water=1000 !ZHG 2015 [kg/m3]
+  real,parameter :: rho_water=1000. !ZHG 2015 [kg/m3]
   ! karman                  Karman's constant
   ! href [m]                Reference height for dry deposition
   ! konvke                  Relative share of kinetic energy used for parcel lifting

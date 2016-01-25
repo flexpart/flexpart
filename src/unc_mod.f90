@@ -21,22 +21,22 @@
 
 module unc_mod
 
-  use par_mod, only:cp
+  use par_mod, only:dep_prec
 
   implicit none
 
   real,allocatable ,dimension (:,:,:,:,:,:,:) :: gridunc
   real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: drygridunc
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: wetgridunc
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygridunc
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: wetgridunc
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn
 
 ! For sum of individual contributions, used for the MPI version
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: drygridunc0
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn0
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: wetgridunc0
-  real(cp),allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn0
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygridunc0
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn0
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: wetgridunc0
+  real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn0
 
   real,allocatable, dimension (:,:,:,:,:) :: init_cond
 

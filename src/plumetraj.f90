@@ -54,6 +54,7 @@ subroutine plumetraj(itime)
   use point_mod
   use par_mod
   use com_mod
+  use mean_mod
 
   implicit none
 

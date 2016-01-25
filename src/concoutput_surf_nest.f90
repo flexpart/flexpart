@@ -60,6 +60,7 @@ subroutine concoutput_surf_nest(itime,outnum)
   use outg_mod
   use par_mod
   use com_mod
+  use mean_mod
 
   implicit none
 
@@ -87,7 +88,7 @@ subroutine concoutput_surf_nest(itime,outnum)
   !integer sparse_dump_i(numxgrid*numygrid*numzgrid)
 
   !real sparse_dump_u(numxgrid*numygrid*numzgrid)
-  real :: auxgrid(nclassunc)
+  real(dep_prec) :: auxgrid(nclassunc)
   real :: halfheight,dz,dz1,dz2,tot_mu(maxspec,maxpointspec_act)
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real,parameter :: weightair=28.97

@@ -62,6 +62,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   use outg_mod
   use par_mod
   use com_mod
+  use mean_mod
 
   implicit none
 
@@ -89,9 +90,10 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 !integer sparse_dump_i(numxgrid*numygrid*numzgrid)
 
 !real sparse_dump_u(numxgrid*numygrid*numzgrid)
-  real :: auxgrid(nclassunc),gridtotal,gridsigmatotal,gridtotalunc
-  real :: wetgridtotal,wetgridsigmatotal,wetgridtotalunc
-  real :: drygridtotal,drygridsigmatotal,drygridtotalunc
+  real(dep_prec) :: auxgrid(nclassunc)
+  real(sp) :: gridtotal,gridsigmatotal,gridtotalunc
+  real(dep_prec) :: wetgridtotal,wetgridsigmatotal,wetgridtotalunc
+  real(dep_prec) :: drygridtotal,drygridsigmatotal,drygridtotalunc
   real :: halfheight,dz,dz1,dz2,tot_mu(maxspec,maxpointspec_act)
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real,parameter :: weightair=28.97

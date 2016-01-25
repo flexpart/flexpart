@@ -52,6 +52,7 @@ module mpi_mod
 !                         loops over particles. Will be all processes        *
 !                         unless a dedicated process runs getfields/readwind *
 ! lmp_sync                If .false., use asynchronous MPI                   *
+! mp_cp                   Real precision to use for deposition fields        *
 !                                                                            *
 !                                                                            *
 !                                                                            *
@@ -83,7 +84,7 @@ module mpi_mod
 
   integer :: mp_seed=0
   integer, parameter :: mp_sp=MPI_REAL4, mp_dp=MPI_REAL8
-  integer, parameter :: mp_pp=mp_sp
+  integer :: mp_cp
   integer, parameter :: id_root=0 ! master process
 
 ! MPI tags/requests for send/receive operation
@@ -162,14 +163,14 @@ contains
 !   mpi_mode    default 0, set to 2/3 if running MPI version
 !   mp_np       number of running processes, decided at run-time
 !***********************************************************************
-    use par_mod, only: maxpart, numwfmem
+    use par_mod, only: maxpart, numwfmem, dep_prec
     use com_mod, only: mpi_mode
 
     implicit none
 
     integer :: i,j,s,addmaxpart=0
 
-! each process gets an ID (mp_pid) in the range 0,..,mp_np-1
+! Each process gets an ID (mp_pid) in the range 0,..,mp_np-1
     call MPI_INIT(mp_ierr)
     if (mp_ierr /= 0) goto 100
     call MPI_COMM_RANK(MPI_COMM_WORLD, mp_pid, mp_ierr)
@@ -178,7 +179,7 @@ contains
     if (mp_ierr /= 0) goto 100
 
 
-! this variable is used to handle subroutines common to parallel/serial version
+! Variable mpi_mode is used to handle subroutines common to parallel/serial version
     if (lmp_sync) then
       mpi_mode=2 ! hold 2 windfields in memory
     else
@@ -187,6 +188,19 @@ contains
 
     if (mp_pid.ne.0) then
       lroot = .false.
+    end if
+
+! Set MPI precision to use for transferring deposition fields
+!************************************************************
+    if (dep_prec==dp) then
+      mp_cp = MPI_REAL8
+      if (lroot) write(*,*) 'Using double precision for deposition fields'
+    else if (dep_prec==sp) then
+      mp_cp = MPI_REAL4
+      if (lroot) write(*,*) 'Using single precision for deposition fields'
+    else
+      write(*,*) 'ERROR: something went wrong setting MPI real precision'
+      stop
     end if
 
 ! Check for sensible combination of parameters
@@ -1670,13 +1684,13 @@ contains
     end if
 
     if ((WETDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(wetgridunc, wetgridunc0, grid_size2d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(wetgridunc, wetgridunc0, grid_size2d, mp_cp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
     if ((DRYDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(drygridunc, drygridunc0, grid_size2d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(drygridunc, drygridunc0, grid_size2d, mp_cp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
@@ -1746,13 +1760,13 @@ contains
     end if
 
     if ((WETDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_cp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
     if ((DRYDEP).and.(ldirect.gt.0)) then
-      call MPI_Reduce(drygriduncn, drygriduncn0, grid_size2d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(drygriduncn, drygriduncn0, grid_size2d, mp_cp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if

@@ -81,7 +81,7 @@ interpol_mod.o          cmapf_mod.o \
 unc_mod.o               oh_mod.o \
 xmass_mod.o             flux_mod.o \
 point_mod.o             outg_mod.o \
-	 		random_mod.o
+mean_mod.o	 	random_mod.o
 
 MPI_MODOBJS = \
 mpi_mod.o
@@ -166,7 +166,7 @@ pbl_profile.o           readOHfield.o\
 juldate.o               \
 interpol_vdep.o         interpol_rain.o \
 hanna.o                 wetdepokernel.o \
-mean.o                  wetdepo.o \
+                  wetdepo.o \
 hanna_short.o           windalign.o \
 hanna1.o                	\
                         gridcheck_nests.o \
@@ -292,18 +292,18 @@ cmapf_mod.o: par_mod.o
 com_mod.o: par_mod.o
 conccalc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 conccalc_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o unc_mod.o
-concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o
-concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+	unc_mod.o mean_mod.o
+concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o
-concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+	unc_mod.o mean_mod.o
+concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_surf_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o
-concoutput_surf_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+	unc_mod.o mean_mod.o
+concoutput_surf_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_surf_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o \
-	point_mod.o unc_mod.o
+	point_mod.o unc_mod.o mean_mod.o
 conv_mod.o: par_mod.o
 convect43c.o: conv_mod.o par_mod.o
 convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o
@@ -358,13 +358,15 @@ interpol_wind_nests.o: com_mod.o interpol_mod.o par_mod.o
 interpol_wind_short.o: com_mod.o interpol_mod.o par_mod.o
 interpol_wind_short_nests.o: com_mod.o interpol_mod.o par_mod.o
 juldate.o: par_mod.o
+mean_mod.o: par_mod.o
 mpi_mod.o: com_mod.o par_mod.o unc_mod.o
-netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 obukhov.o: par_mod.o
 obukhov_gfs.o: par_mod.o
 ohreaction.o: com_mod.o oh_mod.o par_mod.o
 openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
+outg_mod.o: par_mod.o
 outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 par_mod.o : $(wind_mod)
@@ -375,7 +377,7 @@ partoutput_mpi.o: com_mod.o mpi_mod.o par_mod.o
 partoutput_short.o: com_mod.o par_mod.o
 partoutput_short_mpi.o: com_mod.o mpi_mod.o par_mod.o
 pbl_profile.o: par_mod.o
-plumetraj.o: com_mod.o par_mod.o point_mod.o
+plumetraj.o: com_mod.o par_mod.o point_mod.o mean_mod.o
 psih.o: par_mod.o
 psim.o: par_mod.o
 raerod.o: par_mod.o

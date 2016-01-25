@@ -771,7 +771,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !          prec=lsp+convp
 !          if (lsp.gt.convp) then !  prectype='lsp'
 !            lconvectprec = .false.
-!          else ! prectype='cp '
+!          else ! prectype='cp'
 !            lconvectprec = .true.
 !           endif
 !      else ! windfields does not contain cloud data 

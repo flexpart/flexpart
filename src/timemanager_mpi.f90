@@ -113,8 +113,9 @@ subroutine timemanager
   real :: outnum,weight,prob(maxspec)
   real :: decfact
 
-  real :: drydeposit(maxspec),gridtotalunc,wetgridtotalunc
-  real :: drygridtotalunc,xold,yold,zold,xmassfract
+  real(sp) :: gridtotalunc
+  real(dep_prec) :: drygridtotalunc,wetgridtotalunc,drydeposit(maxspec)
+  real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
 !double precision xm(maxspec,maxpointspec_act),
 !    +                 xm_depw(maxspec,maxpointspec_act),
@@ -260,7 +261,7 @@ subroutine timemanager
       if (memstat.ne.0.and.memstat.lt.32.and.lmp_use_reader) then
 ! TODO: z0(7) changes with time, so should be dimension (numclass,2) to
 ! allow transfer of the future value in the background
-        call MPI_Bcast(z0,numclass,mp_pp,id_read,MPI_COMM_WORLD,mp_ierr)
+        call MPI_Bcast(z0,numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
         call mpif_gf_request
       end if
 
@@ -755,7 +756,7 @@ subroutine timemanager
                    xmass1(j,ks)/xmass(npoint(j),ks))
                    
                    !CGZ-lifetime: Check mass fraction left/save lifetime
-                   ! if(lroot.and.real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.inv_e.and.checklifetime(j,ks).eq.0.)then
+                   ! if(lroot.and.real(npart(npoint(j)))*xmass1(j,ks)/xmass(npoint(j),ks).lt.e_inv.and.checklifetime(j,ks).eq.0.)then
                        !Mass below 1% of initial >register lifetime
                    !     checklifetime(j,ks)=abs(itra1(j)-itramem(j))
 
