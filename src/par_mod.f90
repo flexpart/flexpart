@@ -51,7 +51,7 @@ module par_mod
   ! dp). sp is default, dp can be used for increased precision.
   !****************************************************************
 
-  integer,parameter :: dep_prec=dp
+  integer,parameter :: dep_prec=sp
 
   !***********************************************************
   ! Number of directories/files used for FLEXPART input/output

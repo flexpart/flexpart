@@ -103,8 +103,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !ZHG 2015 temporary variables for testing
   real :: rcw(0:nxmax-1,0:nymax-1)
   real :: rpc(0:nxmax-1,0:nymax-1)
-  character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
-  character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
+  ! character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
+  ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
   CHARACTER(LEN=3)  :: aspec
   integer :: virr=0
   real :: tot_cloud_h
