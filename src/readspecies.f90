@@ -220,6 +220,9 @@ subroutine readspecies(id_spec,pos_spec)
 
 !NIK 16.02.2015
 ! Check scavenging parameters given in SPECIES file
+
+  if (weta(pos_spec).gt.0.0 .or. wetb(pos_spec).gt.0.0 .or. weta_in(pos_spec).gt.0.0 .or. wetb_in(pos_spec).gt.0.0) then
+
   if (dquer(pos_spec).gt.0) then !is particle
     if (lroot) then
       write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
@@ -242,19 +245,19 @@ subroutine readspecies(id_spec,pos_spec)
       write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
            &(IN efficiency)  ', wetb_in(pos_spec)
     end if
-    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.7) then
+    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.01) then
       if (lroot) then
         write(*,*) '*******************************************'
         write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
-        write(*,*) '          The default value is 0.9 for CCN '
+        write(*,*) '          Likely range is 0.0-1.0 for CCN '
         write(*,*) '*******************************************'
       end if
     endif
-    if (wetb_in(pos_spec).gt.0.2 .or. wetb_in(pos_spec).lt.0.01) then
+    if (wetb_in(pos_spec).gt.1.0 .or. wetb_in(pos_spec).lt.0.01) then
       if (lroot) then
         write(*,*) '*******************************************'
         write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
-        write(*,*) '          The default value is 0.1 for IN '
+        write(*,*) '          Likely range is 0.0-1.0 for Ice nuclei (IN) '
         write(*,*) '*******************************************'
       end if
     endif
@@ -286,7 +289,7 @@ subroutine readspecies(id_spec,pos_spec)
       endif
     end if
   endif
-
+  endif
 
   if ((weta(pos_spec).gt.0).and.(henry(pos_spec).le.0)) then
     if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
