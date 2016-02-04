@@ -137,8 +137,7 @@ module com_mod
   
 
 !NIK 16.02.2015
-  integer :: tot_blc_count=0, tot_inc_count=0
-
+  integer(selected_int_kind(16)) :: tot_blc_count=0, tot_inc_count=0
 
 
   !*********************************************************************
@@ -486,18 +485,10 @@ module com_mod
   ! 3d nested fields
   !*****************
 
-  real :: uun(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: vvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: wwn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: ttn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: qvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: pvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  integer(kind=1) :: cloudsn(0:nxmaxn-1,0:nymaxn-1,0:nzmax,numwfmem,maxnests)
-  integer :: cloudsnh(0:nxmaxn-1,0:nymaxn-1,numwfmem,maxnests)
-  real :: rhon(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: drhodzn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
-  real :: tthn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,maxnests)
-  real :: qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,maxnests)
+  real,allocatable,dimension(:,:,:,:,:) :: uun, vvn, wwn, ttn, qvn, pvn,&
+       & rhon, drhodzn, tthn, qvhn
+  integer,allocatable,dimension(:,:,:,:) :: cloudsnh
+  integer(kind=1),allocatable,dimension(:,:,:,:,:) :: cloudsn
 
   ! 2d nested fields
   !*****************
@@ -751,18 +742,18 @@ module com_mod
   !*****************************************************************
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process
-
-  contains
-      subroutine com_mod_allocate(nmpart)
-!*******************************************************************************    
-! Dynamic allocation of arrays
-!
-! For FLEXPART version 9.2 and earlier these arrays were statically declared
-! with size maxpart. This function is introduced so that the MPI version
-! can declare these arrays with smaller size ("maxpart per process"), while
-! the serial version allocate at run-time with size maxpart
-!
-!*******************************************************************************
+  
+contains
+  subroutine com_mod_allocate_part(nmpart)
+  !*******************************************************************************    
+  ! Dynamic allocation of arrays
+  !
+  ! For FLEXPART version 9.2 and earlier these arrays were statically declared
+  ! with size maxpart. This function is introduced so that the MPI version
+  ! can declare these arrays with smaller size ("maxpart per process"), while
+  ! the serial version allocate at run-time with size maxpart 
+  !
+  !*******************************************************************************
     implicit none 
 
     integer, intent(in) :: nmpart ! maximum number of particles (per process)
@@ -778,7 +769,33 @@ module com_mod
     allocate(uap(nmpart),ucp(nmpart),uzp(nmpart),us(nmpart),&
          & vs(nmpart),ws(nmpart),cbt(nmpart))
     
-  end subroutine com_mod_allocate
+  end subroutine com_mod_allocate_part
+
+
+  subroutine com_mod_allocate_nests
+  !*******************************************************************************    
+  ! Dynamic allocation of arrays
+  !
+  ! For nested wind fields. 
+  ! 
+  !*******************************************************************************
+    implicit none 
+
+    allocate(uun(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(vvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(wwn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(ttn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(qvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(pvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(cloudsn(0:nxmaxn-1,0:nymaxn-1,0:nzmax,numwfmem,numbnests))
+    allocate(cloudsnh(0:nxmaxn-1,0:nymaxn-1,numwfmem,numbnests))
+    allocate(rhon(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(drhodzn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(tthn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
+    allocate(qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
+
+    
+  end subroutine com_mod_allocate_nests
    
 
 end module com_mod

@@ -104,10 +104,6 @@ subroutine gridcheck
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'gridcheck'
 
-  !NIK 16.02.2015
-  tot_blc_count=0 !count for total number of occurences of below cloud scavenging
-  tot_inc_count=0 !count for total number of occurences of in cloud scavenging
-
 
   iumax=0
   iwmax=0

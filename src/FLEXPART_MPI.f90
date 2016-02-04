@@ -62,7 +62,7 @@ program flexpart
 
 ! Initialize arrays in com_mod 
 !*****************************
-  call com_mod_allocate(maxpart_mpi)
+  call com_mod_allocate_part(maxpart_mpi)
 
   ! Generate a large number of random numbers
   !******************************************
@@ -194,7 +194,14 @@ program flexpart
     write(*,*) 'call readavailable'
   endif  
   call readavailable
-!end if
+
+  ! If nested wind fields are used, allocate arrays
+  !************************************************
+
+  if (verbosity.gt.0 .and. lroot) then
+    write(*,*) 'call com_mod_allocate_nests'
+  endif
+  call com_mod_allocate_nests
 
 ! Read the model grid specifications,
 ! both for the mother domain and eventual nests
@@ -444,15 +451,15 @@ program flexpart
 
 ! NIK 16.02.2005 
   if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
   else
     if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, tot_blc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_blc_count, tot_blc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, tot_inc_count, 1, MPI_INTEGER, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_inc_count, tot_inc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
   end if

@@ -281,6 +281,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
 
   !write (*,*) 'initializing nested cloudsn, n:',n
   !   create a cloud and rainout/washout field, cloudsn occur where rh>80%
+  write(*,*) 'Nested fields: using cloud water from Parameterization'
   do jy=0,nyn(l)-1
     do ix=0,nxn(l)-1
       rain_cloud_above=0

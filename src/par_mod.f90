@@ -171,7 +171,7 @@ module par_mod
   !*********************************************
 
   !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  integer,parameter :: maxnests=0,nxmaxn=351,nymaxn=351 !ECMWF
+  !integer,parameter :: maxnests=0,nxmaxn=351,nymaxn=351 !ECMWF
 
   !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
   ! maxnests                maximum number of nested grids

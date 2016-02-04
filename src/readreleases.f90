@@ -224,7 +224,9 @@ subroutine readreleases
   allocate(specnum_rel2(nspec),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel2'
   specnum_rel2=specnum_rel(1:nspec)
-  deallocate(specnum_rel)
+  deallocate(specnum_rel) 
+! eso: BUG, crashes here for nspec=12 and maxspec=6,
+! TODO: catch error and exit
   allocate(specnum_rel(nspec),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel'
   specnum_rel=specnum_rel2

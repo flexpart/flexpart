@@ -189,7 +189,7 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
       isec1(6)=132         ! indicatorOfParameter
     elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
       isec1(6)=133         ! indicatorOfParameter
-! ESO Cloud water is in a) fields CLWC and CIWC, *or* b) field qc 
+! ESO Cloud water is in a) fields CLWC and CIWC, *or* b) field QC 
     elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
       isec1(6)=246         ! indicatorOfParameter
     elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
@@ -376,7 +376,6 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
         clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
         readclouds=.true.
         sumclouds=.true.
-!if (clwch(i,j,nlev_ec-k+2,n) .gt. 0)        write(*,*) 'readwind: found water!', clwch(i,j,nlev_ec-k+2,n)
       endif
 
     end do

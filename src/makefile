@@ -38,7 +38,7 @@ FLEXPART-GFS 		= FP_gfs_gfortran
 FLEXPART-GFS-MPI 	= FP_gfs_MPI
 
 ifeq ($(gcc), 4.9)
-# Compiled libraries under users ~flexpart (or ~espen), gfortran v4.9
+# Compiled libraries under users ~flexpart, gfortran v4.9
 	ROOT_DIR = /homevip/flexpart/
 #	ROOT_DIR = /homevip/espen/
 
@@ -62,14 +62,14 @@ endif
 
 ## OPTIMIZATION LEVEL
 O_LEV = 2 # [0,1,2,3,g,s,fast]
-O_LEV_DBG = 0 # [0,g]
+O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
-LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff -llapack  # -fopenmp # -llapack
+LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff -llapack  # -fopenmp
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER) # -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace -Warray-bounds  -Wall -fcheck=all $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero -fdump-core
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)

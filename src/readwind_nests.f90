@@ -172,6 +172,14 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     isec1(6)=132         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
     isec1(6)=133         ! indicatorOfParameter
+! ESO Cloud water is in a) fields CLWC and CIWC, *or* b) field QC 
+    elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
+      isec1(6)=246         ! indicatorOfParameter
+    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
+      isec1(6)=247         ! indicatorOfParameter
+! ESO qc(=clwc+ciwc):
+    elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
+      isec1(6)=201031         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot !
@@ -202,9 +210,9 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     isec1(6)=146         ! indicatorOfParameter
   elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
     isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS !added by mc to make it consisitent with new readwind.f90
+  elseif ((parCat.eq.2).and.(parNum.eq.38) .or. parId .eq. 180) then ! EWSS !added by mc to make it consisitent with new readwind.f90
     isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS !added by mc to make it consisitent with new readwind.f90
+  elseif ((parCat.eq.2).and.(parNum.eq.37) .or. parId .eq. 181) then ! NSSS !added by mc to make it consisitent with new readwind.f90
     isec1(6)=181         ! indicatorOfParameter
   elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
     isec1(6)=129         ! indicatorOfParameter
@@ -334,6 +342,28 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
         if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+
+! ESO TODO:
+! -add check for if one of clwc/ciwc missing (error),
+!    also if all 3 cw fields present, use qc and disregard the others
+! -use same flags readclouds/sumclouds as in mother grid? this assumes
+!    that both the nested and mother grids contain CW in same format
+        if(isec1(6).eq.246) then  !! CLWC  Cloud liquid water content [kg/kg]
+          clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+          ! readclouds=.true.
+          ! sumclouds=.false.
+        endif
+        if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
+          ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+        endif
+!ZHG end
+!ESO read qc (=clwc+ciwc)
+        if(isec1(6).eq.201031) then  !! QC  Cloud liquid water content [kg/kg]
+          clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+          ! readclouds=.true.
+          ! sumclouds=.true.
+        endif
+
 
       end do
     end do

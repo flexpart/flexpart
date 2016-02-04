@@ -55,8 +55,8 @@ program flexpart
 
   ! Initialize arrays in com_mod
   !*****************************
-  call com_mod_allocate(maxpart)
-
+  call com_mod_allocate_part(maxpart)
+  
 
   ! Generate a large number of random numbers
   !******************************************
@@ -169,6 +169,14 @@ program flexpart
     write(*,*) 'call readavailable'
   endif  
   call readavailable
+
+  ! If nested wind fields are used, allocate arrays
+  !************************************************
+
+  if (verbosity.gt.0) then
+    write(*,*) 'call com_mod_allocate_nests'
+  endif
+  call com_mod_allocate_nests
 
   ! Read the model grid specifications,
   ! both for the mother domain and eventual nests

@@ -43,4 +43,5 @@ module wind_mod
   integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
   integer,parameter :: nxshift=0     ! for GFS or FNL
 
+  integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=181
 end module wind_mod

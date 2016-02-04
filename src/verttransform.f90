@@ -577,7 +577,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 ! to scavenging. Also clouds that are not precipitating are defined which may be 
 ! to include future cloud processing by non-precipitating-clouds. 
 !***********************************************************************************
-    write(*,*) 'using cloud water from ECMWF'
+    write(*,*) 'Global ECMWF fields: using cloud water'
     clw(:,:,:,n)=0.0
     icloud_stats(:,:,:,n)=0.0
     clouds(:,:,:,n)=0
@@ -634,12 +634,16 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         endif ! precipitation
       end do
     end do
+
+! eso: copy the relevant data to clw4 to reduce amount of communicated data for MPI
+    clw4(:,:,n) = icloud_stats(:,:,4,n)
+
 !**************************************************************************
   else       ! use old definitions
 !**************************************************************************
 !   create a cloud and rainout/washout field, clouds occur where rh>80%
 !   total cloudheight is stored at level 0
-    write(*,*) 'using cloud water from Parameterization'
+    write(*,*) 'Global fields: using cloud water from Parameterization'
     do jy=0,nymin1
       do ix=0,nxmin1
 ! OLD METHOD
@@ -680,8 +684,6 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
     end do
   endif !readclouds
 
-! eso: copy the relevant data to clw4 to reduce amount of communicated data for MPI
-  clw4(:,:,n) = icloud_stats(:,:,4,n)
 
      !********* TEST ***************
      ! WRITE OUT SOME TEST VARIABLES
