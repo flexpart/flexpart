@@ -544,24 +544,26 @@ subroutine concoutput_nest(itime,outnum)
   ! Reinitialization of grid
   !*************************
 
-  do ks=1,nspec
-  do kp=1,maxpointspec_act
-    do i=1,numreceptor
-      creceptor(i,ks)=0.
-    end do
-    do jy=0,numygridn-1
-      do ix=0,numxgridn-1
-        do l=1,nclassunc
-          do nage=1,nageclass
-            do kz=1,numzgrid
-              griduncn(ix,jy,kz,ks,kp,l,nage)=0.
-            end do
-          end do
-        end do
-      end do
-    end do
-  end do
-  end do
+  ! do ks=1,nspec
+  ! do kp=1,maxpointspec_act
+  !   do i=1,numreceptor
+  !     creceptor(i,ks)=0.
+  !   end do
+  !   do jy=0,numygridn-1
+  !     do ix=0,numxgridn-1
+  !       do l=1,nclassunc
+  !         do nage=1,nageclass
+  !           do kz=1,numzgrid
+  !             griduncn(ix,jy,kz,ks,kp,l,nage)=0.
+  !           end do
+  !         end do
+  !       end do
+  !     end do
+  !   end do
+  ! end do
+  ! end do
+  creceptor(:,:)=0.
+  griduncn(:,:,:,:,:,:,:)=0.
 
 
 end subroutine concoutput_nest

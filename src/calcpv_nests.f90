@@ -67,7 +67,8 @@ subroutine calcpv_nests(l,n,uuhn,vvhn,pvhn)
       enddo
     enddo
   enddo
-  ppmk=(100000./ppml)**kappa
+!  ppmk=(100000./ppml)**kappa
+  ppmk(0:nxn(l)-1,0:nyn(l)-1,1:nuvz)=(100000./ppml(0:nxn(l)-1,0:nyn(l)-1,1:nuvz))**kappa
 
   do jy=0,nyn(l)-1
     phi = (ylat0n(l) + jy * dyn(l)) * pi / 180.

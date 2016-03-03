@@ -87,10 +87,14 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
   ! If point at border of grid -> small displacement into grid
   !***********************************************************
 
-  if (xt.ge.(real(nxn(ngrid)-1)-0.0001)) &
-       xt=real(nxn(ngrid)-1)-0.0001
-  if (yt.ge.(real(nyn(ngrid)-1)-0.0001)) &
-       yt=real(nyn(ngrid)-1)-0.0001
+  ! if (xt.ge.(real(nxn(ngrid)-1)-0.0001)) &
+  !      xt=real(nxn(ngrid)-1)-0.0001
+  ! if (yt.ge.(real(nyn(ngrid)-1)-0.0001)) &
+  !      yt=real(nyn(ngrid)-1)-0.0001
+
+! ESO make it consistent with interpol_rain
+  if (xt.ge.(real(nxn(ngrid)-1))) xt=real(nxn(ngrid)-1)-0.00001
+  if (yt.ge.(real(nyn(ngrid)-1))) yt=real(nyn(ngrid)-1)-0.00001
 
 
 
@@ -104,6 +108,7 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
 
   ix=int(xt)
   jy=int(yt)
+
   ixp=ix+1
   jyp=jy+1
   ddx=xt-real(ix)

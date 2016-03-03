@@ -282,7 +282,7 @@ subroutine readavailable
   write(*,*) ' #### CANNOT BE OPENED             #### '
   stop
 
-999   write(*,*) ' #### FLEXPART MODEL ERROR! AVAILABLE IILE #### '
+999   write(*,*) ' #### FLEXPART MODEL ERROR! AVAILABLE FILE #### '
   write(*,'(a)') '     '//path(4)(1:length(4))
   write(*,*) ' #### CANNOT BE OPENED           #### '
   stop

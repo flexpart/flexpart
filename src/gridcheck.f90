@@ -193,16 +193,12 @@ subroutine gridcheck
 !ZHG FOR CLOUDS FROM GRIB
   elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
     isec1(6)=246         ! indicatorOfParameter
-    ! readclouds=.true.
-    ! sumclouds=.false.
   elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
     isec1(6)=247         ! indicatorOfParameter
 !ZHG end
 ! ESO qc(=clwc+ciwc)
   elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
     isec1(6)=201031      ! indicatorOfParameter
-    ! readclouds=.true.
-    ! sumclouds=.true.
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
@@ -365,6 +361,22 @@ subroutine gridcheck
     if (nxshift.ge.nxfield) stop 'nxshift (par_mod) too large'
   endif ! gotGrid
 
+  if (nx.gt.nxmax) then
+   write(*,*) 'FLEXPART error: Too many grid points in x direction.'
+    write(*,*) 'Reduce resolution of wind fields.'
+    write(*,*) 'Or change parameter settings in file par_mod.'
+    write(*,*) nx,nxmax
+    stop
+  endif
+
+  if (ny.gt.nymax) then
+   write(*,*) 'FLEXPART error: Too many grid points in y direction.'
+    write(*,*) 'Reduce resolution of wind fields.'
+    write(*,*) 'Or change parameter settings in file par_mod.'
+    write(*,*) ny,nymax
+    stop
+  endif
+
   k=isec1(8)
   if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
   if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
@@ -409,22 +421,6 @@ subroutine gridcheck
   nuvz=iumax
   nwz =iwmax
   if(nuvz.eq.nlev_ec) nwz=nlev_ec+1
-
-  if (nx.gt.nxmax) then
-   write(*,*) 'FLEXPART error: Too many grid points in x direction.'
-    write(*,*) 'Reduce resolution of wind fields.'
-    write(*,*) 'Or change parameter settings in file par_mod.'
-    write(*,*) nx,nxmax
-    stop
-  endif
-
-  if (ny.gt.nymax) then
-   write(*,*) 'FLEXPART error: Too many grid points in y direction.'
-    write(*,*) 'Reduce resolution of wind fields.'
-    write(*,*) 'Or change parameter settings in file par_mod.'
-    write(*,*) ny,nymax
-    stop
-  endif
 
   if (nuvz+1.gt.nuvzmax) then
     write(*,*) 'FLEXPART error: Too many u,v grid points in z '// &

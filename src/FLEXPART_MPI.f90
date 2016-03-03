@@ -347,11 +347,6 @@ program flexpart
     call readOHfield
   endif
 
-  !! testing !!
-  ! open(999,file=trim(path(1))//'OH_FIELDS/jscalar_50N.txt',action='write',status='new')
-  ! open(998,file=trim(path(1))//'OH_FIELDS/jscalar_50S.txt',action='write',status='new')
-
-
   ! Write basic information on the simulation to a file "header"
   ! and open files that are to be kept open throughout the simulation
   !******************************************************************

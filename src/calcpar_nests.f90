@@ -102,6 +102,7 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn)
 
       ustarn(ix,jy,1,n,l)=scalev(psn(ix,jy,1,n,l),tt2n(ix,jy,1,n,l), &
            td2n(ix,jy,1,n,l),surfstrn(ix,jy,1,n,l))
+      if (ustarn(ix,jy,1,n,l).le.1.e-8) ustarn(ix,jy,1,n,l)=1.e-8
 
   ! 2) Calculation of inverse Obukhov length scale
   !***********************************************
@@ -134,7 +135,7 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn)
       if(lsubgrid.eq.1) then
         subsceff=min(excessoron(ix,jy,l),hmixplus)
       else
-        subsceff=0
+        subsceff=0.0
       endif
   !
   ! CALCULATE HMIX EXCESS ACCORDING TO SUBGRIDSCALE VARIABILITY AND STABILITY
@@ -148,8 +149,9 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn)
   !********************************************
 
       if (DRYDEP) then
-        z0(4)=0.016*ustarn(ix,jy,1,n,l)*ustarn(ix,jy,1,n,l)/ga
-        z0(9)=0.016*ustarn(ix,jy,1,n,l)*ustarn(ix,jy,1,n,l)/ga
+        ! z0(4)=0.016*ustarn(ix,jy,1,n,l)*ustarn(ix,jy,1,n,l)/ga
+        ! z0(9)=0.016*ustarn(ix,jy,1,n,l)*ustarn(ix,jy,1,n,l)/ga
+        z0(7)=0.016*ustarn(ix,jy,1,n,l)*ustarn(ix,jy,1,n,l)/ga
 
   ! Calculate relative humidity at surface
   !***************************************
@@ -227,8 +229,10 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn)
     end do
   end do
 
+  ! Calculation of potential vorticity on 3-d grid
+  !***********************************************
 
-    call calcpv_nests(l,n,uuhn,vvhn,pvhn)
+  call calcpv_nests(l,n,uuhn,vvhn,pvhn)
 
   end do
 

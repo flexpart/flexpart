@@ -66,48 +66,44 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   use par_mod
   use com_mod
   use cmapf_mod, only: cc2gll
-! eso TODO:
-! only used for timing of CPU measurement. Remove this (and calls to mpif_mtime below)
-! as this routine should not be dependent on MPI
 !  use mpi_mod
-! :TODO
 
   implicit none
 
-  integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp,ixm,jym
-  integer :: rain_cloud_above(0:nxmax-1,0:nymax-1),kz_inv,idx(0:nxmax-1,0:nymax-1)
-  real :: f_qvsat,pressure,cosf(0:nymax-1)
-  real :: rh,lsp,convp,tim,tim2,rhmin,precmin,prec
-  real :: uvzlev(0:nxmax-1,0:nymax-1,nuvzmax),rhoh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real :: pinmconv(0:nxmax-1,0:nymax-1,nzmax)
-  real :: ew,pint(0:nxmax-1,0:nymax-1),tv(0:nxmax-1,0:nymax-1)
-  real :: tvold(0:nxmax-1,0:nymax-1),pold(0:nxmax-1,0:nymax-1),dz1,dz2,dz,ui,vi
+  real,intent(in),dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: uuh,vvh,pvh
+  real,intent(in),dimension(0:nxmax-1,0:nymax-1,nwzmax) :: wwh
+
+  real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: rhoh,uvzlev,wzlev
+  real,dimension(0:nxmax-1,0:nymax-1,nzmax) :: pinmconv
+  real,dimension(0:nxmax-1,0:nymax-1) ::  tvold,pold,pint,tv
+  real,dimension(0:nymax-1) :: cosf
+
+  integer,dimension(0:nxmax-1,0:nymax-1) :: rain_cloud_above,idx
+
+  integer :: ix,jy,kz,iz,n,kmin,ix1,jy1,ixp,jyp,ixm,jym,kz_inv
+  real :: f_qvsat,pressure,rh,lsp,convp,prec
+  real :: ew,dz1,dz2,dz
   real :: xlon,ylat,xlonr,dzdx,dzdy
   real :: dzdx1,dzdx2,dzdy1,dzdy2
   real :: uuaux,vvaux,uupolaux,vvpolaux,ddpol,ffpol,wdummy
-  real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real :: pvh(0:nxmax-1,0:nymax-1,nuvzmax)
-  real :: wwh(0:nxmax-1,0:nymax-1,nwzmax)
-  real :: wzlev(0:nxmax-1,0:nymax-1,nwzmax)
   real,parameter :: const=r_air/ga
-!  integer:: ihr, imin, isec, i100th,ihr2, imin2, isec2, i100th2
-  parameter (precmin = 0.002) ! minimum prec in mm/h for cloud diagnostics
+  real,parameter :: precmin = 0.002 ! minimum prec in mm/h for cloud diagnostics
 
   logical :: init = .true.
 
   !ZHG SEP 2014 tests  
-  integer :: cloud_ver,cloud_min, cloud_max 
-  integer ::teller(5), convpteller=0, lspteller=0
-  real :: cloud_col_wat, cloud_water
+  ! integer :: cloud_ver,cloud_min, cloud_max 
+  ! integer ::teller(5), convpteller=0, lspteller=0
+  ! real :: cloud_col_wat, cloud_water
   !ZHG 2015 temporary variables for testing
-  real :: rcw(0:nxmax-1,0:nymax-1)
-  real :: rpc(0:nxmax-1,0:nymax-1)
+  ! real :: rcw(0:nxmax-1,0:nymax-1)
+  ! real :: rpc(0:nxmax-1,0:nymax-1)
   ! character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
   ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
-  CHARACTER(LEN=3)  :: aspec
-  integer :: virr=0
+  ! CHARACTER(LEN=3)  :: aspec
+  ! integer :: virr=0
   real :: tot_cloud_h
+  real :: dbg_height(nzmax) 
 !ZHG
 
 !*************************************************************************
@@ -142,7 +138,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 3   continue
 
 
-    tvold(ixm,jym)=tt2(ixm,jym,1,n)*(1.+0.378*ew(td2(ixm,jym,1,n))/ &
+    tvold(ixm,jym)=tt2(ixm,jym,1,n)*(1.+0.378*ew*(td2(ixm,jym,1,n))/ &
          ps(ixm,jym,1,n))
     pold(ixm,jym)=ps(ixm,jym,1,n)
     height(1)=0.
@@ -181,6 +177,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
     init=.false.
 
+    dbg_height = height
+
   endif
 
 
@@ -190,7 +188,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
   do jy=0,nymin1
     do ix=0,nxmin1
-      tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
+      tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew*(td2(ix,jy,1,n))/ &
            ps(ix,jy,1,n))
     enddo
   enddo
@@ -249,19 +247,23 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   tt(:,:,1,n)=tth(:,:,1,n)
   qv(:,:,1,n)=qvh(:,:,1,n)
 !hg adding the cloud water 
-  clwc(:,:,1,n)=clwch(:,:,1,n)
-  if (.not.sumclouds) ciwc(:,:,1,n)=ciwch(:,:,1,n)   
+  if (readclouds) then
+    clwc(:,:,1,n)=clwch(:,:,1,n)
+    if (.not.sumclouds) ciwc(:,:,1,n)=ciwch(:,:,1,n)
+  end if
 !hg 
   pv(:,:,1,n)=pvh(:,:,1)
   rho(:,:,1,n)=rhoh(:,:,1)
+
   uu(:,:,nz,n)=uuh(:,:,nuvz)
   vv(:,:,nz,n)=vvh(:,:,nuvz)
   tt(:,:,nz,n)=tth(:,:,nuvz,n)
   qv(:,:,nz,n)=qvh(:,:,nuvz,n)
-
 !hg adding the cloud water
-  clwc(:,:,nz,n)=clwch(:,:,nuvz,n)
-  if (.not.sumclouds) ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
+  if (readclouds) then
+    clwc(:,:,nz,n)=clwch(:,:,nuvz,n)
+    if (.not.sumclouds) ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
+  end if
 !hg
   pv(:,:,nz,n)=pvh(:,:,nuvz)
   rho(:,:,nz,n)=rhoh(:,:,nuvz)
@@ -278,8 +280,10 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
           tt(ix,jy,iz,n)=tt(ix,jy,nz,n)
           qv(ix,jy,iz,n)=qv(ix,jy,nz,n)
 !hg adding the cloud water
-          clwc(ix,jy,iz,n)=clwc(ix,jy,nz,n)
-          if (.not.sumclouds) ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
+          if (readclouds) then
+            clwc(ix,jy,iz,n)=clwc(ix,jy,nz,n)
+            if (.not.sumclouds) ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
+          end if
 !hg
           pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
           rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
@@ -308,9 +312,11 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
           qv(ix,jy,iz,n)=(qvh(ix,jy,kz-1,n)*dz2 &
                +qvh(ix,jy,kz,n)*dz1)/dz
 !hg adding the cloud water
-          clwc(ix,jy,iz,n)=(clwch(ix,jy,kz-1,n)*dz2+clwch(ix,jy,kz,n)*dz1)/dz
-          if (.not.sumclouds) &
-               &ciwc(ix,jy,iz,n)=(ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
+          if (readclouds) then
+            clwc(ix,jy,iz,n)=(clwch(ix,jy,kz-1,n)*dz2+clwch(ix,jy,kz,n)*dz1)/dz
+            if (.not.sumclouds) &
+                 &ciwc(ix,jy,iz,n)=(ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
+          end if
 !hg
           pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
           rho(ix,jy,iz,n)=(rhoh(ix,jy,kz-1)*dz2+rhoh(ix,jy,kz)*dz1)/dz
@@ -600,7 +606,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
             icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
             icloud_stats(ix,jy,3,n)= min(height(kz+1),height(kz))                     ! Cloud BOT height stats      [m]
 !ZHG 2015 extra for testing
-            clh(ix,jy,kz,n)=height(kz+1)-height(kz)
+!            clh(ix,jy,kz,n)=height(kz+1)-height(kz)
             icloud_stats(ix,jy,1,n)=icloud_stats(ix,jy,1,n)+(height(kz+1)-height(kz)) ! Cloud total vertical extent [m]
             icloud_stats(ix,jy,2,n)= max(icloud_stats(ix,jy,2,n),height(kz))          ! Cloud TOP height            [m]
 !ZHG

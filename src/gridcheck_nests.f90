@@ -171,22 +171,18 @@ subroutine gridcheck_nests
     isec1(6)=133         ! indicatorOfParameter
   elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
     isec1(6)=246         ! indicatorOfParameter
-    ! readclouds=.true.
-    ! sumclouds=.false.
   elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
     isec1(6)=247         ! indicatorOfParameter
 !ZHG end
 ! ESO qc(=clwc+ciwc)
   elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
     isec1(6)=201031      ! indicatorOfParameter
-    ! readclouds=.true.
-    ! sumclouds=.true.
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
     isec1(6)=134         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
     isec1(6)=135         ! indicatorOfParameter
-  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added bymc to make it consistent with new gridchek.f90
-    isec1(6)=135         ! indicatorOfParameter    !                     ! " " " " " " " " " " " " " " " " " " " " " " " "  " " " 
+  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added bymc to make it consistent with new gridcheck.f90
+    isec1(6)=135         ! indicatorOfParameter    !
   elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
     isec1(6)=151         ! indicatorOfParameter
   elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
@@ -256,6 +252,24 @@ subroutine gridcheck_nests
     nyn(l)=isec2(3)
     nlev_ecn=isec2(12)/2-1
   endif ! ifield
+
+  if (nxn(l).gt.nxmaxn) then
+  write(*,*) 'FLEXPART error: Too many grid points in x direction.'
+  write(*,*) 'Reduce resolution of wind fields (file GRIDSPEC)'
+  write(*,*) 'for nesting level ',l
+  write(*,*) 'Or change parameter settings in file par_mod.'
+  write(*,*) nxn(l),nxmaxn
+  stop
+  endif
+
+  if (nyn(l).gt.nymaxn) then
+  write(*,*) 'FLEXPART error: Too many grid points in y direction.'
+  write(*,*) 'Reduce resolution of wind fields (file GRIDSPEC)'
+  write(*,*) 'for nesting level ',l
+  write(*,*) 'Or change parameter settings in file par_mod.'
+  write(*,*) nyn(l),nymaxn
+  stop
+  endif
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
   if (isec1(6) .eq. 167 .and. (gotGrib.eq.0)) then !added by mc to make it consistent with new gridchek.f90 note that gotGrid must be changed in gotGrib!!
@@ -331,24 +345,6 @@ subroutine gridcheck_nests
   nuvzn=iumax
   nwzn=iwmax
   if(nuvzn.eq.nlev_ec) nwzn=nlev_ecn+1
-
-  if (nxn(l).gt.nxmaxn) then
-  write(*,*) 'FLEXPART error: Too many grid points in x direction.'
-  write(*,*) 'Reduce resolution of wind fields (file GRIDSPEC)'
-  write(*,*) 'for nesting level ',l
-  write(*,*) 'Or change parameter settings in file par_mod.'
-  write(*,*) nxn(l),nxmaxn
-  stop
-  endif
-
-  if (nyn(l).gt.nymaxn) then
-  write(*,*) 'FLEXPART error: Too many grid points in y direction.'
-  write(*,*) 'Reduce resolution of wind fields (file GRIDSPEC)'
-  write(*,*) 'for nesting level ',l
-  write(*,*) 'Or change parameter settings in file par_mod.'
-  write(*,*) nyn(l),nymaxn
-  stop
-  endif
 
   if ((nuvzn.gt.nuvzmax).or.(nwzn.gt.nwzmax)) then
   write(*,*) 'FLEXPART error: Nested wind fields have too many'// &

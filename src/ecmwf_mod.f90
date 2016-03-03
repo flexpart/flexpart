@@ -40,15 +40,19 @@ module wind_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
 
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
   integer,parameter :: nxshift=359
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !test BUG 
+!  integer,parameter :: nxshift=0
 
 ! 
   !*********************************************
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=181 !ECMWF
+  integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=181
+!  integer,parameter :: maxnests=1,nxmaxn=86,nymaxn=31
 
 
 end module wind_mod

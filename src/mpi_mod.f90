@@ -859,8 +859,6 @@ contains
 !   MPI_Bcast is used, so implicitly all processes are synchronized at this
 !   step
 !
-! TODO
-!   GFS version
 !
 !*******************************************************************************
     use com_mod
@@ -921,7 +919,6 @@ contains
 !**********************************************************************
 
 ! The non-reader processes need to know if cloud water were read.
-! TODO: only at first step or always?
     call MPI_Bcast(readclouds,1,MPI_LOGICAL,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
@@ -1016,9 +1013,6 @@ contains
     call MPI_Bcast(oli(:,:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
     if (mp_ierr /= 0) goto 600 
 
-    call MPI_Bcast(z0,numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
     goto 601
@@ -1044,8 +1038,6 @@ contains
 !   MPI_Bcast is used, so implicitly all processes are synchronized at this
 !   step
 !
-! TODO
-!   Transfer cloud water/ice if and when available for nested
 !
 !***********************************************************************
     use com_mod
@@ -1059,11 +1051,11 @@ contains
     integer :: li,ui
 
 ! Common array sizes used for communications
-    integer :: d3_size1 = nxmaxn*nymaxn*nzmax*maxnests
-    integer :: d3_size2 = nxmaxn*nymaxn*nuvzmax*maxnests
-    integer :: d2_size1 = nxmaxn*nymaxn*maxnests
-    integer :: d2_size2 = nxmaxn*nymaxn*maxspec*maxnests
-    integer :: d2_size3 = nxmaxn*nymaxn*maxnests
+    integer :: d3_size1 = nxmaxn*nymaxn*nzmax
+    integer :: d3_size2 = nxmaxn*nymaxn*nuvzmax
+    integer :: d2_size1 = nxmaxn*nymaxn
+    integer :: d2_size2 = nxmaxn*nymaxn*maxspec
+    integer :: d2_size3 = nxmaxn*nymaxn
 
     integer :: d3s1,d3s2,d2s1,d2s2
 
@@ -1105,6 +1097,10 @@ contains
 ! processes
 !**********************************************************************
 
+! The non-reader processes need to know if cloud water were read.
+    call MPI_Bcast(readclouds_nest,maxnests,MPI_LOGICAL,id_read,MPI_COMM_WORLD,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+
 ! Static fields/variables sent only at startup
     if (first_call) then
       call MPI_Bcast(oron(:,:,:),d2_size3,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -1119,8 +1115,8 @@ contains
     end if
 
 ! MPI prefers contiguous arrays for sending (else a buffer is created),
-! hence the loop
-
+! hence the loop over nests
+!**********************************************************************
     do i=1, numbnests 
 ! 3D fields
       call MPI_Bcast(uun(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -1144,10 +1140,18 @@ contains
       call MPI_Bcast(pvn(:,:,:,li:ui,i),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_Bcast(cloudsn(:,:,:,li:ui,i),d3s1,MPI_INTEGER1,id_read,MPI_COMM_WORLD,mp_ierr)
-      if (mp_ierr /= 0) goto 600 
+      if (mp_ierr /= 0) goto 600
+
+! cloud water/ice:
+    if (readclouds_nest(i)) then
+      ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+      ! if (mp_ierr /= 0) goto 600
+      call MPI_Bcast(clw4n(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    end if
 
 ! 2D fields
-      call MPI_Bcast(cloudsnh(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(cloudshn(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_Bcast(vdepn(:,:,:,li:ui,i),d2s2,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600 
@@ -1205,7 +1209,6 @@ contains
 !   memstat -- input, for resolving pointer to windfield index being read
 !   mind    -- index where to place new fields
 !
-! TODO
 !
 !*******************************************************************************
     use com_mod
@@ -1391,7 +1394,6 @@ contains
 ! VARIABLES
 !   memstat -- input, used to resolve windfield index being received
 !
-! TODO
 !
 !*******************************************************************************
     use com_mod
@@ -2018,7 +2020,6 @@ contains
 ! j=mp_pid*nvar_async
 ! In the implementation with 3 fields, the processes may have posted
 ! MPI_Irecv requests that should be cancelled here
-!! TODO:
 ! if (.not.lmp_sync) then
 !   r=mp_pid*nvar_async
 !   do j=r,r+nvar_async-1
@@ -2104,7 +2105,6 @@ contains
 ! VARIABLES
 !   
 !
-! TODO
 !
 !*******************************************************************************
     use com_mod
@@ -2131,7 +2131,7 @@ contains
 ! Time-varying fields:
     uu(:,:,:,li:ui) = 10.0
     vv(:,:,:,li:ui) = 0.0
-    uupol(:,:,:,li:ui) = 10.0 ! TODO check if ok
+    uupol(:,:,:,li:ui) = 10.0
     vvpol(:,:,:,li:ui)=0.0
     ww(:,:,:,li:ui)=0.
     tt(:,:,:,li:ui)=300.
@@ -2163,7 +2163,6 @@ contains
     hmix(:,:,:,li:ui)=10000.
     tropopause(:,:,:,li:ui)=10000.
     oli(:,:,:,li:ui)=0.01
-    z0=1.0
  
   end subroutine set_fields_synthetic
 

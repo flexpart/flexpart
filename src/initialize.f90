@@ -98,7 +98,7 @@ subroutine initialize(itime,ldt,up,vp,wp, &
   ixp=ix+1
   jyp=jy+1
 
-  h=max(hmix(ix ,jy ,1,memind(1)), &
+  h=max(hmix(ix ,jy,1,memind(1)), &
        hmix(ixp,jy ,1,memind(1)), &
        hmix(ix ,jyp,1,memind(1)), &
        hmix(ixp,jyp,1,memind(1)), &
@@ -156,15 +156,15 @@ subroutine initialize(itime,ldt,up,vp,wp, &
     vp=rannumb(nrand+1)*sigv
     wp=rannumb(nrand+2)
     if (.not.turbswitch) then     ! modified by mc
-        wp=wp*sigw
+      wp=wp*sigw
     else if (cblflag.eq.1) then   ! modified by mc
-        if(-h/ol.gt.5) then
-        !if (ol.lt.0.) then
-        !if (ol.gt.0.) then !by mc : only for test correct is lt.0
-            call initialize_cbl_vel(idummy,zt,ust,wst,h,sigw,wp,ol)
-        else
-            wp=wp*sigw
-        end if            
+      if(-h/ol.gt.5) then
+!if (ol.lt.0.) then
+!if (ol.gt.0.) then !by mc : only for test correct is lt.0
+        call initialize_cbl_vel(idummy,zt,ust,wst,h,sigw,wp,ol)
+      else
+        wp=wp*sigw
+      end if
     end if
 
 

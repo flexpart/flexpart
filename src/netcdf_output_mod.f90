@@ -78,6 +78,11 @@ module netcdf_output_mod
 
   implicit none
 
+  private
+
+  public :: writeheader_netcdf,concoutput_surf_nest_netcdf,concoutput_netcdf,&
+       &concoutput_nest_netcdf,concoutput_surf_netcdf
+
 !  include 'netcdf.inc'
 
   ! parameter for data compression (1-9, 9 = most aggressive)
@@ -96,7 +101,7 @@ module netcdf_output_mod
   integer, dimension(5)       :: depdimids, depdimidsn
   real,parameter :: eps=nxmax/3.e5
 
-  private:: writemetadata, output_units, nf90_err
+!  private:: writemetadata, output_units, nf90_err
 
   ! switch output of release point information on/off
   logical, parameter :: write_releases = .true.
@@ -627,10 +632,18 @@ subroutine writeheader_netcdf(lnest)
   call nf90_err(nf90_put_var(ncid, levID, outheight(1:numzgrid)))
 
   ! volume
-  call nf90_err(nf90_put_var(ncid, volID, volume(:,:,:)))
+  if (lnest) then
+    call nf90_err(nf90_put_var(ncid, volID, volumen(:,:,:)))
+  else
+    call nf90_err(nf90_put_var(ncid, volID, volume(:,:,:)))
+  end if
 
   ! area
-  call nf90_err(nf90_put_var(ncid, areaID, area(:,:)))
+  if (lnest) then
+    call nf90_err(nf90_put_var(ncid, areaID, arean(:,:)))
+  else
+    call nf90_err(nf90_put_var(ncid, areaID, area(:,:)))
+  end if
 
   if (write_releases.eqv..true.) then
     ! release point information

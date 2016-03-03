@@ -346,22 +346,20 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
 ! ESO TODO:
 ! -add check for if one of clwc/ciwc missing (error),
 !    also if all 3 cw fields present, use qc and disregard the others
-! -use same flags readclouds/sumclouds as in mother grid? this assumes
-!    that both the nested and mother grids contain CW in same format
         if(isec1(6).eq.246) then  !! CLWC  Cloud liquid water content [kg/kg]
-          clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
-          ! readclouds=.true.
-          ! sumclouds=.false.
+          clwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+          readclouds_nest(l)=.true.
+          sumclouds_nest(l)=.false.
         endif
         if(isec1(6).eq.247) then  !! CIWC  Cloud ice water content
-          ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+          ciwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         endif
 !ZHG end
 !ESO read qc (=clwc+ciwc)
         if(isec1(6).eq.201031) then  !! QC  Cloud liquid water content [kg/kg]
-          clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
-          ! readclouds=.true.
-          ! sumclouds=.true.
+          clwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+          readclouds_nest(l)=.true.
+          sumclouds_nest(l)=.true.
         endif
 
 

@@ -387,7 +387,7 @@ readavailable.o: com_mod.o par_mod.o
 readcommand.o: com_mod.o par_mod.o
 readdepo.o: com_mod.o par_mod.o
 readlanduse.o: com_mod.o par_mod.o
-readlanduse_int1.o: com_mod.o par_mod.o
+#readlanduse_int1.o: com_mod.o par_mod.o
 readOHfield.o: com_mod.o oh_mod.o par_mod.o
 readoutgrid.o: com_mod.o outg_mod.o par_mod.o
 readoutgrid_nest.o: com_mod.o outg_mod.o par_mod.o

@@ -133,7 +133,9 @@ module com_mod
 !ZHG SEP 2015 wheather or not to read clouds from GRIB
   logical :: readclouds
 !ESO DEC 2015 whether or not both clwc and ciwc are present (if so they are summed)
-  logical :: sumclouds 
+  logical :: sumclouds
+
+  logical,dimension(maxnests) :: readclouds_nest, sumclouds_nest
   
 
 !NIK 16.02.2015
@@ -369,7 +371,6 @@ module com_mod
 
 !ZHG Sep 2015  
    real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
-   real :: clh(0:nxmax-1,0:nymax-1,nuvzmax,numwfmem)
    real :: clw4(0:nxmax-1,0:nymax-1,numwfmem) ! eso: =icloud_stats(:,:,4,:)
 
 
@@ -486,8 +487,9 @@ module com_mod
   !*****************
 
   real,allocatable,dimension(:,:,:,:,:) :: uun, vvn, wwn, ttn, qvn, pvn,&
-       & rhon, drhodzn, tthn, qvhn
-  integer,allocatable,dimension(:,:,:,:) :: cloudsnh
+       & rhon, drhodzn, tthn, qvhn, clwcn, ciwcn, clwn, clwchn, ciwchn
+  real,allocatable,dimension(:,:,:,:) :: clw4n
+  integer,allocatable,dimension(:,:,:,:) :: cloudshn
   integer(kind=1),allocatable,dimension(:,:,:,:,:) :: cloudsn
 
   ! 2d nested fields
@@ -787,13 +789,29 @@ contains
     allocate(ttn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
     allocate(qvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
     allocate(pvn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
-    allocate(cloudsn(0:nxmaxn-1,0:nymaxn-1,0:nzmax,numwfmem,numbnests))
-    allocate(cloudsnh(0:nxmaxn-1,0:nymaxn-1,numwfmem,numbnests))
+    allocate(clwcn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(ciwcn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(clwn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+
+    allocate(cloudsn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
+    allocate(cloudshn(0:nxmaxn-1,0:nymaxn-1,numwfmem,numbnests))
     allocate(rhon(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
     allocate(drhodzn(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,numbnests))
     allocate(tthn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
     allocate(qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
+    allocate(clwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
+    allocate(ciwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
+    allocate(clw4n(0:nxmax-1,0:nymax-1,numwfmem,numbnests))
 
+!    clw4n(:,:,:,:)=0.
+    clwcn(:,:,:,:,:)=0.
+    ciwcn(:,:,:,:,:)=0.
+    clwchn(:,:,:,:,:)=0.
+    ciwchn(:,:,:,:,:)=0.
+    ! clwn(:,:,:,:,:)=0.
+
+    ! cloudsn(:,:,:,:,:)=0
+    ! cloudshn(:,:,:,:)=0
     
   end subroutine com_mod_allocate_nests
    

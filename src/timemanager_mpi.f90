@@ -236,12 +236,12 @@ subroutine timemanager
 ! in sync at start of each new field time interval
     if (lmp_sync.and.lmp_use_reader.and.memstat.gt.0) then
       call mpif_gf_send_vars(memstat)
-      call mpif_gf_send_vars_nest(memstat)
+      if (numbnests>0) call mpif_gf_send_vars_nest(memstat)
 ! Version 2  (lmp_sync=.false., see below) is also used whenever 2 new fields are
 ! read (as at first time step), in which case async send/recv is impossible.
     else if (.not.lmp_sync.and.lmp_use_reader.and.memstat.ge.32) then
       call mpif_gf_send_vars(memstat)
-      call mpif_gf_send_vars_nest(memstat)
+      if (numbnests>0) call mpif_gf_send_vars_nest(memstat)
     end if
 
 ! Version 2 (lmp_sync=.false.) is for holding three fields in memory. Uses a
@@ -259,9 +259,6 @@ subroutine timemanager
 ! COMPLETION CHECK:
 ! Issued at start of each new field period. 
       if (memstat.ne.0.and.memstat.lt.32.and.lmp_use_reader) then
-! TODO: z0(7) changes with time, so should be dimension (numclass,2) to
-! allow transfer of the future value in the background
-        call MPI_Bcast(z0,numclass,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
         call mpif_gf_request
       end if
 

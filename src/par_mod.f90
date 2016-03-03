@@ -138,9 +138,7 @@ module par_mod
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=26,nwzmax=26,nzmax=26
   !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
-  !integer,parameter :: nxmax=1201,nymax=235,nuvzmax=58,nwzmax=58,nzmax=58
 
 !  integer,parameter :: nxshift=359 ! for ECMWF
   !integer,parameter :: nxshift=0     ! for GFS or FNL
@@ -215,9 +213,9 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=40000000
+  integer,parameter :: maxpart=400000
   integer,parameter :: maxspec=6
-  integer,parameter :: minmass=0.0 !0.0001
+  real,parameter :: minmass=0.0 !0.0001
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
