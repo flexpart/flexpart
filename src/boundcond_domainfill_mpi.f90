@@ -191,10 +191,10 @@ subroutine boundcond_domainfill(itime,loutend)
         windx=(windhl(1)*dt2+windhl(2)*dt1)*dtt
         rhox=(rhohl(1)*dt2+rhohl(2)*dt1)*dtt
 
-  ! Calculate mass flux
-  !********************
+  ! Calculate mass flux, divided by number of processes
+  !****************************************************
 
-        fluxofmass=windx*rhox*boundarea*real(lsynctime)
+        fluxofmass=windx*rhox*boundarea*real(lsynctime)/mp_partgroup_np
 
 
   ! If the mass flux is directed into the domain, add it to previous mass fluxes;
@@ -424,10 +424,10 @@ subroutine boundcond_domainfill(itime,loutend)
         windx=(windhl(1)*dt2+windhl(2)*dt1)*dtt
         rhox=(rhohl(1)*dt2+rhohl(2)*dt1)*dtt
 
-  ! Calculate mass flux
-  !********************
+  ! Calculate mass flux, divided by number of processes
+  !****************************************************
 
-        fluxofmass=windx*rhox*boundarea*real(lsynctime)
+        fluxofmass=windx*rhox*boundarea*real(lsynctime)/mp_partgroup_np
 
   ! If the mass flux is directed into the domain, add it to previous mass fluxes;
   ! if it is out of the domain, set accumulated mass flux to zero
@@ -586,6 +586,7 @@ subroutine boundcond_domainfill(itime,loutend)
   ! must be dumped, too, to be used for later runs
   !*****************************************************************************
 
+! :TODO: eso parallelize
   if ((ipout.gt.0).and.(itime.eq.loutend)) then
     open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
          form='unformatted')

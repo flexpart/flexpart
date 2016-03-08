@@ -162,12 +162,14 @@ subroutine init_domainfill
     do ix=nx_we(1),nx_we(2)      ! loop about longitudes
       pp(1)=rho(ix,jy,1,1)*r_air*tt(ix,jy,1,1)
       pp(nz)=rho(ix,jy,nz,1)*r_air*tt(ix,jy,nz,1)
-      colmass(ix,jy)=(pp(1)-pp(nz))/ga*gridarea(jy)
+      ! Each MPI process is assigned an equal share of particles
+      colmass(ix,jy)=(pp(1)-pp(nz))/ga*gridarea(jy)/mp_partgroup_np
       colmasstotal=colmasstotal+colmass(ix,jy)
+
     end do
   end do
 
-  write(*,*) 'Atm. mass: ',colmasstotal
+  if (lroot) write(*,*) 'Atm. mass: ',colmasstotal
 
 
   if (ipin.eq.0) numpart=0
@@ -414,6 +416,7 @@ subroutine init_domainfill
 ! This overrides any previous calculations.
 !***************************************************************************
 
+! :TODO: eso: parallelize
   if (ipin.eq.1) then
     open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
          form='unformatted')

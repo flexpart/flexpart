@@ -103,10 +103,10 @@ subroutine concoutput_nest(itime,outnum)
 ! mind        eso:added to ensure identical results between 2&3-fields versions
 
 ! Measure execution time
-  if (mp_measure_time) then
-    call cpu_time(mp_root_time_beg)
-    mp_root_wtime_beg = mpi_wtime()
-  end if
+  if (mp_measure_time) call mpif_mtime('iotime',0)
+  !   call cpu_time(mp_root_time_beg)
+  !   mp_root_wtime_beg = mpi_wtime()
+  ! end if
 
   if (verbosity.eq.1) then
      print*,'inside concoutput_surf '
@@ -579,12 +579,13 @@ subroutine concoutput_nest(itime,outnum)
     end do
   end do
 
-  if (mp_measure_time) then
-    call cpu_time(mp_root_time_end)
-    mp_root_wtime_end = mpi_wtime()
-    mp_root_time_total = mp_root_time_total + (mp_root_time_end - mp_root_time_beg)
-    mp_root_wtime_total = mp_root_wtime_total + (mp_root_wtime_end - mp_root_wtime_beg)
-  end if
+  if (mp_measure_time) call mpif_mtime('iotime',1)
+  ! if (mp_measure_time) then
+  !   call cpu_time(mp_root_time_end)
+  !   mp_root_wtime_end = mpi_wtime()
+  !   mp_root_time_total = mp_root_time_total + (mp_root_time_end - mp_root_time_beg)
+  !   mp_root_wtime_total = mp_root_wtime_total + (mp_root_wtime_end - mp_root_wtime_beg)
+  ! end if
 
 end subroutine concoutput_nest
 

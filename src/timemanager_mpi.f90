@@ -694,15 +694,18 @@ subroutine timemanager
 ! Integrate Lagevin equation for lsynctime seconds
 !*************************************************
 
-        mp_advance_wtime_beg = mpi_wtime()
+        if (mp_measure_time) call mpif_mtime('advance',0)
+!mp_advance_wtime_beg = mpi_wtime()
 
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
              us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
              cbt(j))
 
-        mp_advance_wtime_end = mpi_wtime()
-        mp_advance_wtime_total = mp_advance_wtime_total + (mp_advance_wtime_end - &
-             & mp_advance_wtime_beg)
+        if (mp_measure_time) call mpif_mtime('advance',1)
+
+        ! mp_advance_wtime_end = mpi_wtime()
+        ! mp_advance_wtime_total = mp_advance_wtime_total + (mp_advance_wtime_end - &
+        !      & mp_advance_wtime_beg)
 
 
 ! Calculate the gross fluxes across layer interfaces

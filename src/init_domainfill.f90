@@ -20,30 +20,30 @@
 !**********************************************************************
 
 subroutine init_domainfill
-  !
-  !*****************************************************************************
-  !                                                                            *
-  ! Initializes particles equally distributed over the first release location  *
-  ! specified in file RELEASES. This box is assumed to be the domain for doing *
-  ! domain-filling trajectory calculations.                                    *
-  ! All particles carry the same amount of mass which alltogether comprises the*
-  ! mass of air within the box.                                                *
-  !                                                                            *
-  !     Author: A. Stohl                                                       *
-  !                                                                            *
-  !     15 October 2002                                                        *
-  !                                                                            *
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  !                                                                            *
-  ! numparticlecount    consecutively counts the number of particles released  *
-  ! nx_we(2)       grid indices for western and eastern boundary of domain-    *
-  !                filling trajectory calculations                             *
-  ! ny_sn(2)       grid indices for southern and northern boundary of domain-  *
-  !                filling trajectory calculations                             *
-  !                                                                            *
-  !*****************************************************************************
+!
+!*****************************************************************************
+!                                                                            *
+! Initializes particles equally distributed over the first release location  *
+! specified in file RELEASES. This box is assumed to be the domain for doing *
+! domain-filling trajectory calculations.                                    *
+! All particles carry the same amount of mass which alltogether comprises the*
+! mass of air within the box.                                                *
+!                                                                            *
+!     Author: A. Stohl                                                       *
+!                                                                            *
+!     15 October 2002                                                        *
+!                                                                            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+!                                                                            *
+! numparticlecount    consecutively counts the number of particles released  *
+! nx_we(2)       grid indices for western and eastern boundary of domain-    *
+!                filling trajectory calculations                             *
+! ny_sn(2)       grid indices for southern and northern boundary of domain-  *
+!                filling trajectory calculations                             *
+!                                                                            *
+!*****************************************************************************
 
   use point_mod
   use par_mod
@@ -64,19 +64,19 @@ subroutine init_domainfill
   integer :: idummy = -11
 
 
-  ! Determine the release region (only full grid cells), over which particles
-  ! shall be initialized
-  ! Use 2 fields for west/east and south/north boundary
-  !**************************************************************************
+! Determine the release region (only full grid cells), over which particles
+! shall be initialized
+! Use 2 fields for west/east and south/north boundary
+!**************************************************************************
 
   nx_we(1)=max(int(xpoint1(1)),0)
   nx_we(2)=min((int(xpoint2(1))+1),nxmin1)
   ny_sn(1)=max(int(ypoint1(1)),0)
   ny_sn(2)=min((int(ypoint2(1))+1),nymin1)
 
-  ! For global simulations (both global wind data and global domain-filling),
-  ! set a switch, such that no boundary conditions are used
-  !**************************************************************************
+! For global simulations (both global wind data and global domain-filling),
+! set a switch, such that no boundary conditions are used
+!**************************************************************************
   if (xglobal.and.sglobal.and.nglobal) then
     if ((nx_we(1).eq.0).and.(nx_we(2).eq.nxmin1).and. &
          (ny_sn(1).eq.0).and.(ny_sn(2).eq.nymin1)) then
@@ -86,15 +86,15 @@ subroutine init_domainfill
     endif
   endif
 
-  ! Do not release particles twice (i.e., not at both in the leftmost and rightmost
-  ! grid cell) for a global domain
-  !*****************************************************************************
+! Do not release particles twice (i.e., not at both in the leftmost and rightmost
+! grid cell) for a global domain
+!*****************************************************************************
   if (xglobal) nx_we(2)=min(nx_we(2),nx-2)
 
 
-  ! Calculate area of grid cell with formula M=2*pi*R*h*dx/360,
-  ! see Netz, Formeln der Mathematik, 5. Auflage (1983), p.90
-  !************************************************************
+! Calculate area of grid cell with formula M=2*pi*R*h*dx/360,
+! see Netz, Formeln der Mathematik, 5. Auflage (1983), p.90
+!************************************************************
 
   do jy=ny_sn(1),ny_sn(2)      ! loop about latitudes
     ylat=ylat0+real(jy)*dy
@@ -116,7 +116,7 @@ subroutine init_domainfill
     gridarea(jy)=2.*pi*r_earth*hzone*dx/360.
   end do
 
-  ! Do the same for the south pole
+! Do the same for the south pole
 
   if (sglobal) then
     ylat=ylat0
@@ -129,7 +129,7 @@ subroutine init_domainfill
     gridarea(0)=2.*pi*r_earth*hzone*dx/360.
   endif
 
-  ! Do the same for the north pole
+! Do the same for the north pole
 
   if (nglobal) then
     ylat=ylat0+real(nymin1)*dy
@@ -143,8 +143,8 @@ subroutine init_domainfill
   endif
 
 
-  ! Calculate total mass of each grid column and of the whole atmosphere
-  !*********************************************************************
+! Calculate total mass of each grid column and of the whole atmosphere
+!*********************************************************************
 
   colmasstotal=0.
   do jy=ny_sn(1),ny_sn(2)          ! loop about latitudes
@@ -156,13 +156,13 @@ subroutine init_domainfill
     end do
   end do
 
-           write(*,*) 'Atm. mass: ',colmasstotal
+  write(*,*) 'Atm. mass: ',colmasstotal
 
 
   if (ipin.eq.0) numpart=0
 
-  ! Determine the particle positions
-  !*********************************
+! Determine the particle positions
+!*********************************
 
   numparttot=0
   numcolumn=0
@@ -174,9 +174,9 @@ subroutine init_domainfill
       if (ncolumn.eq.0) goto 30
       if (ncolumn.gt.numcolumn) numcolumn=ncolumn
 
-  ! Calculate pressure at the altitudes of model surfaces, using the air density
-  ! information, which is stored as a 3-d field
-  !*****************************************************************************
+! Calculate pressure at the altitudes of model surfaces, using the air density
+! information, which is stored as a 3-d field
+!*****************************************************************************
 
       do kz=1,nz
         pp(kz)=rho(ix,jy,kz,1)*r_air*tt(ix,jy,kz,1)
@@ -190,10 +190,10 @@ subroutine init_domainfill
         jj=jj+1
 
 
-  ! For columns with many particles (i.e. around the equator), distribute
-  ! the particles equally, for columns with few particles (i.e. around the
-  ! poles), distribute the particles randomly
-  !***********************************************************************
+! For columns with many particles (i.e. around the equator), distribute
+! the particles equally, for columns with few particles (i.e. around the
+! poles), distribute the particles randomly
+!***********************************************************************
 
 
         if (ncolumn.gt.20) then
@@ -208,10 +208,10 @@ subroutine init_domainfill
             dz2=pnew-pp(kz+1)
             dz=1./(dz1+dz2)
 
-  ! Assign particle position
-  !*************************
-  ! Do the following steps only if particles are not read in from previous model run
-  !*****************************************************************************
+! Assign particle position
+!*************************
+! Do the following steps only if particles are not read in from previous model run
+!*****************************************************************************
             if (ipin.eq.0) then
               xtra1(numpart+jj)=real(ix)-0.5+ran1(idummy)
               if (ix.eq.0) xtra1(numpart+jj)=ran1(idummy)
@@ -223,8 +223,8 @@ subroutine init_domainfill
                    ztra1(numpart+jj)=height(nz)-0.5
 
 
-  ! Interpolate PV to the particle position
-  !****************************************
+! Interpolate PV to the particle position
+!****************************************
               ixm=int(xtra1(numpart+jj))
               jym=int(ytra1(numpart+jj))
               ixp=ixm+1
@@ -259,14 +259,14 @@ subroutine init_domainfill
               if (ylat.lt.0.) pvpart=-1.*pvpart
 
 
-  ! For domain-filling option 2 (stratospheric O3), do the rest only in the stratosphere
-  !*****************************************************************************
+! For domain-filling option 2 (stratospheric O3), do the rest only in the stratosphere
+!*****************************************************************************
 
               if (((ztra1(numpart+jj).gt.3000.).and. &
                    (pvpart.gt.pvcrit)).or.(mdomainfill.eq.1)) then
 
-  ! Assign certain properties to the particle
-  !******************************************
+! Assign certain properties to the particle
+!******************************************
                 nclass(numpart+jj)=min(int(ran1(idummy)* &
                      real(nclassunc))+1,nclassunc)
                 numparticlecount=numparticlecount+1
@@ -292,10 +292,16 @@ subroutine init_domainfill
     end do
   end do
 
+  write(*,*) 'init_domainfill> ncolumn: ', ncolumn 
+  write(*,*) 'init_domainfill> numcolumn: ', numcolumn 
+  write(*,*) 'init_domainfill> ny_sn(1),ny_sn(2): ', ny_sn(1),ny_sn(2)
+  write(*,*) 'init_domainfill> nx_we(1),nx_we(2): ', nx_we(1),nx_we(2)
 
-  ! Check whether numpart is really smaller than maxpart
-  !*****************************************************
 
+! Check whether numpart is really smaller than maxpart
+!*****************************************************
+
+! ESO :TODO: this warning need to be moved further up, else out-of-bounds error earlier
   if (numpart.gt.maxpart) then
     write(*,*) 'numpart too large: change source in init_atm_mass.f'
     write(*,*) 'numpart: ',numpart,' maxpart: ',maxpart
@@ -305,8 +311,8 @@ subroutine init_domainfill
   xmassperparticle=colmasstotal/real(numparttot)
 
 
-  ! Make sure that all particles are within domain
-  !***********************************************
+! Make sure that all particles are within domain
+!***********************************************
 
   do j=1,numpart
     if ((xtra1(j).lt.0.).or.(xtra1(j).ge.real(nxmin1)).or. &
@@ -318,15 +324,15 @@ subroutine init_domainfill
 
 
 
-  ! For boundary conditions, we need fewer particle release heights per column,
-  ! because otherwise it takes too long until enough mass has accumulated to
-  ! release a particle at the boundary (would take dx/u seconds), leading to
-  ! relatively large position errors of the order of one grid distance.
-  ! It's better to release fewer particles per column, but to do so more often.
-  ! Thus, use on the order of nz starting heights per column.
-  ! We thus repeat the above to determine fewer starting heights, that are
-  ! used furtheron in subroutine boundcond_domainfill.f.
-  !****************************************************************************
+! For boundary conditions, we need fewer particle release heights per column,
+! because otherwise it takes too long until enough mass has accumulated to
+! release a particle at the boundary (would take dx/u seconds), leading to
+! relatively large position errors of the order of one grid distance.
+! It's better to release fewer particles per column, but to do so more often.
+! Thus, use on the order of nz starting heights per column.
+! We thus repeat the above to determine fewer starting heights, that are
+! used furtheron in subroutine boundcond_domainfill.f.
+!****************************************************************************
 
   fractus=real(numcolumn)/real(nz)
   write(*,*) 'Total number of particles at model start: ',numpart
@@ -342,26 +348,26 @@ subroutine init_domainfill
       if (ncolumn.eq.0) goto 80
 
 
-  ! Memorize how many particles per column shall be used for all boundaries
-  ! This is further used in subroutine boundcond_domainfill.f
-  ! Use 2 fields for west/east and south/north boundary
-  !************************************************************************
+! Memorize how many particles per column shall be used for all boundaries
+! This is further used in subroutine boundcond_domainfill.f
+! Use 2 fields for west/east and south/north boundary
+!************************************************************************
 
       if (ix.eq.nx_we(1)) numcolumn_we(1,jy)=ncolumn
       if (ix.eq.nx_we(2)) numcolumn_we(2,jy)=ncolumn
       if (jy.eq.ny_sn(1)) numcolumn_sn(1,ix)=ncolumn
       if (jy.eq.ny_sn(2)) numcolumn_sn(2,ix)=ncolumn
 
-  ! Calculate pressure at the altitudes of model surfaces, using the air density
-  ! information, which is stored as a 3-d field
-  !*****************************************************************************
+! Calculate pressure at the altitudes of model surfaces, using the air density
+! information, which is stored as a 3-d field
+!*****************************************************************************
 
       do kz=1,nz
         pp(kz)=rho(ix,jy,kz,1)*r_air*tt(ix,jy,kz,1)
       end do
 
-  ! Determine the reference starting altitudes
-  !*******************************************
+! Determine the reference starting altitudes
+!*******************************************
 
       deltacol=(pp(1)-pp(nz))/real(ncolumn)
       pnew=pp(1)+deltacol/2.
@@ -373,19 +379,19 @@ subroutine init_domainfill
             dz2=pnew-pp(kz+1)
             dz=1./(dz1+dz2)
             zposition=(height(kz)*dz2+height(kz+1)*dz1)*dz
-           if (zposition.gt.height(nz)-0.5) zposition=height(nz)-0.5
+            if (zposition.gt.height(nz)-0.5) zposition=height(nz)-0.5
 
-  ! Memorize vertical positions where particles are introduced
-  ! This is further used in subroutine boundcond_domainfill.f
-  !***********************************************************
+! Memorize vertical positions where particles are introduced
+! This is further used in subroutine boundcond_domainfill.f
+!***********************************************************
 
             if (ix.eq.nx_we(1)) zcolumn_we(1,jy,j)=zposition
             if (ix.eq.nx_we(2)) zcolumn_we(2,jy,j)=zposition
             if (jy.eq.ny_sn(1)) zcolumn_sn(1,ix,j)=zposition
             if (jy.eq.ny_sn(2)) zcolumn_sn(2,ix,j)=zposition
 
-  ! Initialize mass that has accumulated at boundary to zero
-  !*********************************************************
+! Initialize mass that has accumulated at boundary to zero
+!*********************************************************
 
             acc_mass_we(1,jy,j)=0.
             acc_mass_we(2,jy,j)=0.
@@ -398,10 +404,10 @@ subroutine init_domainfill
     end do
   end do
 
-  ! If particles shall be read in to continue an existing run,
-  ! then the accumulated masses at the domain boundaries must be read in, too.
-  ! This overrides any previous calculations.
-  !***************************************************************************
+! If particles shall be read in to continue an existing run,
+! then the accumulated masses at the domain boundaries must be read in, too.
+! This overrides any previous calculations.
+!***************************************************************************
 
   if (ipin.eq.1) then
     open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &

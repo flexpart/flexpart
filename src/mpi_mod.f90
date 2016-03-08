@@ -119,31 +119,31 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.false.
+  logical, parameter :: mp_measure_time=.true.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time
-  real(sp) :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
-  real(dp) :: mp_comm_wtime_beg, mp_comm_wtime_end, mp_comm_wtime_total=0.
-  real(sp) :: mp_root_time_beg, mp_root_time_end, mp_root_time_total=0.
-  real(dp) :: mp_root_wtime_beg, mp_root_wtime_end, mp_root_wtime_total=0.
-  real(sp) :: mp_barrier_time_beg, mp_barrier_time_end, mp_barrier_time_total=0.
-  real(dp) :: mp_barrier_wtime_beg, mp_barrier_wtime_end, mp_barrier_wtime_total=0.
-  real(sp) :: tm_nploop_beg, tm_nploop_end, tm_nploop_total=0.
-  real(sp) :: tm_tot_beg, tm_tot_end, tm_tot_total=0.
-  real(dp) :: mp_getfields_wtime_beg, mp_getfields_wtime_end, mp_getfields_wtime_total=0.
-  real(sp) :: mp_getfields_time_beg, mp_getfields_time_end, mp_getfields_time_total=0.
-  real(dp) :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
-  real(sp) :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
-  real(dp) :: mp_io_wtime_beg, mp_io_wtime_end, mp_io_wtime_total=0.
-  real(sp) :: mp_io_time_beg, mp_io_time_end, mp_io_time_total=0.
-  real(dp) :: mp_wetdepo_wtime_beg, mp_wetdepo_wtime_end, mp_wetdepo_wtime_total=0.
-  real(sp) :: mp_wetdepo_time_beg, mp_wetdepo_time_end, mp_wetdepo_time_total=0.
-  real(dp) :: mp_advance_wtime_beg, mp_advance_wtime_end, mp_advance_wtime_total=0.
-  real(dp) :: mp_conccalc_time_beg, mp_conccalc_time_end, mp_conccalc_time_total=0.
-  real(dp) :: mp_total_wtime_beg, mp_total_wtime_end, mp_total_wtime_total=0.
-  real(dp) :: mp_vt_wtime_beg, mp_vt_wtime_end, mp_vt_wtime_total
-  real(sp) :: mp_vt_time_beg, mp_vt_time_end, mp_vt_time_total
+  real(sp),private :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
+  real(dp),private :: mp_comm_wtime_beg, mp_comm_wtime_end, mp_comm_wtime_total=0.
+  real(sp),private :: mp_root_time_beg, mp_root_time_end, mp_root_time_total=0.
+  real(dp),private :: mp_root_wtime_beg, mp_root_wtime_end, mp_root_wtime_total=0.
+  real(sp),private :: mp_barrier_time_beg, mp_barrier_time_end, mp_barrier_time_total=0.
+  real(dp),private :: mp_barrier_wtime_beg, mp_barrier_wtime_end, mp_barrier_wtime_total=0.
+  real(sp),private :: tm_nploop_beg, tm_nploop_end, tm_nploop_total=0.
+  real(sp),private :: tm_tot_beg, tm_tot_end, tm_tot_total=0.
+  real(dp),private :: mp_getfields_wtime_beg, mp_getfields_wtime_end, mp_getfields_wtime_total=0.
+  real(sp),private :: mp_getfields_time_beg, mp_getfields_time_end, mp_getfields_time_total=0.
+  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
+  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
+  real(dp),private :: mp_io_wtime_beg, mp_io_wtime_end, mp_io_wtime_total=0.
+  real(sp),private :: mp_io_time_beg, mp_io_time_end, mp_io_time_total=0.
+  real(dp),private :: mp_wetdepo_wtime_beg, mp_wetdepo_wtime_end, mp_wetdepo_wtime_total=0.
+  real(sp),private :: mp_wetdepo_time_beg, mp_wetdepo_time_end, mp_wetdepo_time_total=0.
+  real(dp),private :: mp_advance_wtime_beg, mp_advance_wtime_end, mp_advance_wtime_total=0.
+  real(dp),private :: mp_conccalc_time_beg, mp_conccalc_time_end, mp_conccalc_time_total=0.
+  real(dp),private :: mp_total_wtime_beg, mp_total_wtime_end, mp_total_wtime_total=0.
+  real(dp),private :: mp_vt_wtime_beg, mp_vt_wtime_end, mp_vt_wtime_total
+  real(sp),private :: mp_vt_time_beg, mp_vt_time_end, mp_vt_time_total
 
 ! dat_lun           logical unit number for i/o
   integer, private :: dat_lun 
@@ -1823,6 +1823,16 @@ contains
              &(mp_wetdepo_time_end - mp_wetdepo_time_beg)
       end if
 
+    case ('advance')
+      if (imode.eq.0) then
+        mp_advance_wtime_beg = mpi_wtime()
+      else
+        mp_advance_wtime_end = mpi_wtime()
+
+        mp_advance_wtime_total = mp_advance_wtime_total + &
+             &(mp_advance_wtime_end - mp_advance_wtime_beg)
+      end if
+
     case ('getfields')
       if (imode.eq.0) then
         mp_getfields_wtime_beg = mpi_wtime()
@@ -1853,6 +1863,7 @@ contains
         mp_conccalc_time_total = mp_conccalc_time_total + mp_conccalc_time_end - &
              &mp_conccalc_time_beg
       end if
+
     case ('rootonly')
       if (imode.eq.0) then
         call cpu_time(mp_root_time_beg)

@@ -213,8 +213,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=400000
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxpart=40000000
+  integer,parameter :: maxspec=1
   real,parameter :: minmass=0.0 !0.0001
 
   ! maxpart                 Maximum number of particles
