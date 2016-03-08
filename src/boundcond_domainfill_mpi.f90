@@ -588,11 +588,13 @@ subroutine boundcond_domainfill(itime,loutend)
 
 ! :TODO: eso parallelize
   if ((ipout.gt.0).and.(itime.eq.loutend)) then
-    open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
-         form='unformatted')
-    write(unitboundcond) numcolumn_we,numcolumn_sn, &
-         zcolumn_we,zcolumn_sn,acc_mass_we,acc_mass_sn
-    close(unitboundcond)
+    if (lroot) then
+      open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
+           form='unformatted')
+      write(unitboundcond) numcolumn_we,numcolumn_sn, &
+           zcolumn_we,zcolumn_sn,acc_mass_we,acc_mass_sn
+      close(unitboundcond)
+    end if
   endif
 
 end subroutine boundcond_domainfill

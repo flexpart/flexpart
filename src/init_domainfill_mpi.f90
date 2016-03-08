@@ -180,7 +180,7 @@ subroutine init_domainfill
   do jy=ny_sn(1),ny_sn(2)      ! loop about latitudes
     ylat=ylat0+real(jy)*dy
     do ix=nx_we(1),nx_we(2)      ! loop about longitudes
-      ncolumn=nint(0.999*real(npart(1))*colmass(ix,jy)/ &
+      ncolumn=nint(0.999*real(npart(1)/mp_partgroup_np)*colmass(ix,jy)/ &
            colmasstotal)
       if (ncolumn.eq.0) goto 30
       if (ncolumn.gt.numcolumn) numcolumn=ncolumn
@@ -340,14 +340,14 @@ subroutine init_domainfill
 !****************************************************************************
 
   fractus=real(numcolumn)/real(nz)
-  write(*,*) 'Total number of particles at model start: ',numpart
-  write(*,*) 'Maximum number of particles per column: ',numcolumn
-  write(*,*) 'If ',fractus,' <1, better use more particles'
+  write(*,*) 'Total number of particles at model start: ',numpart*mp_partgroup_np
+  write(*,*) 'Maximum number of particles per column: ',numcolumn*mp_partgroup_np
+  write(*,*) 'If ',fractus*mp_partgroup_np,' <1, better use more particles'
   fractus=sqrt(max(fractus,1.))/2.
 
   do jy=ny_sn(1),ny_sn(2)      ! loop about latitudes
     do ix=nx_we(1),nx_we(2)      ! loop about longitudes
-      ncolumn=nint(0.999/fractus*real(npart(1))*colmass(ix,jy) &
+      ncolumn=nint(0.999/fractus*real(npart(1)/mp_partgroup_np)*colmass(ix,jy) &
            /colmasstotal)
       if (ncolumn.gt.maxcolumn) stop 'maxcolumn too small'
       if (ncolumn.eq.0) goto 80

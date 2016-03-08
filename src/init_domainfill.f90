@@ -292,11 +292,6 @@ subroutine init_domainfill
     end do
   end do
 
-  write(*,*) 'init_domainfill> ncolumn: ', ncolumn 
-  write(*,*) 'init_domainfill> numcolumn: ', numcolumn 
-  write(*,*) 'init_domainfill> ny_sn(1),ny_sn(2): ', ny_sn(1),ny_sn(2)
-  write(*,*) 'init_domainfill> nx_we(1),nx_we(2): ', nx_we(1),nx_we(2)
-
 
 ! Check whether numpart is really smaller than maxpart
 !*****************************************************

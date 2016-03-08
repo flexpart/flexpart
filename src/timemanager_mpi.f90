@@ -117,11 +117,6 @@ subroutine timemanager
   real(dep_prec) :: drygridtotalunc,wetgridtotalunc,drydeposit(maxspec)
   real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
-!double precision xm(maxspec,maxpointspec_act),
-!    +                 xm_depw(maxspec,maxpointspec_act),
-!    +                 xm_depd(maxspec,maxpointspec_act)
-
-!open(88,file='TEST.dat')
 
 ! Measure time spent in timemanager
   if (mp_measure_time) call mpif_mtime('timemanager',0)
