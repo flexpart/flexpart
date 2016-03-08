@@ -53,8 +53,6 @@ subroutine init_domainfill
   use random_mod, only: ran1
   use mpi_mod
 
-! :TODO: parallelize this
-
   implicit none
 
   integer :: j,ix,jy,kz,ncolumn,numparttot
