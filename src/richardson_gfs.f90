@@ -140,7 +140,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
     thetaold=theta
     zold=z
   end do
-
+  k=k-1 ! ESO: make sure k <= nuvz (ticket #139)
 20   continue
 
   ! Determine Richardson number between the critical levels

@@ -110,7 +110,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
     rh = qvlev(k) / f_qvsat( pint, ttlev(k) )
 
 
-  !alculate Richardson number at each level
+  ! Calculate Richardson number at each level
   !****************************************
 
     ri=ga/thetaref*(theta-thetaref)*(z-zref)/ &
@@ -126,7 +126,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
     thetaold=theta
     zold=z
   end do
-
+  k=k-1 ! ESO: make sure k <= nuvz (ticket #139)
 20   continue
 
   ! Determine Richardson number between the critical levels
