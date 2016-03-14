@@ -10,10 +10,10 @@ SHELL = /bin/bash
 #    ("ROOT_DIR")
 #    To use gfortran version 4.9, add "gcc=4.9" to the make command, e.g.
 #       'make -j ecmwf gcc=4.9',
-#    also set environment variable LD_LIBRARY_FLAGS=
+#    also set environment variable LD_LIBRARY_PATH to point to compiler libraries
 # 
 #  USAGE
-#    Compile serial FLEXPART (ECMWF)
+#    Compile serial FLEXPART (ECMWF)a
 #      make [-j] ecmwf
 #
 #    Compile parallel FLEXPART (ECMWF)

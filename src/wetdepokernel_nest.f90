@@ -53,8 +53,6 @@ subroutine wetdepokernel_nest(nunc,deposit,x,y,nage,kp)
   real :: x,y,deposit(maxspec),ddx,ddy,xl,yl,wx,wy,w
   integer :: ix,jy,ixp,jyp,ks,kp,nunc,nage
 
-  real :: dbg_dx, dbg_dy, dbg_xoutshiftn, dbg_youtshiftn, dbg_dxoutn, dbg_dyoutn,dbg_t
-
   xl=(x*dx+xoutshiftn)/dxoutn
   yl=(y*dy+youtshiftn)/dyoutn
 

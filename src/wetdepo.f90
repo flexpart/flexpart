@@ -142,17 +142,14 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
 ! Determine nested grid coordinates
 !**********************************
+    readclouds_this_nest=.false.
 
     if (ngrid.gt.0) then
       xtn=(xtra1(jpart)-xln(ngrid))*xresoln(ngrid)
       ytn=(ytra1(jpart)-yln(ngrid))*yresoln(ngrid)
       ix=int(xtn)
       jy=int(ytn)
-      if (readclouds_nest(ngrid)) then
-        readclouds_this_nest=.true.
-      else
-        readclouds_this_nest=.false.
-      end if
+      if (readclouds_nest(ngrid)) readclouds_this_nest=.true.
     else
       ix=int(xtra1(jpart))
       jy=int(ytra1(jpart))
@@ -363,9 +360,9 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! scavenging coefficient based on Hertel et al 1995 - using the S_i for either gas or aerosol
 !OLD 
           if ((readclouds.and.ngrid.eq.0).or.(readclouds_this_nest.and.ngrid.gt.0)) then
-            wetscav=S_i*(prec(1)/3.6E6)
+            wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)
           else
-            wetscav=S_i*(prec(1)/3.6E6)/clouds_h
+            wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)/clouds_h
           endif
 
 

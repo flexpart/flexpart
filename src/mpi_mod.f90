@@ -60,7 +60,7 @@ module mpi_mod
 !*****************************************************************************
 
   use mpi 
-  use par_mod, only: dp, sp
+  use par_mod, only: dp,sp
   use com_mod, only: lroot
 
   implicit none
@@ -1408,7 +1408,7 @@ contains
     integer :: d3s2 = nxmax*nymax*nuvzmax
     integer :: d2s1 = nxmax*nymax
     integer :: d2s2 = nxmax*nymax*maxspec
-    integer :: d1_size1 = maxwf
+    !integer :: d1_size1 = maxwf
 
 !    integer :: d3s1,d3s2,d2s1,d2s2
 !*******************************************************************************
@@ -2153,14 +2153,14 @@ contains
     qv(:,:,:,li:ui)=1.0
 
     pv(:,:,:,li:ui)=1.0
-    clouds(:,:,:,li:ui)=0.0
+    clouds(:,:,:,li:ui)=0
 
     clwc(:,:,:,li:ui)=0.0
     ciwc(:,:,:,li:ui)=0.0
   
 ! 2D fields
 
-    cloudsh(:,:,li:ui)=0.0
+    cloudsh(:,:,li:ui)=0
     vdep(:,:,:,li:ui)=0.0
     ps(:,:,:,li:ui)=1.0e5
     sd(:,:,:,li:ui)=0.0

@@ -824,7 +824,6 @@ subroutine timemanager
 
 ! eso :TODO: this not implemented yet (transfer particles to PID 0 or rewrite)
 ! the tools to do this are already in mpi_mod.f90
-! :CUR: check this
   if (lroot) then 
     do j=1,numpart
       if (linit_cond.ge.1) call initial_cond_calc(itime,j)

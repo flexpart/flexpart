@@ -82,6 +82,9 @@ module par_mod
   real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
   real,parameter :: d_trop=50., d_strat=0.1
   real,parameter :: rho_water=1000. !ZHG 2015 [kg/m3]
+  !ZHG MAR2016
+  real,parameter :: incloud_ratio=1.6
+
   ! karman                  Karman's constant
   ! href [m]                Reference height for dry deposition
   ! konvke                  Relative share of kinetic energy used for parcel lifting
@@ -215,7 +218,7 @@ module par_mod
 
   integer,parameter :: maxpart=40000000
   integer,parameter :: maxspec=1
-  real,parameter :: minmass=0.0 !0.0001
+  real,parameter :: minmass=0.0001
 
   ! maxpart                 Maximum number of particles
   ! maxspec                 Maximum number of chemical species per release
