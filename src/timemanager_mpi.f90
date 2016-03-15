@@ -281,7 +281,7 @@ subroutine timemanager
 !*********************************************************************
 
     if (lmpreader.and.lmp_use_reader) then
-      if (itime.lt.ideltas) then
+      if (itime.lt.ideltas*ldirect) then
         cycle
       else
         goto 999

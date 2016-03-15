@@ -84,6 +84,7 @@ subroutine releaseparticles(itime)
     first_call=.false.
   end if
 
+  mind2=memind(2)
 
   ! Determine the actual date and time in Greenwich (i.e., UTC + correction for daylight savings time)
   !*****************************************************************************
