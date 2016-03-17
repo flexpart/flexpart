@@ -1,0 +1,15 @@
+************************************************
+*                                              *
+*Lagrangian particle dispersion model FLEXPART *
+*         Please select your options           *
+*                                              *
+*This file determines the ageclasses to be used*
+*                                              *
+*Ages are given in seconds. The first class    *
+*starts at age zero and goes up to the first   *
+*age specified. The last age gives the maximum *
+*time a particle is carried in the simulation. *
+*                                              *
+************************************************
+1          Integer   Number of age classes
+1814400    Integer        1

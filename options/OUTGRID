@@ -1,0 +1,114 @@
+********************************************************************************
+*                                                                              *
+*      Input file for the Lagrangian particle dispersion model FLEXPART        *
+*                       Please specify your output grid                        *
+*                                                                              *
+********************************************************************************
+
+1.  ------.----       4X,F11.4
+     -177.5000       GEOGRAFICAL LONGITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLONLEFT        (left boundary of the first grid cell - not its centre)
+
+2.  ------.----       4X,F11.4
+      -90.0000       GEOGRAFICAL LATITUDE OF LOWER LEFT CORNER OF OUTPUT GRID
+    OUTLATLOWER       (lower boundary of the first grid cell - not its centre)
+
+3.  -----             4X,I5
+      144             NUMBER OF GRID POINTS IN X DIRECTION (= No. of cells + 1)
+    NUMXGRID
+
+4.  -----             4X,I5
+      180            NUMBER OF GRID POINTS IN Y DIRECTION (= No. of cells + 1)
+    NUMYGRID
+
+5.  ------.---        4X,F10.3
+         2.500        GRID DISTANCE IN X DIRECTION
+    DXOUTLON
+
+6.  ------.---        4X,F10.3
+         1.           GRID DISTANCE IN Y DIRECTION
+    DYOUTLAT
+
+7.  -----.-           4X, F7.1
+       65.0
+    LEVEL 1           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+8.  -----.-           4X, F7.1
+      250.0
+    LEVEL 2           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+9.  -----.-           4X, F7.1
+      600.0
+    LEVEL 3           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+10.  -----.-           4X, F7.1
+     1150.0
+    LEVEL 4           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+11.  -----.-           4X, F7.1
+     2000.0
+    LEVEL 5           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+12.  -----.-           4X, F7.1
+     3000.0
+    LEVEL 6           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+13. -----.-           4X, F7.1
+     4200.0
+    LEVEL 7           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+14 -----.-           4X, F7.1
+     5400.0
+    LEVEL 8           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+15. -----.-           4X, F7.1
+     6600.0
+    LEVEL 9           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+16. -----.-           4X, F7.1
+     7900.0
+   LEVEL 10           HEIGHT OF LEVEL (UPPER BOUNDARY) 
+
+17. -----.-           4X, F7.1
+     9000.0
+   LEVEL 11           HEIGHT OF LEVEL (UPPER BOUNDARY) 
+
+18. -----.-           4X, F7.1
+    10300.0
+   LEVEL 12           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+19. -----.-           4X, F7.1
+    11500.0
+    LEVEL13           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+20. -----.-           4X, F7.1
+    12700.0
+    LEVEL14           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+21. -----.-           4X, F7.1
+    14000.0
+    LEVEL15           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+22. -----.-           4X, F7.1
+    16300.0
+    LEVEL16           HEIGHT OF LEVEL (UPPER BOUNDARY) 
+
+23. -----.-           4X, F7.1
+    18700.0
+    LEVEL17           HEIGHT OF LEVEL (UPPER BOUNDARY) 
+
+24. -----.-           4X, F7.1
+    22200.0
+    LEVEL18           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+25. -----.-           4X, F7.1
+    26000.0
+    LEVEL19            HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+26. -----.-           4X, F7.1
+    32000.0
+    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
+
+27. -----.-           4X, F7.1
+    43000.0
+    LEVEL21           HEIGHT OF LEVEL (UPPER BOUNDARY)          

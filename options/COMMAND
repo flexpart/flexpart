@@ -1,0 +1,32 @@
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++
++++++++++++++ HEADER +++++++++++++++++ 
+1
+20110102      0     
+20110109      0
+ 3600
+ 1800
+  300
+ 9999999
+300  SYNC
+-1.0  CTL
+4     IFINE
+1     IOUT
+0     IPOUT
+1     LSUBGRID
+1     LCONVECTION
+0     LAGESPECTRA
+0     IPIN
+1     IOFR
+0     IFLUX
+0     MDOMAINFILL
+1     IND_SOURCE
+1     IND_RECEPTOR
+0     MQUASILAG
+0     NESTED_OUTPUT
+0     LINIT_COND
+0     method_w
