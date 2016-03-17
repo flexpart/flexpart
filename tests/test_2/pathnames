@@ -1,0 +1,6 @@
+./options/
+./output/
+../../meteogrid/
+../../meteogrid/AVAILABLE_10days
+../../meteogrid/grid_atm.nc
+========================================================

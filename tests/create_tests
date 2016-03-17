@@ -1,0 +1,21 @@
+#! /bin/bash
+
+
+
+tmp_dir=../tests_tmp/ 
+#if [ -n  $1 ]; then
+#  echo $1 
+#  exit
+#  tmp_dir=$1
+#fi
+if [ ! -d "$tmp_dir" ]; then
+  mkdir $tmp_dir
+  echo create $tmp_dir
+fi
+
+echo $tmp_dir
+#exit
+./create_test test_0 $tmp_dir ../../src/flexpartnoresm
+./create_test test_1 $tmp_dir ../../src/flexpartnoresm
+./create_test test_2 $tmp_dir ../../src/flexpartnoresm
+

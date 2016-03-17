@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#input FP exec
+test_dir=$1
+base_dir=$2
+FP_exec=$3
+options_default=../options 
+
+#echo FP_exec=$FP_exec
+#echo $FLEXOUT_TMP
+
+#suffix=$(date "+%y-%m-%d_%H%M%S")
+#test_tmp=${FLEXOUT_TMP}${base_dir}${test_dir}
+test_tmp=${base_dir}${test_dir}
+#_${suffix}
+
+current_dir=$(pwd)
+echo test_tmp=$test_tmp
+mkdir $test_tmp
+
+#copy default optios
+cp -r $options_default $test_tmp/options
+#override default options
+if [ "$(ls -A ${test_dir}/options)" ]; then
+  cp -r ${test_dir}/options/* $test_tmp/options/
+fi
+# copy paths form repo source exec tmp dir 
+cp ${test_dir}/pathnames $test_tmp
+# make output dir locally
+mkdir ${test_tmp}/output
+ln -s $FP_exec ${test_tmp}/flexpartnoresm
+
+#cd $test_tmp
+#echo $(pwd)
+#echo $FP_exec
+#echo run $FP_exec '; stdout to  out.log' 
+#$FP_exec   &> out.log # both out and err
+
+
+

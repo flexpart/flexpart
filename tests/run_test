@@ -1,0 +1,15 @@
+#!/bin/bash
+
+test_tmp=$1 
+FP_exec=$2
+
+echo FP_exec=$FP_exec
+
+cd $test_tmp
+echo on $(pwd)
+#echo run $FP_exec
+echo run $FP_exec '; stdout to  out.log' 
+nohup $FP_exec   &> out.log &   # both out and err
+
+
+

@@ -1,0 +1,9 @@
+#! /bin/bash 
+./create_tests
+
+echo run test 0
+./run_test ../tests_tmp/test_0  ./flexpartnoresm 
+echo run test 1
+./run_test ../tests_tmp/test_1  ./flexpartnoresm 
+echo run test 2
+./run_test ../tests_tmp/test_2  ./flexpartnoresm 
