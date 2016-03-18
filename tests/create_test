@@ -14,22 +14,45 @@ options_default=../options
 test_tmp=${base_dir}${test_dir}
 #_${suffix}
 
-current_dir=$(pwd)
-echo test_tmp=$test_tmp
-mkdir $test_tmp
+#current_dir=$(pwd)
+if [[ -d "$test_tmp" ]] ; then
+  echo  $test_tmp already exists
+else 
+  echo create test in $test_tmp
+  mkdir $test_tmp
+fi
 
 #copy default optios
+echo copy default options from  $options_default
 cp -r $options_default $test_tmp/options
-#override default options
-if [ -d "$test_dir"  &&  "$(ls -A ${test_dir}/options)" ]; then
-  cp -r ${test_dir}/options/* $test_tmp/options/
-fi
-# copy paths form repo source exec tmp dir 
-cp ${test_dir}/pathnames $test_tmp
-# make output dir locally
-mkdir ${test_tmp}/output
-ln -s $FP_exec ${test_tmp}/flexpartnoresm
 
+#override default options
+if [[ -d "$test_dir/options" ]] && [[  "$(ls -A ${test_dir}/options)" ]]; then
+  cp -r ${test_dir}/options/* $test_tmp/options/
+  echo copy specific options for this test from ${test_dir}/options
+fi
+
+# copy paths form repo source exec tmp dir 
+echo copy ${test_dir}/pathnames
+cp ${test_dir}/pathnames $test_tmp
+
+# make output dir locally
+if [[ -d "$test_tmp/output" ]]; then
+  echo  $test_tmp/output already exists
+else
+  mkdir ${test_tmp}/output
+  echo create ${test_tmp}/output
+fi
+
+if [[ -L "${test_tmp}/flexpartnoresm" ]]; then
+  rm ${test_tmp}/flexpartnoresm
+  echo remove existing link ${test_tmp}/flexpartnoresm  
+fi
+ln -s $FP_exec ${test_tmp}/flexpartnoresm
+echo link  $FP_exec to ${test_tmp}/flexpartnoresm
+
+echo $test_dir is ready to run
+echo
 #cd $test_tmp
 #echo $(pwd)
 #echo $FP_exec

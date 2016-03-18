@@ -13,7 +13,7 @@ if [ ! -d "$tmp_dir" ]; then
   echo create $tmp_dir
 fi
 
-echo $tmp_dir
+echo create tests in $tmp_dir
 #exit
 ./create_test test_0 $tmp_dir ../../src/flexpartnoresm
 ./create_test test_1 $tmp_dir ../../src/flexpartnoresm
