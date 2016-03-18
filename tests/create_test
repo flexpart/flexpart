@@ -21,7 +21,7 @@ mkdir $test_tmp
 #copy default optios
 cp -r $options_default $test_tmp/options
 #override default options
-if [ "$(ls -A ${test_dir}/options)" ]; then
+if [ -d "$test_dir"  &&  "$(ls -A ${test_dir}/options)" ]; then
   cp -r ${test_dir}/options/* $test_tmp/options/
 fi
 # copy paths form repo source exec tmp dir 
