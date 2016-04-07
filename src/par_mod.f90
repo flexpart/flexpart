@@ -27,12 +27,17 @@
 !                                                                              *
 !        1997                                                                  *
 !                                                                              *
-!        Last update 15 August 2013 IP                                         *
+!        Update 15 August 2013 IP                                              *
+!                                                                              *
+!        ESO 2016:                                                             *
+!          GFS specific parameters moved to gfs_mod.f90                        *
+!          ECMWF specific parameters moved to ecmwf_mod.f90                    *
 !                                                                              *
 !*******************************************************************************
 
 module par_mod
 
+!************************************************************************
 ! wind_mod: is gfs_mod.f90 for target gfs, ecmwf_mod.f90 for target ecmwf
 !************************************************************************
   use wind_mod 
@@ -134,50 +139,14 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
-  ! nxmax,nymax,nuvzmax,nwzmax,nzmax:
-  ! Moved to ecmwf.f90 (for ECMWF) / gfs.f90 (GFS)
+  ! Moved to ecmwf_mod.f90 (for ECMWF) / gfs_mod.f90 (for GFS)
   
-
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
-  !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
-
-!  integer,parameter :: nxshift=359 ! for ECMWF
-  !integer,parameter :: nxshift=0     ! for GFS or FNL
-
   integer,parameter :: nconvlevmax = nuvzmax-1
   integer,parameter :: na = nconvlevmax+1
-
-  ! moved to gfs_mod.f90 / ecmwf_mod.f90
-  !
-  ! nxmax,nymax        maximum dimension of wind fields in x and y
-  !                    direction, respectively
-  ! nuvzmax,nwzmax     maximum dimension of (u,v) and (w) wind fields in z
-  !                    direction (for fields on eta levels)
-  ! nzmax              maximum dimension of wind fields in z direction
-  !                    for the transformed Cartesian coordinates
-  ! nxshift            for global grids (in x), the grid can be shifted by
-  !                    nxshift grid points, in order to accomodate nested
-  !                    grids, and output grids overlapping the domain "boundary"
-  !                    nxshift must not be negative; "normal" setting would be 0
 
   ! ntracermax         maximum number of tracer species in convection
   ! nconvlevmax        maximum number of levels for convection
   ! na                 parameter used in Emanuel's convect subroutine
-
-
-  !*********************************************
-  ! Maximum dimensions of the nested input grids
-  !*********************************************
-
-  !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  !integer,parameter :: maxnests=0,nxmaxn=351,nymaxn=351 !ECMWF
-
-  !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
-  ! maxnests                maximum number of nested grids
-  ! nxmaxn,nymaxn           maximum dimension of nested wind fields in
-  !                         x and y direction, respectively
 
 
   !*********************************
@@ -216,7 +185,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=40000000
+  integer,parameter :: maxpart=10000
   integer,parameter :: maxspec=1
   real,parameter :: minmass=0.0001
 

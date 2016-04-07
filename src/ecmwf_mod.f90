@@ -21,14 +21,15 @@
 
 !*******************************************************************************
 !   Include file for calculation of particle trajectories (Program FLEXPART)   *
-!        This file contains ECMWF specific parameters used in FLEXPART         *
-!        Note that module name differs from file name.                         *
-!        The makefile selects either this file, or gfs_mod.f90, depending      *
-!        on target.                                                            *
 !                                                                              *
-!        Author: ESO                                                           *
+!       This file contains ECMWF specific parameters used in FLEXPART          *
+!       Note that module name differs from file name.                          *
+!       The makefile selects either this file, or gfs_mod.f90, depending       *
+!       on target.                                                             *
 !                                                                              *
-!        2015                                                                  *
+!       Author: ESO                                                            *
+!                                                                              *
+!       2015                                                                   *
 !                                                                              *
 !*******************************************************************************
 
@@ -43,10 +44,8 @@ module wind_mod
 !  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
   integer,parameter :: nxshift=359
-!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !test BUG 
 !  integer,parameter :: nxshift=0
 
-! 
   !*********************************************
   ! Maximum dimensions of the nested input grids
   !*********************************************
@@ -54,5 +53,15 @@ module wind_mod
   integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=181
 !  integer,parameter :: maxnests=1,nxmaxn=86,nymaxn=31
 
+  ! nxmax,nymax        maximum dimension of wind fields in x and y
+  !                    direction, respectively
+  ! nuvzmax,nwzmax     maximum dimension of (u,v) and (w) wind fields in z
+  !                    direction (for fields on eta levels)
+  ! nzmax              maximum dimension of wind fields in z direction
+  !                    for the transformed Cartesian coordinates
+  ! nxshift            for global grids (in x), the grid can be shifted by
+  !                    nxshift grid points, in order to accomodate nested
+  !                    grids, and output grids overlapping the domain "boundary"
+  !                    nxshift must not be negative; "normal" setting would be 0
 
 end module wind_mod

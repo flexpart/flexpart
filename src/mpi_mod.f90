@@ -194,10 +194,11 @@ contains
 !************************************************************
     if (dep_prec==dp) then
       mp_cp = MPI_REAL8
-      if (lroot) write(*,*) 'Using double precision for deposition fields'
+      ! TODO: write info message for serial version as well 
+      if (lroot.and.verbosity>0) write(*,*) 'Using double precision for deposition fields'
     else if (dep_prec==sp) then
       mp_cp = MPI_REAL4
-      if (lroot) write(*,*) 'Using single precision for deposition fields'
+      if (lroot.and.verbosity>0) write(*,*) 'Using single precision for deposition fields'
     else
       write(*,*) 'ERROR: something went wrong setting MPI real precision'
       stop

@@ -227,39 +227,42 @@ subroutine timemanager
 
     if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',0)
 
+! Two approaches to MPI getfields is implemented:
 ! Version 1 (lmp_sync=.true.) uses a read-ahead process where send/recv is done
 ! in sync at start of each new field time interval
+!
+! Version 2 (lmp_sync=.false.) is for holding three fields in memory. Uses a
+! read-ahead process where sending/receiving of the 3rd fields is done in
+! the background in parallel with performing computations with fields 1&2
+!********************************************************************************
+
     if (lmp_sync.and.lmp_use_reader.and.memstat.gt.0) then
       call mpif_gf_send_vars(memstat)
       if (numbnests>0) call mpif_gf_send_vars_nest(memstat)
-! Version 2  (lmp_sync=.false., see below) is also used whenever 2 new fields are
+! Version 2  (lmp_sync=.false.) is also used whenever 2 new fields are
 ! read (as at first time step), in which case async send/recv is impossible.
     else if (.not.lmp_sync.and.lmp_use_reader.and.memstat.ge.32) then
       call mpif_gf_send_vars(memstat)
       if (numbnests>0) call mpif_gf_send_vars_nest(memstat)
     end if
 
-! Version 2 (lmp_sync=.false.) is for holding three fields in memory. Uses a
-! read-ahead process where sending/receiving of the 3rd fields is done in
-! the background in parallel with performing computations with fields 1&2
-!********************************************************************************
     if (.not.lmp_sync) then
     
-! READER PROCESS:
+! Reader process:
       if (memstat.gt.0..and.memstat.lt.32.and.lmp_use_reader.and.lmpreader) then
         if (mp_dev_mode) write(*,*) 'Reader process: calling mpif_gf_send_vars_async' 
         call mpif_gf_send_vars_async(memstat)
       end if
 
-! COMPLETION CHECK:
+! Completion check:
 ! Issued at start of each new field period. 
       if (memstat.ne.0.and.memstat.lt.32.and.lmp_use_reader) then
         call mpif_gf_request
       end if
 
-! RECVEIVING PROCESS(ES):
-      ! eso TODO: at this point we do not know if clwc/ciwc will be available
-      ! at next time step. Issue receive request anyway, cancel at mpif_gf_request
+! Recveiving process(es):
+! eso TODO: at this point we do not know if clwc/ciwc will be available
+! at next time step. Issue receive request anyway, cancel at mpif_gf_request
       if (memstat.gt.0.and.lmp_use_reader.and..not.lmpreader) then
         if (mp_dev_mode) write(*,*) 'Receiving process: calling mpif_gf_send_vars_async. PID: ', mp_pid
         call mpif_gf_recv_vars_async(memstat)
