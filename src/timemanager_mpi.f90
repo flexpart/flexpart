@@ -493,11 +493,6 @@ subroutine timemanager
           endif
           if (mp_measure_time) call mpif_mtime('iotime',1)
 
-! :TODO: Correct calling of conc_surf above?
-
-!   call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
-! endif
-
           if (nested_output.eq.1) then
 
 ! MPI: Root process collects/sums nested grids
@@ -693,17 +688,12 @@ subroutine timemanager
 !*************************************************
 
         if (mp_measure_time) call mpif_mtime('advance',0)
-!mp_advance_wtime_beg = mpi_wtime()
 
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
              us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
              cbt(j))
 
         if (mp_measure_time) call mpif_mtime('advance',1)
-
-        ! mp_advance_wtime_end = mpi_wtime()
-        ! mp_advance_wtime_total = mp_advance_wtime_total + (mp_advance_wtime_end - &
-        !      & mp_advance_wtime_beg)
 
 
 ! Calculate the gross fluxes across layer interfaces

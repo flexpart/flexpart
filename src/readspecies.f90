@@ -150,7 +150,7 @@ subroutine readspecies(id_spec,pos_spec)
     read(unitspecies,'(e18.1)',end=22) density(pos_spec)
 !  write(*,*) density(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dquer(pos_spec)
-!  write(*,*) dquer(pos_spec)
+    write(*,*) 'dquer(pos_spec):', dquer(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dsigma(pos_spec)
 !  write(*,*) dsigma(pos_spec)
     read(unitspecies,'(f18.2)',end=22) dryvel(pos_spec)
@@ -291,7 +291,7 @@ subroutine readspecies(id_spec,pos_spec)
   endif
   endif
 
-  if ((weta(pos_spec).gt.0).and.(henry(pos_spec).le.0)) then
+  if (((weta(pos_spec).gt.0).or.(wetb(pos_spec).gt.0)).and.(henry(pos_spec).le.0)) then
     if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
   endif
 

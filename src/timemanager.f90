@@ -144,7 +144,7 @@ subroutine timemanager
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
   
-
+  write(*,46) float(itime)/3600,itime,numpart
 
   if (verbosity.gt.0) then
     write (*,*) 'timemanager> starting simulation'
@@ -430,8 +430,8 @@ subroutine timemanager
         !CGZ-lifetime: output species lifetime
 
         !write(*,46) float(itime)/3600,itime,numpart
-45      format(i9,' SECONDS SIMULATED: ',i8, ' PARTICLES:    Uncertainty: ',3f7.3)
-46      format(' Simulated ',f7.1,' hours (',i9,' s), ',i8, ' particles')
+45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
+46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
         loutnext=loutnext+loutstep
         loutstart=loutnext-loutaver/2

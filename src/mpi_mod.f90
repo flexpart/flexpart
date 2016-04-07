@@ -119,7 +119,7 @@ module mpi_mod
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
-  logical, parameter :: mp_measure_time=.true.
+  logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
 
 ! for measuring CPU/Wall time

@@ -257,7 +257,6 @@ subroutine wetdepo(itime,ltsample,loutnext)
       wetdeposit(ks)=0. 
       wetscav=0.   
 
-!ZHG test if it nested?
       if (ngrid.gt.0) then
         act_temp=ttn(ix,jy,hz,n,ngrid)
       else
