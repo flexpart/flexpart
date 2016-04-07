@@ -167,14 +167,16 @@ What is implemented in the MPI version
     * Nested grid output
     * NetCDF output
     * Namelist input/output
-
- -Implemented but untested:
     * Domain-filling trajectory calculations
     * Nested wind fields
 
+ -Implemented but untested:
+
+    * Backward runs (but not initial_cond_output.f90)
+
  -The following will most probably not work (untested/under developement): 
 
-    * Backward runs
+    * Calculation/output of fluxes 
 
  -This will positively NOT work yet
 
