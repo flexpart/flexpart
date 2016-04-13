@@ -185,7 +185,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=10000
+  integer,parameter :: maxpart=4000000
   integer,parameter :: maxspec=1
   real,parameter :: minmass=0.0001
 
@@ -228,9 +228,8 @@ module par_mod
   ! Dimension of random number field
   !*********************************
 
-!  integer,parameter :: maxrand=120000000
   integer,parameter :: maxrand=200000000
-!
+
   ! maxrand                 number of random numbers used
   
 

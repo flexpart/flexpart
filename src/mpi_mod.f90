@@ -164,7 +164,7 @@ contains
 !   mp_np       number of running processes, decided at run-time
 !***********************************************************************
     use par_mod, only: maxpart, numwfmem, dep_prec
-    use com_mod, only: mpi_mode
+    use com_mod, only: mpi_mode, verbosity
 
     implicit none
 
@@ -385,6 +385,9 @@ contains
 !*******************************************************************************    
 ! Dynamic allocation of arrays (in serial code these have size maxpart)
 !
+! Not in use anymore, moved to com_mod for interoperability with serial version
+! 
+! TODO: remove 
 !*******************************************************************************
     use com_mod
 
@@ -1042,7 +1045,7 @@ contains
 !
 !***********************************************************************
     use com_mod
-    use par_mod, only: numwfmem
+    use par_mod,only: numwfmem
 
     implicit none
 
@@ -1225,7 +1228,7 @@ contains
     integer :: d3s2 = nxmax*nymax*nuvzmax
     integer :: d2s1 = nxmax*nymax
     integer :: d2s2 = nxmax*nymax*maxspec
-    integer :: d1s1 = maxwf
+!    integer :: d1s1 = maxwf
 
 !*******************************************************************************
 
@@ -1429,6 +1432,10 @@ contains
     else if (memstat.eq.19) then
 ! last read was asynchronous to index 2, 3 is free
       mind=3
+    else
+! illegal state
+      write(*,*) 'mpi_mod> FLEXPART ERROR: Illegal memstat value. Exiting.'
+      stop
     end if
 
     if (mp_dev_mode) then
@@ -1601,13 +1608,12 @@ contains
 !
 !
 !*******************************************************************************
-    use com_mod, only: readclouds
+!    use com_mod,only: readclouds
 
     implicit none
 
 
-    integer :: n_req
-    integer :: i
+    integer :: n_req !,i
 
 !***********************************************************************
 
@@ -1957,7 +1963,7 @@ contains
 !***********************************************************************
     implicit none
 
-    integer :: ip,j,r
+    integer :: ip !,j,r
 
 !***********************************************************************
 

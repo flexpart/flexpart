@@ -316,7 +316,8 @@ program flexpart
     if (verbosity.gt.0 .and. lroot) then
       print*,'call readpartpositions'
     endif
-    call readpartpositions
+    ! readwind process skips this step
+    if (lmp_use_reader.and..not.lmpreader) call readpartpositions
   else
     if (verbosity.gt.0 .and. lroot) then
       print*,'numpart=0, numparticlecount=0'

@@ -103,7 +103,7 @@ subroutine timemanager
   implicit none
 
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
-  integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0,mind
+  integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0 !,mind
 ! integer :: ksp
   integer :: ip
   integer :: loutnext,loutstart,loutend
@@ -114,7 +114,8 @@ subroutine timemanager
   real :: decfact
 
   real(sp) :: gridtotalunc
-  real(dep_prec) :: drygridtotalunc,wetgridtotalunc,drydeposit(maxspec)
+  real(dep_prec) :: drygridtotalunc=0_dep_prec,wetgridtotalunc=0_dep_prec,&
+       & drydeposit(maxspec)=0_dep_prec
   real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
 
@@ -136,9 +137,9 @@ subroutine timemanager
 
 
 !  itime=0
-  if (lroot) then
-  !  write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
-    write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
+  if (lroot.or.mp_dev_mode) then
+    write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
+  !  write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
     
     if (verbosity.gt.0) then
       write (*,*) 'timemanager> starting simulation'
@@ -274,7 +275,7 @@ subroutine timemanager
 
 ! For validation and tests: call the function below to set all fields to simple
 ! homogeneous values
-    if (mp_dev_mode) call set_fields_synthetic
+!    if (mp_dev_mode) call set_fields_synthetic
 
 !*******************************************************************************
 
@@ -553,7 +554,7 @@ subroutine timemanager
         endif
         
         !CGZ-lifetime: output species lifetime
-        if (lroot) then
+        if (lroot.or.mp_dev_mode) then
         !   write(*,*) 'Overview species lifetime in days', &
         !        real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
         !   write(*,*) 'all info:',species_lifetime

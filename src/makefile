@@ -13,7 +13,7 @@ SHELL = /bin/bash
 #    also set environment variable LD_LIBRARY_PATH to point to compiler libraries
 # 
 #  USAGE
-#    Compile serial FLEXPART (ECMWF)a
+#    Compile serial FLEXPART (ECMWF)
 #      make [-j] ecmwf
 #
 #    Compile parallel FLEXPART (ECMWF)
