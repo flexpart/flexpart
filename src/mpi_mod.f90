@@ -979,7 +979,7 @@ contains
     if (readclouds) then
       ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(clw4(:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(ctwc(:,:,li:ui),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
       ! call MPI_Bcast(clwc(:,:,:,li:ui),d3s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
@@ -1150,7 +1150,7 @@ contains
     if (readclouds_nest(i)) then
       ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       ! if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(clw4n(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+      call MPI_Bcast(ctwcn(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
 
@@ -1359,7 +1359,7 @@ contains
         i=i+1
         ! call MPI_Isend(icloud_stats(:,:,:,mind),d2s1*5,mp_sp,dest,tm1,&
         !      &MPI_COMM_WORLD,reqs(i),mp_ierr)
-        call MPI_Isend(clw4(:,:,mind),d2s1,mp_sp,dest,tm1,&
+        call MPI_Isend(ctwc(:,:,mind),d2s1,mp_sp,dest,tm1,&
              &MPI_COMM_WORLD,reqs(i),mp_ierr)
 
         if (mp_ierr /= 0) goto 600
@@ -1572,7 +1572,7 @@ contains
 
       ! call MPI_Irecv(icloud_stats(:,:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
       !      &MPI_COMM_WORLD,reqs(j),mp_ierr)
-      call MPI_Irecv(clw4(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
+      call MPI_Irecv(ctwc(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
 

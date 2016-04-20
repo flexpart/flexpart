@@ -88,7 +88,7 @@ module par_mod
   real,parameter :: d_trop=50., d_strat=0.1
   real,parameter :: rho_water=1000. !ZHG 2015 [kg/m3]
   !ZHG MAR2016
-  real,parameter :: incloud_ratio=1.6
+  real,parameter :: incloud_ratio=2.2
 
   ! karman                  Karman's constant
   ! href [m]                Reference height for dry deposition

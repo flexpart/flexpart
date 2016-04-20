@@ -1,0 +1,27 @@
+****************************************************************************
+*                                                                          *
+*     Input file for the Lagrangian particle dispersion model FLEXPART     *
+*               Definition file of chemical species/radionuclides          *
+*     This file is on the format required by version 10 (05/2015)          *
+****************************************************************************
+I2-131             Tracer name
+691200.0           Species half life
+8.0E-05            Below-cloud scavenging (gases) - A (weta_gas)
+0.62               Below-cloud scavenging (gases) - B (wetb_gas)
+-9.9               Below-cloud scavenging (particles) - Crain (crain_aero)
+-9.9               Below-cloud scavenging (particles) - Csnow (csnow_aero)
+-9.9               In-cloud scavenging (particles) - CCNeff (ccn_aero)
+-9.9               In-cloud scavenging (particles) - INeff (in_aero)
+2.7                Dry deposition (gases) - D
+1.0e+05            Dry deposition (gases) - Henrys const.
+0.1                Dry deposition (gases) - f0 (reactivity)
+-9.9E09            Dry deposition (particles) - rho
+                   Dry deposition (particles) - dquer
+                   Dry deposition (particles) - dsig
+-9.99              Alternative: dry deposition velocity
+ -9.99             molweight
+-9.99E-09          OH Reaction rate - C [cm^3/molecule/sec]
+-9.9               OH reaction rate - D [K]
+-9.9               OH Reaction rate - N (no unit)
+-9                 number of associated species (neg. none)
+-99.99             KOA - organic matter air partitioning

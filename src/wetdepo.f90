@@ -269,59 +269,67 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !***********************  
       if (clouds_v.ge.4) then !below cloud
 
-        if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then !if positive below-cloud parameters given in SPECIES file (either A or B)
+! For gas: if positive below-cloud parameters (A or B), and dquer<=0
+!******************************************************************
+        if ((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) then
+          !        if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then 
+          blc_count=blc_count+1
+          wetscav=weta_gas(ks)*prec(1)**wetb_gas(ks)
+
+! For aerosols: if positive below-cloud parameters (Crain/Csnow or B), and dquer>0
+!*********************************************************************************
+        else if ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.)) then
           blc_count=blc_count+1
 
-!GAS
-          if (dquer(ks) .le. 0.) then  !is gas
-            wetscav=weta(ks)*prec(1)**wetb(ks)
-
-!AEROSOL
-          else !is particle
 !NIK 17.02.2015
-! For the calculation here particle size needs to be in meter and not um as dquer is changed to in readreleases
-! for particles larger than 10 um use the largest size defined in the parameterizations (10um)
-            dquer_m=min(10.,dquer(ks))/1000000. !conversion from um to m
-            if (act_temp .ge. 273. .and. weta(ks).gt.0.)  then !Rain 
+! For the calculation here particle size needs to be in meter and not um as dquer is
+! changed in readreleases
+! For particles larger than 10 um use the largest size defined in the parameterizations (10um)
+          dquer_m=min(10.,dquer(ks))/1000000. !conversion from um to m
+
+! Rain:
+          if (act_temp .ge. 273. .and. crain_aero(ks).gt.0.)  then
+
 ! ZHG 2014 : Particle RAIN scavenging coefficient based on Laakso et al 2003, 
-! the below-cloud scavenging (rain efficienty) 
-! parameter A (=weta) from SPECIES file
-              wetscav= weta(ks)*10**(bclr(1)+ (bclr(2)*(log10(dquer_m))**(-4))+(bclr(3)*(log10(dquer_m))**(-3))+ (bclr(4)* &
-                   (log10(dquer_m))**(-2))+ (bclr(5)*(log10(dquer_m))**(-1))+ bclr(6)* (prec(1))**(0.5))
+! the below-cloud scavenging (rain efficienty) parameter Crain (=crain_aero) from SPECIES file
+            wetscav=crain_aero(ks)*10**(bclr(1)+(bclr(2)*(log10(dquer_m))**(-4))+ &
+                 & (bclr(3)*(log10(dquer_m))**(-3))+ (bclr(4)*(log10(dquer_m))**(-2))+&
+                 &(bclr(5)*(log10(dquer_m))**(-1))+bclr(6)* (prec(1))**(0.5))
 
-            elseif (act_temp .lt. 273. .and. wetb(ks).gt.0.)  then ! Snow
+! Snow:
+          elseif (act_temp .lt. 273. .and. csnow_aero(ks).gt.0.)  then 
 ! ZHG 2014 : Particle SNOW scavenging coefficient based on Kyro et al 2009, 
-! the below-cloud scavenging (Snow efficiency) 
-! parameter B (=wetb) from SPECIES file
-              wetscav= wetb(ks)*10**(bcls(1)+ (bcls(2)*(log10(dquer_m))**(-4))+(bcls(3)*(log10(dquer_m))**(-3))+ (bcls(4)* &
-                   (log10(dquer_m))**(-2))+ (bcls(5)*(log10(dquer_m))**(-1))+ bcls(6)* (prec(1))**(0.5))
+! the below-cloud scavenging (Snow efficiency) parameter Csnow (=csnow_aero) from SPECIES file
+            wetscav=csnow_aero(ks)*10**(bcls(1)+(bcls(2)*(log10(dquer_m))**(-4))+&
+                 &(bcls(3)*(log10(dquer_m))**(-3))+ (bcls(4)*(log10(dquer_m))**(-2))+&
+                 &(bcls(5)*(log10(dquer_m))**(-1))+ bcls(6)* (prec(1))**(0.5))
 
-            endif
-
+          endif
+          
 !             write(*,*) 'bl-cloud, act_temp=',act_temp, ',prec=',prec(1),',wetscav=', wetscav, ', jpart=',jpart
 
-          endif !gas or particle
-        endif ! positive below-cloud scavenging parameters given in Species file
+        endif ! gas or particle
+!      endif ! positive below-cloud scavenging parameters given in Species file
       endif !end BELOW
-
 
 !********************
 ! IN CLOUD SCAVENGING
 !********************
       if (clouds_v.lt.4) then ! In-cloud
-! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are given in species file
-        if (weta_in(ks).gt.0. .or. wetb_in(ks).gt.0.) then 
+! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are
+! given in species file, or if gas and positive Henry's constant
+        if ((ccn_aero(ks).gt.0. .or. in_aero(ks).gt.0.).or.(henry(ks).gt.0.and.dquer(ks).le.0)) then 
           inc_count=inc_count+1
 ! if negative coefficients (turned off) set to zero for use in equation
-          if (weta_in(ks).lt.0.) weta_in(ks)=0.
-          if (wetb_in(ks).lt.0.) wetb_in(ks)=0.
+          if (ccn_aero(ks).lt.0.) ccn_aero(ks)=0.
+          if (in_aero(ks).lt.0.) in_aero(ks)=0.
 
 !ZHG 2015 Cloud liquid & ice water (CLWC+CIWC) from ECMWF
 ! nested fields
           if (ngrid.gt.0.and.readclouds_this_nest) then
-            cl=clw4n(ix,jy,n,ngrid)*(grfraction(1)/cc)
+            cl=ctwcn(ix,jy,n,ngrid)*(grfraction(1)/cc)
           else if (ngrid.eq.0.and.readclouds) then
-            cl=clw4(ix,jy,n)*(grfraction(1)/cc)
+            cl=ctwc(ix,jy,n)*(grfraction(1)/cc)
           else                                  !parameterize cloudwater m2/m3
 !ZHG updated parameterization of cloud water to better reproduce the values coming from ECMWF
             cl=1.6E-6*prec(1)**0.36
@@ -336,13 +344,13 @@ subroutine wetdepo(itime,ltsample,loutnext)
             liq_frac =((act_temp-273.)/(273.-253.))**2.
           end if
 ! ZHG: Calculate the aerosol partition based on cloud phase and Ai and Bi
-          frac_act = liq_frac*weta_in(ks) +(1-liq_frac)*wetb_in(ks)
+          frac_act = liq_frac*ccn_aero(ks) +(1-liq_frac)*in_aero(ks)
 
 !ZHG Use the activated fraction and the liqid water to calculate the washout
 
 ! AEROSOL
 !**************************************************
-          if (dquer(ks).gt. 0.) then ! is particle
+          if (dquer(ks).gt.0.) then ! is particle
 
             S_i= frac_act/cl
 

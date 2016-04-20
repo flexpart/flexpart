@@ -81,7 +81,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   integer,dimension(0:nxmax-1,0:nymax-1) :: rain_cloud_above,idx
 
   integer :: ix,jy,kz,iz,n,kmin,ix1,jy1,ixp,jyp,ixm,jym,kz_inv
-  real :: f_qvsat,pressure,rh,lsp,convp,prec
+  real :: f_qvsat,pressure,rh,lsp,convp,cloudh_min,prec
   real :: ew,dz1,dz2,dz
   real :: xlon,ylat,xlonr,dzdx,dzdy
   real :: dzdx1,dzdx2,dzdy1,dzdy2
@@ -585,7 +585,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !***********************************************************************************
     write(*,*) 'Global ECMWF fields: using cloud water'
     clw(:,:,:,n)=0.0
-    icloud_stats(:,:,:,n)=0.0
+!    icloud_stats(:,:,:,n)=0.0
+    ctwc(:,:,n)=0.0
     clouds(:,:,:,n)=0
 ! If water/ice are read separately into clwc and ciwc, store sum in clwc
     if (.not.sumclouds) then 
@@ -603,12 +604,15 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
             clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
             tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
-            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
-            icloud_stats(ix,jy,3,n)= min(height(kz+1),height(kz))                     ! Cloud BOT height stats      [m]
+            
+!            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
+            ctwc(ix,jy,n) = ctwc(ix,jy,n)+clw(ix,jy,kz,n)
+!            icloud_stats(ix,jy,3,n)= min(height(kz+1),height(kz))                     ! Cloud BOT height stats      [m]
+            cloudh_min=min(height(kz+1),height(kz))
 !ZHG 2015 extra for testing
 !            clh(ix,jy,kz,n)=height(kz+1)-height(kz)
-            icloud_stats(ix,jy,1,n)=icloud_stats(ix,jy,1,n)+(height(kz+1)-height(kz)) ! Cloud total vertical extent [m]
-            icloud_stats(ix,jy,2,n)= max(icloud_stats(ix,jy,2,n),height(kz))          ! Cloud TOP height            [m]
+!            icloud_stats(ix,jy,1,n)=icloud_stats(ix,jy,1,n)+(height(kz+1)-height(kz)) ! Cloud total vertical extent [m]
+!            icloud_stats(ix,jy,2,n)= max(icloud_stats(ix,jy,2,n),height(kz))          ! Cloud TOP height            [m]
 !ZHG
           endif
         end do
@@ -625,7 +629,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
               else
                 clouds(ix,jy,kz,n)=2                             ! convp in-cloud
               endif                                              ! convective or large scale
-            elseif((clw(ix,jy,kz,n).le.0) .and. (icloud_stats(ix,jy,3,n).ge.height(kz)) ) then ! is below cloud
+            elseif((clw(ix,jy,kz,n).le.0) .and. (cloudh_min.ge.height(kz))) then ! is below cloud
               if (lsp.ge.convp) then
                 clouds(ix,jy,kz,n)=5                             ! lsp dominated washout
               else
@@ -642,7 +646,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
     end do
 
 ! eso: copy the relevant data to clw4 to reduce amount of communicated data for MPI
-    clw4(:,:,n) = icloud_stats(:,:,4,n)
+!    ctwc(:,:,n) = icloud_stats(:,:,4,n)
 
 !**************************************************************************
   else       ! use old definitions

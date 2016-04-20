@@ -1,25 +1,12 @@
-****************************************************************************
-*                                                                          *
-*     Input file for the Lagrangian particle dispersion model FLEXPART     *
-*               Definition file of chemical species/radionuclides          *
-*                                                                          *
-****************************************************************************
-G-HCH              Tracer name
--999.9             Species half life
-3.5E-05            Below-cloud scavenging (gases and particles) - A
-0.62               Below-cloud scavenging (gases and particles)- B
-1.0                In-cloud scavenging (gases and particles) - Ai
-1.0                In-cloud scavenging (gases and particles) - Bi
-4.3                Dry deposition (gases) - D
-4.22E+02           Dry deposition (gases) - Henrys const.
-0.1                Dry deposition (gases) - f0 (reactivity)
--9.9E09            Dry deposition (particles) - rho
-                   Dry deposition (particles) - dquer
-                   Dry deposition (particles) - dsig
--9.99              Alternative: dry deposition velocity
-290.83             molweight
-6.21E-11           OH Reaction rate - C [cm^3/molecule/sec]
-1203.0             OH reaction rate - D [K]
-2.0                OH Reaction rate - N (no unit)
--9                 number of associated specias (neg. none)
--99.99             KOA - organic matter air partitioning
+&SPECIES_PARAMS
+ PSPECIES="G-HCH           ",
+ PWETA_GAS=  3.5E-05,
+ PWETB_GAS= 0.62    ,
+ PRELDIFF=  4.3    ,
+ PHENRY=  422.0    ,
+ PF0= 0.10    ,
+ PWEIGHTMOLAR=  290.83    ,
+ POHCCONST=  6.21E-11,
+ POHDCONST=  1203.00000    ,
+ POHNCONST=  2.00000000    ,
+ /

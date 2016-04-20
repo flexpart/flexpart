@@ -159,9 +159,10 @@ module com_mod
   integer :: specnum(maxspec)
   !real xmass(maxpoint,maxspec)
   real :: decay(maxspec)
-  real :: weta(maxspec),wetb(maxspec)
+  real :: weta_gas(maxspec),wetb_gas(maxspec)
+  real :: crain_aero(maxspec),csnow_aero(maxspec)
 ! NIK: 31.01.2013- parameters for in-cloud scavening
-  real :: weta_in(maxspec), wetb_in(maxspec)
+  real :: ccn_aero(maxspec),in_aero(maxspec)
   real :: reldiff(maxspec),henry(maxspec),f0(maxspec)
   real :: density(maxspec),dquer(maxspec),dsigma(maxspec)
   real :: vsetaver(maxspec),cunningham(maxspec),weightmolar(maxspec)
@@ -196,9 +197,9 @@ module com_mod
   ! decay                   decay constant of radionuclide
 
   ! WET DEPOSITION
-  ! weta, wetb              parameters for determining below-cloud wet scavenging coefficients
-  ! weta_in, wetb_in       parameters for determining in-cloud wet scavenging coefficients
-  ! wetc_in, wetd_in       parameters for determining in-cloud wet scavenging coefficients
+  ! weta_gas, wetb_gas     parameters for below-cloud wet scavenging coefficients (gasses)
+  ! crain_aero, in_aero    parameters for in-cloud wet scavenging coefficients (aerosols)
+  ! wetc_in, wetd_in       parameters for in-cloud wet scavenging coefficients (aerosols)
 
   ! GAS DEPOSITION
   ! reldiff                 diffusivitiy of species relative to diff. of H2O
@@ -215,7 +216,7 @@ module com_mod
   ! density [kg/m3]         density of particles
   ! dquer [m]               mean diameter of particles
   ! dsigma                  dsigma=10 or dsigma=0.1 means that 68% of the
-  !                    mass are between 0.1*dquer and 10*dquer
+  !                         mass are between 0.1*dquer and 10*dquer
 
   ! fract                   mass fraction of each diameter interval
   ! vset [m/s]              gravitational settling velocity in ni intervals
@@ -370,8 +371,8 @@ module com_mod
   integer :: cloudsh(0:nxmax-1,0:nymax-1,numwfmem)
 
 !ZHG Sep 2015  
-   real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
-   real :: clw4(0:nxmax-1,0:nymax-1,numwfmem) ! eso: =icloud_stats(:,:,4,:)
+!   real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
+   real :: ctwc(0:nxmax-1,0:nymax-1,numwfmem) ! eso: =icloud_stats(:,:,4,:)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
@@ -391,6 +392,7 @@ module com_mod
   !c icloudthck (m)       cloud thickness     
 
   ! pplev for the GFS version
+  ! ctwc                 total cloud water content
 
   ! 2d fields
   !**********
@@ -488,7 +490,7 @@ module com_mod
 
   real,allocatable,dimension(:,:,:,:,:) :: uun, vvn, wwn, ttn, qvn, pvn,&
        & rhon, drhodzn, tthn, qvhn, clwcn, ciwcn, clwn, clwchn, ciwchn
-  real,allocatable,dimension(:,:,:,:) :: clw4n
+  real,allocatable,dimension(:,:,:,:) :: ctwcn
   integer,allocatable,dimension(:,:,:,:) :: cloudshn
   integer(kind=1),allocatable,dimension(:,:,:,:,:) :: cloudsn
 
@@ -801,17 +803,12 @@ contains
     allocate(qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
     allocate(clwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
     allocate(ciwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
-    allocate(clw4n(0:nxmax-1,0:nymax-1,numwfmem,numbnests))
+    allocate(ctwcn(0:nxmax-1,0:nymax-1,numwfmem,numbnests))
 
-!    clw4n(:,:,:,:)=0.
     clwcn(:,:,:,:,:)=0.
     ciwcn(:,:,:,:,:)=0.
     clwchn(:,:,:,:,:)=0.
     ciwchn(:,:,:,:,:)=0.
-    ! clwn(:,:,:,:,:)=0.
-
-    ! cloudsn(:,:,:,:,:)=0
-    ! cloudshn(:,:,:,:)=0
     
   end subroutine com_mod_allocate_nests
    

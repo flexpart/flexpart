@@ -56,9 +56,9 @@ subroutine readreleases
   !                     area                                                   *
   ! xpoint2,ypoint2     geograf. coordinates of upper right corner of release  *
   !                     area                                                   *
-  ! weta, wetb          parameters to determine the below-cloud scavenging     *
-  ! weta_in, wetb_in    parameters to determine the in-cloud scavenging        *
-  ! wetc_in, wetd_in    parameters to determine the in-cloud scavenging        *
+  ! weta_gas, wetb_gas  parameters for below-cloud scavenging (gas)            *
+  ! crain_aero, csnow_aero  parameters for below-cloud scavenging (aerosol)    *
+  ! ccn_aero, in_aero   parameters for in-cloud scavenging (aerosol)           *
   ! zpoint1,zpoint2     height range, over which release takes place           *
   ! num_min_discrete    if less, release cannot be randomized and happens at   *
   !                     time mid-point of release interval                     *
@@ -362,7 +362,7 @@ subroutine readreleases
   ! Check if wet deposition or OH reaction shall be calculated
   !***********************************************************
 ! NIK 15.02.2015, with new wet dep scheme either A or B parameters can be assigned a positive value which switches on wet dep
-    if (weta(i).gt.0. .or. wetb(i).gt.0.)  then
+    if (weta_gas(i).gt.0. .or. wetb_gas(i).gt.0.)  then ! :TODO: or particle
       WETDEP=.true.
       if (lroot) then
         write (*,*) 'Below-cloud scavenging: ON'
@@ -373,12 +373,12 @@ subroutine readreleases
     endif
     
 ! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
-    if (weta_in(i).gt.0. .or. wetb_in(i).gt.0.)  then
+    if (ccn_aero(i).gt.0. .or. in_aero(i).gt.0.)  then
       WETDEP=.true.
       if (lroot) then
         write (*,*) 'In-cloud scavenging: ON'
 !        write (*,*) 'In-cloud scavenging coefficients: ',&
-!           &weta_in(i),wetb_in(i),i !,wetc_in(i), wetd_in(i),i
+!           &ccn_aero(i),in_aero(i),i !,wetc_in(i), wetd_in(i),i
       end if
     else
       if (lroot) write (*,*) 'In-cloud scavenging: OFF' 

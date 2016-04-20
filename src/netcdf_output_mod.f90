@@ -60,8 +60,8 @@ module netcdf_output_mod
                        nspec,maxpointspec_act,species,numpoint,&
                        dx,xlon0,dy,ylat0,compoint,method,lsubgrid,lconvection,&
                        ind_source,ind_receptor,nageclass,lage,&
-                       drydep,wetdep,decay,weta,wetb, numbnests, &
-                       weta_in,wetb_in, & ! wetc_in,wetd_in, &
+                       drydep,wetdep,decay,weta_gas,wetb_gas, numbnests, &
+                       ccn_aero,in_aero, & ! wetc_in,wetd_in, &
                        reldiff,henry,f0,density,dquer,dsigma,dryvel,&
 !                       weightmolar,ohreact,spec_ass,kao,vsetaver,&
                        weightmolar,ohcconst,ohdconst,spec_ass,kao,vsetaver,&
@@ -542,10 +542,10 @@ subroutine writeheader_netcdf(lnest)
              wdsID, deflate_level = deflate_level, &
              chunksizes = dep_chunksizes))
         call nf90_err(nf90_put_att(ncid, wdsID, 'units', '1e-12 kg m-2'))
-        call nf90_err(nf90_put_att(ncid, wdsID, 'weta', weta(i)))
-        call nf90_err(nf90_put_att(ncid, wdsID, 'wetb', wetb(i)))
-        call nf90_err(nf90_put_att(ncid, wdsID, 'weta_in', weta_in(i)))
-        call nf90_err(nf90_put_att(ncid, wdsID, 'wetb_in', wetb_in(i)))
+        call nf90_err(nf90_put_att(ncid, wdsID, 'weta_gas', weta_gas(i)))
+        call nf90_err(nf90_put_att(ncid, wdsID, 'wetb_gas', wetb_gas(i)))
+        call nf90_err(nf90_put_att(ncid, wdsID, 'ccn_aero', ccn_aero(i)))
+        call nf90_err(nf90_put_att(ncid, wdsID, 'in_aero', in_aero(i)))
         ! call nf90_err(nf90_put_att(ncid, wdsID, 'wetc_in', wetc_in(i)))
         ! call nf90_err(nf90_put_att(ncid, wdsID, 'wetd_in', wetd_in(i)))
         call nf90_err(nf90_put_att(ncid, wdsID, 'dquer', dquer(i)))

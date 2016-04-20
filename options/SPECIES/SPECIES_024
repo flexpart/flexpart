@@ -1,26 +1,23 @@
-****************************************************************************
-*                                                                          *
-*     Input file for the Lagrangian particle dispersion model FLEXPART     *
-*               Definition file of chemical species/radionuclides          *
-*     This file is on the format required by version 10 (05/2015)          *
-****************************************************************************
-AIRTRACER             Tracer name
--999.9             Species half life
--9.9               Below-cloud scavenging (gases and particles) - A
--9.9               Below-cloud scavenging (gases and particles)- B
--9.9               In-cloud scavenging (gases and particles) - Ai
--9.9               In-cloud scavenging (gases and particles) - Bi
--9.9               Dry deposition (gases) - D
-                   Dry deposition (gases) - Henrys const.
-                   Dry deposition (gases) - f0 (reactivity)
--9.9E09            Dry deposition (particles) - rho
-                   Dry deposition (particles) - dquer
-                   Dry deposition (particles) - dsig
--9.99              Alternative: dry deposition velocity
-29.00              molweight
--9.99E-09          OH Reaction rate - C [cm^3/molecule/sec]
--9.9               OH reaction rate - D [K]
--9.9               OH Reaction rate - N (no unit)
--9                 number of associated species (neg. none)
--99.99             KOA - organic matter air partitioning
-
+&SPECIES_PARAMS
+ PSPECIES="AIRTRACER       ",
+ PDECAY= -999.900024    ,
+ PWETA_GAS= -9.89999962    ,
+ PWETB_GAS= -9.89999962    ,
+ PCRAIN_AERO= -9.89999962    ,
+ PCSNOW_AERO= -9.89999962    ,
+ PCCN_AERO= -9.89999962    ,
+ PIN_AERO= -9.89999962    ,
+ PRELDIFF= -9.89999962    ,
+ PHENRY=  0.00000000    ,
+ PF0=  0.00000000    ,
+ PDENSITY= -9.90000026E+09,
+ PDQUER=  0.00000000    ,
+ PDSIGMA=  0.00000000    ,
+ PDRYVEL= -9.98999977    ,
+ PWEIGHTMOLAR=  29.0000000    ,
+ POHCCONST= -9.98999994E-09,
+ POHDCONST= -9.89999962    ,
+ POHNCONST= -9.89999962    ,
+ PSPEC_ASS= -9.00000000    ,
+ PKAO= -99.9899979    ,
+ /

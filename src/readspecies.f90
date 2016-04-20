@@ -41,9 +41,9 @@ subroutine readspecies(id_spec,pos_spec)
   ! Variables:                                                                 *
   ! decaytime(maxtable)  half time for radiological decay                      *
   ! specname(maxtable)   names of chemical species, radionuclides              *
-  ! weta, wetb           Parameters for determining below-cloud scavenging     *
-  ! weta_in              Parameter for determining in-cloud scavenging         *
-  ! wetb_in              Parameter for determining in-cloud scavenging         *
+  ! weta_gas, wetb_gas   Parameters for determining below-cloud scavenging     *
+  ! ccn_aero              Parameter for determining in-cloud scavenging         *
+  ! in_aero              Parameter for determining in-cloud scavenging         *
   ! ohcconst             OH reaction rate constant C                           *
   ! ohdconst             OH reaction rate constant D                           *
   ! ohnconst             OH reaction rate constant n                           *
@@ -65,26 +65,26 @@ subroutine readspecies(id_spec,pos_spec)
   logical :: spec_found
 
   character(len=16) :: pspecies
-  real :: pdecay, pweta, pwetb, preldiff, phenry, pf0, pdensity, pdquer
+  real :: pdecay, pweta_gas, pwetb_gas, preldiff, phenry, pf0, pdensity, pdquer
   real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
-  real :: pweta_in, pwetb_in, pwetc_in, pwetd_in
+  real :: pcrain_aero, pcsnow_aero, pccn_aero, pin_aero
   integer :: readerror
 
 ! declare namelist
   namelist /species_params/ &
-       pspecies, pdecay, pweta, pwetb, &
-       pweta_in, pwetb_in, pwetc_in, pwetd_in, &
+       pspecies, pdecay, pweta_gas, pwetb_gas, &
+       pcrain_aero, pcsnow_aero, pccn_aero, pin_aero, &
        preldiff, phenry, pf0, pdensity, pdquer, &
        pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
 
-  pspecies=" "
+  pspecies="" ! read failure indicator value
   pdecay=-999.9
-  pweta=-9.9E-09
-  pwetb=0.0
-  pweta_in=-9.9E-09
-  pwetb_in=-9.9E-09
-!  pwetc_in=-9.9E-09
-!  pwetd_in=-9.9E-09
+  pweta_gas=-9.9E-09
+  pwetb_gas=0.0
+  pcrain_aero=-9.9E-09
+  pcsnow_aero=-9.9E-09
+  pccn_aero=-9.9E-09
+  pin_aero=-9.9E-09
   preldiff=-9.9
   phenry=0.0
   pf0=0.0
@@ -97,7 +97,7 @@ subroutine readspecies(id_spec,pos_spec)
   pohnconst=2.0
   pspec_ass=-9
   pkao=-99.99
-  pweightmolar=-789.0 ! read failure indicator value
+  pweightmolar=-999.9
 
 ! Open the SPECIES file and read species names and properties
 !************************************************************
@@ -112,7 +112,8 @@ subroutine readspecies(id_spec,pos_spec)
   read(unitspecies,species_params,iostat=readerror)
   close(unitspecies)
 
-  if ((pweightmolar.eq.-789.0).or.(readerror.ne.0)) then ! no namelist found
+!  if ((pweightmolar.eq.-789.0).or.(readerror.ne.0)) then ! no namelist found
+  if ((len(pspecies).eq.0).or.(readerror.ne.0)) then ! no namelist found
 
     readerror=1
 
@@ -126,21 +127,19 @@ subroutine readspecies(id_spec,pos_spec)
 !  write(*,*) species(pos_spec)
     read(unitspecies,'(f18.1)',end=22) decay(pos_spec)
 !  write(*,*) decay(pos_spec)
-    read(unitspecies,'(e18.1)',end=22) weta(pos_spec)
-!  write(*,*) weta(pos_spec)
-    read(unitspecies,'(f18.2)',end=22) wetb(pos_spec)
-!  write(*,*) wetb(pos_spec)
-
+    read(unitspecies,'(e18.1)',end=22) weta_gas(pos_spec)
+!  write(*,*) weta_gas(pos_spec)
+    read(unitspecies,'(f18.2)',end=22) wetb_gas(pos_spec)
+!  write(*,*) wetb_gas(pos_spec)
+    read(unitspecies,'(e18.1)',end=22) crain_aero(pos_spec)
+!  write(*,*) crain_aero(pos_spec)
+    read(unitspecies,'(f18.2)',end=22) csnow_aero(pos_spec)
+!  write(*,*) csnow_aero(pos_spec)
 !*** NIK 31.01.2013: including in-cloud scavening parameters
-    read(unitspecies,'(e18.1)',end=22) weta_in(pos_spec)
-!  write(*,*) weta_in(pos_spec)
-    read(unitspecies,'(f18.2)',end=22) wetb_in(pos_spec)
-!  write(*,*) wetb_in(pos_spec)
-! read(unitspecies,'(f18.2)',end=22) wetc_in(pos_spec)
-!  write(*,*) wetc_in(pos_spec)
-! read(unitspecies,'(f18.2)',end=22) wetd_in(pos_spec)
-!  write(*,*) wetd_in(pos_spec)
-
+    read(unitspecies,'(e18.1)',end=22) ccn_aero(pos_spec)
+!  write(*,*) ccn_aero(pos_spec)
+    read(unitspecies,'(f18.2)',end=22) in_aero(pos_spec)
+!  write(*,*) in_aero(pos_spec)
     read(unitspecies,'(f18.1)',end=22) reldiff(pos_spec)
 !  write(*,*) reldiff(pos_spec)
     read(unitspecies,'(e18.1)',end=22) henry(pos_spec)
@@ -170,12 +169,12 @@ subroutine readspecies(id_spec,pos_spec)
 
     pspecies=species(pos_spec)
     pdecay=decay(pos_spec)
-    pweta=weta(pos_spec)
-    pwetb=wetb(pos_spec)
-    pweta_in=weta_in(pos_spec)
-    pwetb_in=wetb_in(pos_spec)
-!    pwetc_in=wetc_in(pos_spec)
-!    pwetd_in=wetd_in(pos_spec)
+    pweta_gas=weta_gas(pos_spec)
+    pwetb_gas=wetb_gas(pos_spec)
+    pcrain_aero=crain_aero(pos_spec)
+    pcsnow_aero=csnow_aero(pos_spec)
+    pccn_aero=ccn_aero(pos_spec)
+    pin_aero=in_aero(pos_spec)
     preldiff=reldiff(pos_spec)
     phenry=henry(pos_spec)
     pf0=f0(pos_spec)
@@ -194,12 +193,12 @@ subroutine readspecies(id_spec,pos_spec)
 
     species(pos_spec)=pspecies
     decay(pos_spec)=pdecay
-    weta(pos_spec)=pweta
-    wetb(pos_spec)=pwetb
-    weta_in(pos_spec)=pweta_in
-    wetb_in(pos_spec)=pwetb_in
-!    wetc_in(pos_spec)=pwetc_in
-!    wetd_in(pos_spec)=pwetd_in
+    weta_gas(pos_spec)=pweta_gas
+    wetb_gas(pos_spec)=pwetb_gas
+    crain_aero=pcrain_aero
+    csnow_aero=pcsnow_aero
+    ccn_aero(pos_spec)=pccn_aero
+    in_aero(pos_spec)=pin_aero
     reldiff(pos_spec)=preldiff
     henry(pos_spec)=phenry
     f0(pos_spec)=pf0
@@ -221,16 +220,16 @@ subroutine readspecies(id_spec,pos_spec)
 !NIK 16.02.2015
 ! Check scavenging parameters given in SPECIES file
 
-  if (weta(pos_spec).gt.0.0 .or. wetb(pos_spec).gt.0.0 .or. weta_in(pos_spec).gt.0.0 .or. wetb_in(pos_spec).gt.0.0) then
+  if (weta_gas(pos_spec).gt.0.0 .or. wetb_gas(pos_spec).gt.0.0 .or. ccn_aero(pos_spec).gt.0.0 .or. in_aero(pos_spec).gt.0.0) then
 
   if (dquer(pos_spec).gt.0) then !is particle
     if (lroot) then
       write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
-           &(Rain collection efficiency)  ', weta(pos_spec)
+           &(Rain collection efficiency)  ', crain_aero(pos_spec)
       write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter B &
-           &(Snow collection efficiency)  ', wetb(pos_spec)
+           &(Snow collection efficiency)  ', csnow_aero(pos_spec)
     end if
-    if (weta(pos_spec).gt.1.0 .or. wetb(pos_spec).gt.1.0) then
+    if (weta_gas(pos_spec).gt.1.0 .or. wetb_gas(pos_spec).gt.1.0) then
       if (lroot) then
         write(*,*) '*******************************************'
         write(*,*) ' WARNING: Particle below-cloud scavenging parameter A or B &
@@ -241,11 +240,11 @@ subroutine readspecies(id_spec,pos_spec)
     endif
     if (lroot) then
       write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Ai &
-           &(CCN efficiency)  ', weta_in(pos_spec)
+           &(CCN efficiency)  ', ccn_aero(pos_spec)
       write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
-           &(IN efficiency)  ', wetb_in(pos_spec)
+           &(IN efficiency)  ', in_aero(pos_spec)
     end if
-    if (weta_in(pos_spec).gt.1.0 .or. weta_in(pos_spec).lt.0.01) then
+    if (ccn_aero(pos_spec).gt.1.0 .or. ccn_aero(pos_spec).lt.0.01) then
       if (lroot) then
         write(*,*) '*******************************************'
         write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
@@ -253,7 +252,7 @@ subroutine readspecies(id_spec,pos_spec)
         write(*,*) '*******************************************'
       end if
     endif
-    if (wetb_in(pos_spec).gt.1.0 .or. wetb_in(pos_spec).lt.0.01) then
+    if (in_aero(pos_spec).gt.1.0 .or. in_aero(pos_spec).lt.0.01) then
       if (lroot) then
         write(*,*) '*******************************************'
         write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
@@ -264,12 +263,12 @@ subroutine readspecies(id_spec,pos_spec)
 
   else !is gas
     if (lroot) then
-      write(*,*) '  Gas below-cloud scavenging parameter A  ', weta(pos_spec)
-      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb(pos_spec)
+      write(*,*) '  Gas below-cloud scavenging parameter A  ', weta_gas(pos_spec)
+      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb_gas(pos_spec)
       write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
     end if
-    if (weta(pos_spec).gt.0.) then !if wet deposition is turned on
-      if (weta(pos_spec).gt.1E-04 .or. weta(pos_spec).lt.1E-09) then
+    if (weta_gas(pos_spec).gt.0.) then !if wet deposition is turned on
+      if (weta_gas(pos_spec).gt.1E-04 .or. weta_gas(pos_spec).lt.1E-09) then
         if (lroot) then
           write(*,*) '*******************************************'
           write(*,*) ' WARNING: Gas below-cloud scavenging parameter A is out of likely range'
@@ -278,8 +277,8 @@ subroutine readspecies(id_spec,pos_spec)
         end if
       endif
     end if
-    if (wetb(pos_spec).gt.0.) then !if wet deposition is turned on
-      if (wetb(pos_spec).gt.0.8 .or. wetb(pos_spec).lt.0.6) then
+    if (wetb_gas(pos_spec).gt.0.) then !if wet deposition is turned on
+      if (wetb_gas(pos_spec).gt.0.8 .or. wetb_gas(pos_spec).lt.0.6) then
         if (lroot) then
           write(*,*) '*******************************************'
           write(*,*) ' WARNING: Gas below-cloud scavenging parameter B is out of likely range'
@@ -291,7 +290,7 @@ subroutine readspecies(id_spec,pos_spec)
   endif
   endif
 
-  if (((weta(pos_spec).gt.0).or.(wetb(pos_spec).gt.0)).and.(henry(pos_spec).le.0)) then
+  if (((weta_gas(pos_spec).gt.0).or.(wetb_gas(pos_spec).gt.0)).and.(henry(pos_spec).le.0)) then
     if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
   endif
 

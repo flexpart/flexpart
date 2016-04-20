@@ -465,7 +465,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
       write(*,*) 'Nested ECMWF fields: using cloud water'
       clwn(0:nxm1,0:nym1,:,n,l)=0.0
 !    icloud_stats(0:nxm1,0:nym1,:,n)=0.0
-      clw4n(0:nxm1,0:nym1,n,l)=0.0
+      ctwcn(0:nxm1,0:nym1,n,l)=0.0
       cloudsn(0:nxm1,0:nym1,:,n,l)=0
 ! If water/ice are read separately into clwc and ciwc, store sum in clwcn
       if (.not.sumclouds_nest(l)) then 
@@ -483,7 +483,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
 ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
               clwn(ix,jy,kz,n,l)=(clwcn(ix,jy,kz,n,l)*rhon(ix,jy,kz,n,l))*(height(kz+1)-height(kz))
               tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
-              clw4n(ix,jy,n,l) = clw4n(ix,jy,n,l)+clwn(ix,jy,kz,n,l)
+              ctwcn(ix,jy,n,l) = ctwcn(ix,jy,n,l)+clwn(ix,jy,kz,n,l)
 !            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
 !           icloud_stats(ix,jy,3,n)= min(height(kz+1),height(kz))                     ! Cloud BOT height stats      [m]
               cloudh_min=min(height(kz+1),height(kz))

@@ -168,7 +168,7 @@ subroutine timemanager
 
     if (mp_dev_mode) write(*,*) 'myid, itime: ',mp_pid,itime
     
-    if (wetdep .and. itime .ne. 0 .and. numpart .gt. 0) then
+    if (WETDEP .and. itime .ne. 0 .and. numpart .gt. 0) then
       if (verbosity.gt.0) then
         write (*,*) 'timemanager> call wetdepo'
       endif
