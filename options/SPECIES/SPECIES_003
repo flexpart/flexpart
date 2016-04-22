@@ -4,7 +4,5 @@
  PWETB_GAS= 0.62    ,
  PRELDIFF=  1.2    ,
  PHENRY=  3.0E-03,
- PF0=  0.0    ,
- PDQUER=  0.00000000    ,
  PWEIGHTMOLAR=  30.0000000    ,
  /
