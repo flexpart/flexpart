@@ -39,16 +39,16 @@ subroutine readspecies(id_spec,pos_spec)
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
-  ! decaytime(maxtable)  half time for radiological decay                      *
-  ! specname(maxtable)   names of chemical species, radionuclides              *
-  ! weta_gas, wetb_gas   Parameters for determining below-cloud scavenging     *
-  ! ccn_aero              Parameter for determining in-cloud scavenging         *
-  ! in_aero              Parameter for determining in-cloud scavenging         *
-  ! ohcconst             OH reaction rate constant C                           *
-  ! ohdconst             OH reaction rate constant D                           *
-  ! ohnconst             OH reaction rate constant n                           *
-  ! id_spec              SPECIES number as referenced in RELEASE file          *
-  ! id_pos               position where SPECIES data shall be stored           *
+  ! decaytime(maxtable)   half time for radiological decay                     *
+  ! specname(maxtable)    names of chemical species, radionuclides             *
+  ! weta_gas, wetb_gas    Parameters for below-cloud scavenging of gasses      *
+  ! crain_aero,csnow_aero Parameters for below-cloud scavenging of aerosols    *
+  ! ccn_aero,in_aero      Parameters for in-cloud scavenging of aerosols       *
+  ! ohcconst              OH reaction rate constant C                          *
+  ! ohdconst              OH reaction rate constant D                          *
+  ! ohnconst              OH reaction rate constant n                          *
+  ! id_spec               SPECIES number as referenced in RELEASE file         *
+  ! id_pos                position where SPECIES data shall be stored          *
   !                                                                            *
   ! Constants:                                                                 *
   !                                                                            *
@@ -112,8 +112,9 @@ subroutine readspecies(id_spec,pos_spec)
   read(unitspecies,species_params,iostat=readerror)
   close(unitspecies)
 
-!  if ((pweightmolar.eq.-789.0).or.(readerror.ne.0)) then ! no namelist found
-  if ((len(pspecies).eq.0).or.(readerror.ne.0)) then ! no namelist found
+  if ((len(trim(pspecies)).eq.0).or.(readerror.ne.0)) then ! no namelist found
+    if (lroot) write(*,*) "SPECIES file not in NAMELIST format, attempting to &
+         &read as fixed format"
 
     readerror=1
 
@@ -149,7 +150,7 @@ subroutine readspecies(id_spec,pos_spec)
     read(unitspecies,'(e18.1)',end=22) density(pos_spec)
 !  write(*,*) density(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dquer(pos_spec)
-!    write(*,*) 'dquer(pos_spec):', dquer(pos_spec)
+!  write(*,*) 'dquer(pos_spec):', dquer(pos_spec)
     read(unitspecies,'(e18.1)',end=22) dsigma(pos_spec)
 !  write(*,*) dsigma(pos_spec)
     read(unitspecies,'(f18.2)',end=22) dryvel(pos_spec)
@@ -220,79 +221,79 @@ subroutine readspecies(id_spec,pos_spec)
 !NIK 16.02.2015
 ! Check scavenging parameters given in SPECIES file
 
-  if (weta_gas(pos_spec).gt.0.0 .or. wetb_gas(pos_spec).gt.0.0 .or. ccn_aero(pos_spec).gt.0.0 .or. in_aero(pos_spec).gt.0.0) then
-
-  if (dquer(pos_spec).gt.0) then !is particle
-    if (lroot) then
-      write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter A &
-           &(Rain collection efficiency)  ', crain_aero(pos_spec)
-      write(*,'(a,f5.2)') '  Particle below-cloud scavenging parameter B &
-           &(Snow collection efficiency)  ', csnow_aero(pos_spec)
-    end if
-    if (weta_gas(pos_spec).gt.1.0 .or. wetb_gas(pos_spec).gt.1.0) then
-      if (lroot) then
+  if (lroot) then
+! Particles
+!**********
+    if (dquer(pos_spec).gt.0) then
+      if (ccn_aero(pos_spec) .gt. 0) then
+        write(*,'(a,f5.2)') '  Particle CCN  efficiency (CCNeff):', ccn_aero(pos_spec)
+      else 
+        write(*,'(a)')      '  Particle CCN  efficiency (CCNeff):   OFF'
+      endif
+      if (in_aero(pos_spec) .gt. 0) then
+        write(*,'(a,f5.2)') '  Particle  IN  efficiency (INeff) :', in_aero(pos_spec)
+      else
+        write(*,'(a)')      '  Particle  IN  efficiency (INeff) :   OFF'
+      endif
+      if (crain_aero(pos_spec) .gt. 0) then
+        write(*,'(a,f5.2)') '  Particle Rain efficiency (Crain) :', crain_aero(pos_spec)
+      else
+        write(*,'(a)')      '  Particle Rain efficiency (Crain) :   OFF'
+      endif
+      if (csnow_aero(pos_spec) .gt. 0) then
+        write(*,'(a,f5.2)') '  Particle Snow efficiency (Csnow) :', csnow_aero(pos_spec)
+      else
+        write(*,'(a)')      '  Particle Snow efficiency (Csnow) :   OFF'
+      end if
+      if (density(pos_spec) .gt. 0) then
+        write(*,'(a)') '  Dry deposition is turned         :   ON'
+      else
+        write(*,'(a)') '  Dry deposition is (density<0)    :   OFF'
+      end if
+      if (crain_aero(pos_spec).gt.10.0 .or. csnow_aero(pos_spec).gt.10.0 .or. &
+           &ccn_aero(pos_spec).gt.1.0 .or. in_aero(pos_spec).gt.1.0) then
         write(*,*) '*******************************************'
-        write(*,*) ' WARNING: Particle below-cloud scavenging parameter A or B &
-             &is out of likely range'
-        write(*,*) '          Likely range is 0.0-1.0'
+        write(*,*) ' WARNING: Particle Scavenging parameter likely out of range '
+        write(*,*) '       Likely   range for Crain    0.0-10'
+        write(*,*) '       Likely   range for Csnow    0.0-10'
+        write(*,*) '       Physical range for CCNeff   0.0-1'
+        write(*,*) '       Physical range for INeff    0.0-1'
         write(*,*) '*******************************************'
       end if
-    endif
-    if (lroot) then
-      write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Ai &
-           &(CCN efficiency)  ', ccn_aero(pos_spec)
-      write(*,'(a,f5.2)') '  Particle in-cloud scavenging parameter Bi &
-           &(IN efficiency)  ', in_aero(pos_spec)
-    end if
-    if (ccn_aero(pos_spec).gt.1.0 .or. ccn_aero(pos_spec).lt.0.01) then
-      if (lroot) then
-        write(*,*) '*******************************************'
-        write(*,*) ' WARNING: Particle in-cloud scavenging parameter A is out of likely range'
-        write(*,*) '          Likely range is 0.0-1.0 for CCN '
-        write(*,*) '*******************************************'
+    else
+! Gas
+!****
+      if (weta_gas(pos_spec) .gt. 0 .and. wetb_gas(pos_spec).gt.0) then
+        write(*,*)          '  Wet removal for gases      is turned: ON'
+        write(*,*)          '  Gas below-cloud scavenging parameter A  ', &
+             &weta_gas(pos_spec)
+        write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', &
+             &wetb_gas(pos_spec)
+      else
+        write(*,*)          '  Wet removal for gases      is turned: OFF '
       end if
-    endif
-    if (in_aero(pos_spec).gt.1.0 .or. in_aero(pos_spec).lt.0.01) then
-      if (lroot) then
-        write(*,*) '*******************************************'
-        write(*,*) ' WARNING: Particle in-cloud scavenging parameter B is out of likely range'
-        write(*,*) '          Likely range is 0.0-1.0 for Ice nuclei (IN) '
-        write(*,*) '*******************************************'
+      if (reldiff(i).gt.0.) then
+        write(*,*)          '  Dry deposition for gases   is turned: ON '
+      else
+        write(*,*)          '  Dry deposition for gases   is turned: OFF '
       end if
-    endif
-
-  else !is gas
-    if (lroot) then
-      write(*,*) '  Gas below-cloud scavenging parameter A  ', weta_gas(pos_spec)
-      write(*,'(a,f5.2)') '  Gas below-cloud scavenging parameter B  ', wetb_gas(pos_spec)
-      write(*,*) ' Gas in-cloud scavenging uses default values as in Hertel et al 1995'
-    end if
-    if (weta_gas(pos_spec).gt.0.) then !if wet deposition is turned on
-      if (weta_gas(pos_spec).gt.1E-04 .or. weta_gas(pos_spec).lt.1E-09) then
-        if (lroot) then
+      if (weta_gas(pos_spec).gt.0.) then !if wet deposition is turned on
+        if (weta_gas(pos_spec).gt.1E-04 .or. weta_gas(pos_spec).lt.1E-09 .or. &
+             &wetb_gas(pos_spec).gt.0.8 .or. wetb_gas(pos_spec).lt.0.4) then
           write(*,*) '*******************************************'
-          write(*,*) ' WARNING: Gas below-cloud scavenging parameter A is out of likely range'
-          write(*,*) '          Likely range is 1E-04 to 1E-08 (see Hertel et al 1995)'
+          write(*,*) ' WARNING: Gas below-cloud scavengig is out of likely range'
+          write(*,*) '          Likely range for A is 1E-04 to 1E-08'
+          write(*,*) '          Likely range for B is 0.60  to 0.80 ' 
           write(*,*) '*******************************************'
         end if
       endif
-    end if
-    if (wetb_gas(pos_spec).gt.0.) then !if wet deposition is turned on
-      if (wetb_gas(pos_spec).gt.0.8 .or. wetb_gas(pos_spec).lt.0.6) then
-        if (lroot) then
-          write(*,*) '*******************************************'
-          write(*,*) ' WARNING: Gas below-cloud scavenging parameter B is out of likely range'
-          write(*,*) '          Likely range is 0.6 to 0.8 (see Hertel et al 1995)'
-          write(*,*) '*******************************************'
-        end if
+
+      if (((weta_gas(pos_spec).gt.0).or.(wetb_gas(pos_spec).gt.0)).and.&
+           &(henry(pos_spec).le.0)) then
+        if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
       endif
     end if
-  endif
-  endif
-
-  if (((weta_gas(pos_spec).gt.0).or.(wetb_gas(pos_spec).gt.0)).and.(henry(pos_spec).le.0)) then
-    if (dquer(pos_spec).le.0) goto 996 ! no particle, no henry set
-  endif
+  end if
 
   if (spec_ass(pos_spec).gt.0) then
     spec_found=.FALSE.
@@ -303,7 +304,7 @@ subroutine readspecies(id_spec,pos_spec)
         ASSSPEC=.TRUE.
       endif
     end do
-    if (spec_found.eqv..FALSE.) then
+    if (spec_found.eqv..false.) then
       goto 997
     endif
   endif

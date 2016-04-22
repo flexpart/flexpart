@@ -198,8 +198,8 @@ module com_mod
 
   ! WET DEPOSITION
   ! weta_gas, wetb_gas     parameters for below-cloud wet scavenging coefficients (gasses)
-  ! crain_aero, in_aero    parameters for in-cloud wet scavenging coefficients (aerosols)
-  ! wetc_in, wetd_in       parameters for in-cloud wet scavenging coefficients (aerosols)
+  ! crain_aero, csnow_aero parameters for below-cloud wet scavenging coefficients (aerosols)
+  ! ccn_aero, cin_aero     parameters for in-cloud wet scavenging coefficients (aerosols)
 
   ! GAS DEPOSITION
   ! reldiff                 diffusivitiy of species relative to diff. of H2O

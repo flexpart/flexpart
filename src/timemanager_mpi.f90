@@ -136,10 +136,9 @@ subroutine timemanager
 !**********************************************************************
 
 
-!  itime=0
   if (lroot.or.mp_dev_mode) then
-    write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
-  !  write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
+  !  write(*,45) itime,numpart*mp_partgroup_np,gridtotalunc,wetgridtotalunc,drygridtotalunc
+    write(*,46) float(itime)/3600,itime,numpart*mp_partgroup_np
     
     if (verbosity.gt.0) then
       write (*,*) 'timemanager> starting simulation'

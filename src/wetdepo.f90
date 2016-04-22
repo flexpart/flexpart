@@ -349,18 +349,17 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !ZHG Use the activated fraction and the liqid water to calculate the washout
 
 ! AEROSOL
-!**************************************************
-          if (dquer(ks).gt.0.) then ! is particle
-
+!********
+          if (dquer(ks).gt.0.) then
             S_i= frac_act/cl
 
-!*********************
 ! GAS
-          else ! is gas
+!****
+          else
 
             cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
 !REPLACE to switch old/ new scheme 
-! S_i=frac_act/cle
+          ! S_i=frac_act/cle
             S_i=1/cle
           endif ! gas or particle
 

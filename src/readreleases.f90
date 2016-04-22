@@ -361,32 +361,34 @@ subroutine readreleases
 
   ! Check if wet deposition or OH reaction shall be calculated
   !***********************************************************
-! NIK 15.02.2015, with new wet dep scheme either A or B parameters can be assigned a positive value which switches on wet dep
-    if (weta_gas(i).gt.0. .or. wetb_gas(i).gt.0.)  then ! :TODO: or particle
+
+  ! ESO 04.2016 check for below-cloud scavenging (gas or aerosol)
+    if ((dquer(i).le.0..and.(weta_gas(i).gt.0. .or. wetb_gas(i).gt.0.)) .or. &
+         &(dquer(i).gt.0. .and. (crain_aero(i) .gt. 0. .or. csnow_aero(i).gt.0.)))  then
       WETDEP=.true.
       if (lroot) then
-        write (*,*) 'Below-cloud scavenging: ON'
-      !  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
+        write (*,*) '  Below-cloud scavenging: ON'
+!  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
       end if
     else
-      if (lroot) write (*,*) 'Below-cloud scavenging: OFF'
+      if (lroot) write (*,*) '  Below-cloud scavenging: OFF'
     endif
     
 ! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
-    if (ccn_aero(i).gt.0. .or. in_aero(i).gt.0.)  then
+    if (dquer(i).gt.0..and.(ccn_aero(i).gt.0. .or. in_aero(i).gt.0.))  then
       WETDEP=.true.
       if (lroot) then
-        write (*,*) 'In-cloud scavenging: ON'
+        write (*,*) '  In-cloud scavenging: ON'
 !        write (*,*) 'In-cloud scavenging coefficients: ',&
 !           &ccn_aero(i),in_aero(i),i !,wetc_in(i), wetd_in(i),i
       end if
     else
-      if (lroot) write (*,*) 'In-cloud scavenging: OFF' 
+      if (lroot) write (*,*) '  In-cloud scavenging: OFF' 
     endif
 
     if (ohcconst(i).gt.0.) then
       OHREA=.true.
-      if (lroot) write (*,*) 'OHreaction switched on: ',ohcconst(i),i
+      if (lroot) write (*,*) '  OHreaction switched on: ',ohcconst(i),i
     endif
 
     if ((reldiff(i).gt.0.).or.(density(i).gt.0.).or.(dryvel(i).gt.0.)) then

@@ -132,7 +132,7 @@ subroutine readpartpositions
   ! All processes read the whole file
   !***************************************
 
-  open(unitpartin,file=path(2)(1:length(2))//'partposit_end', &
+    open(unitpartin,file=path(2)(1:length(2))//'partposit_end', &
          form='unformatted',err=998)
     
 100 read(unitpartin,end=99) itimein

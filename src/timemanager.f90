@@ -101,7 +101,7 @@ subroutine timemanager
 
   implicit none
 
-  integer :: j,ks,kp,l,n,itime,nstop,nstop1
+  integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
   integer :: ix,jy,ldeltat,itage,nage

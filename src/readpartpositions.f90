@@ -104,21 +104,21 @@ subroutine readpartpositions
   close(unitpartin)
   open(unitpartin,file=path(2)(1:length(2))//'partposit_end', &
        form='unformatted',err=998)
+  
 
+100 read(unitpartin,end=99) itimein
+  i=0
+200 i=i+1
+  read(unitpartin) npoint(i),xlonin,ylatin,ztra1(i),itramem(i), &
+       topo,pvi,qvi,rhoi,hmixi,tri,tti,(xmass1(i,j),j=1,nspec)
+  
+  if (xlonin.eq.-9999.9) goto 100
+  xtra1(i)=(xlonin-xlon0)/dx
+  ytra1(i)=(ylatin-ylat0)/dy
+  numparticlecount=max(numparticlecount,npoint(i))
+  goto 200
 
-100   read(unitpartin,end=99) itimein
-    i=0
-200   i=i+1
-    read(unitpartin) npoint(i),xlonin,ylatin,ztra1(i),itramem(i), &
-         topo,pvi,qvi,rhoi,hmixi,tri,tti,(xmass1(i,j),j=1,nspec)
-
-    if (xlonin.eq.-9999.9) goto 100
-    xtra1(i)=(xlonin-xlon0)/dx
-    ytra1(i)=(ylatin-ylat0)/dy
-    numparticlecount=max(numparticlecount,npoint(i))
-    goto 200
-
-99   numpart=i-1
+99 numpart=i-1
 
   close(unitpartin)
 
