@@ -81,8 +81,10 @@ subroutine readpaths !(pathfile)
   !***************************************************
 
   do i=1,maxnests
-    read(unitpath,'(a)') path(numpath+2*(i-1)+1)
-    read(unitpath,'(a)') path(numpath+2*(i-1)+2)
+  ! ESO 2016 Added 'end'/'err' in case user forgot '====' at end of file and
+  ! maxnests > numbnests
+    read(unitpath,'(a)', end=30, err=30) path(numpath+2*(i-1)+1)
+    read(unitpath,'(a)', end=30, err=30) path(numpath+2*(i-1)+2)
     if (path(numpath+2*(i-1)+1)(1:5).eq.'=====') goto 30
     length(numpath+2*(i-1)+1)=index(path(numpath+2*(i-1)+1),' ')-1
     length(numpath+2*(i-1)+2)=index(path(numpath+2*(i-1)+2),' ')-1

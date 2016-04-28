@@ -222,6 +222,13 @@ subroutine readspecies(id_spec,pos_spec)
 ! Check scavenging parameters given in SPECIES file
 
   if (lroot) then
+! ZHG 2016.04.07 Start of changes
+    write(*,*) ' '
+    if (dquer(pos_spec) .gt.0)  write(*,'(a,i3,a,a,a)')       ' SPECIES: ', &
+         &id_spec,'  ', species(pos_spec),'  (AEROSOL) '
+    if (dquer(pos_spec) .le.0)  write(*,'(a,i3,a,a,a)')       ' SPECIES: ', &
+         &id_spec,'  ', species(pos_spec),'  (GAS) '
+
 ! Particles
 !**********
     if (dquer(pos_spec).gt.0) then
