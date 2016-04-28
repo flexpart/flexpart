@@ -372,7 +372,7 @@ module com_mod
 
 !ZHG Sep 2015  
 !   real :: icloud_stats(0:nxmax-1,0:nymax-1,5,numwfmem)
-   real :: ctwc(0:nxmax-1,0:nymax-1,numwfmem) ! eso: =icloud_stats(:,:,4,:)
+   real :: ctwc(0:nxmax-1,0:nymax-1,numwfmem) ! ESO: =icloud_stats(:,:,4,:)
 
 
   ! uu,vv,ww [m/2]       wind components in x,y and z direction

@@ -102,7 +102,7 @@ module mpi_mod
   logical :: lmpreader=.false. ! is set to true for reading process(es) only.
   logical :: lmp_use_reader=.false. ! true if separate readwind process is used
 
-! true if only using synchronous MPI send/recv:
+! .true. if only using synchronous MPI send/recv (default)
 ! If setting this to .false., numwfmem must be set to 3
 !===============================================================================
   logical :: lmp_sync=.true. 
@@ -207,18 +207,21 @@ contains
 ! Check for sensible combination of parameters
 !*********************************************
 
-    if (.not.lmp_sync.and.numwfmem.ne.3.and.lroot) then
-      write(*,FMT='(80("#"))')
-      write(*,*) '#### mpi_mod::mpif_init> ERROR: ', &
-           & 'numwfmem must be set to 3 for asyncronous reading ####'
-      write(*,FMT='(80("#"))')
+    if (.not.lmp_sync.and.numwfmem.ne.3) then
+      if (lroot) then
+        write(*,FMT='(80("#"))')
+        write(*,*) '#### mpi_mod::mpif_init> ERROR: ', &
+             & 'numwfmem must be set to 3 for asyncronous reading ####'
+        write(*,FMT='(80("#"))')
+      end if
+      call MPI_FINALIZE(mp_ierr)
       stop
     else if (lmp_sync.and.numwfmem.ne.2.and.lroot) then
       write(*,FMT='(80("#"))')
       write(*,*) '#### mpi_mod::mpif_init> WARNING: ', &
            & 'numwfmem should be set to 2 for syncronous'
-      write(*,*) ' reading. Results will still be valid, but unneccesary '
-      write(*,*) 'amount of memory is being allocated.'
+      write(*,*) ' reading. Results will still be valid, but unneccesary memory &
+           &is allocated.'
       write(*,FMT='(80("#"))')
 ! Force "syncronized" version if all processes will call getfields
     else if ((.not.lmp_sync.and.mp_np.lt.read_grp_min).or.(mp_np.eq.1)) then

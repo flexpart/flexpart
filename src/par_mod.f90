@@ -88,7 +88,7 @@ module par_mod
   real,parameter :: d_trop=50., d_strat=0.1
   real,parameter :: rho_water=1000. !ZHG 2015 [kg/m3]
   !ZHG MAR2016
-  real,parameter :: incloud_ratio=2.2
+  real,parameter :: incloud_ratio=6.2
 
   ! karman                  Karman's constant
   ! href [m]                Reference height for dry deposition
@@ -185,8 +185,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=1000000
-  integer,parameter :: maxspec=1
+  integer,parameter :: maxpart=20000000
+  integer,parameter :: maxspec=6
   real,parameter :: minmass=0.0001
 
   ! maxpart                 Maximum number of particles
