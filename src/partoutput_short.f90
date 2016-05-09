@@ -145,7 +145,7 @@ subroutine partoutput_short(itime)
        (i4dump(i),(idump(j,i),j=1,3),i=1,numshortout)
 
 
-  write(*,*) numshortout,numshortall
+  !write(*,*) numshortout,numshortall
 
   close(unitshortpart)
 
