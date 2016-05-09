@@ -588,8 +588,8 @@ subroutine timemanager
               xmass1(j,ks)=xmass1(j,ks)*decfact
             endif
 
-
-            if (mdomainfill.eq.0) then
+! Skip check on mass fraction when npoint represents particle number
+            if (mdomainfill.eq.0.and.mquasilag.eq.0) then
               if (xmass(npoint(j),ks).gt.0.) &
                    xmassfract=max(xmassfract,real(npart(npoint(j)))* &
                    xmass1(j,ks)/xmass(npoint(j),ks))
@@ -604,8 +604,8 @@ subroutine timemanager
                    !CGZ-lifetime: Check mass fraction left/save lifetime
 !ZHG 2015
             else
-              xmassfract=1.
-            endif
+              xmassfract=1.0
+            end if
           end do
 
           if (xmassfract.lt.minmass) then   ! terminate all particles carrying less mass

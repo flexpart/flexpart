@@ -545,9 +545,14 @@ subroutine timemanager
 
 ! Decide whether to write an estimate of the number of particles released, 
 ! or exact number (require MPI reduce operation)
-        numpart_tot_mpi = numpart*mp_partgroup_np
+        if (mp_dev_mode) then
+          numpart_tot_mpi = numpart
+        else
+          numpart_tot_mpi = numpart*mp_partgroup_np
+        end if
 
-        if (mp_exact_numpart.and..not.(lmpreader.and.lmp_use_reader)) then
+        if (mp_exact_numpart.and..not.(lmpreader.and.lmp_use_reader).and.&
+             &.not.mp_dev_mode) then
           call MPI_Reduce(numpart, numpart_tot_mpi, 1, MPI_INTEGER, MPI_SUM, id_root, &
                & mp_comm_used, mp_ierr)
         endif
@@ -737,8 +742,8 @@ subroutine timemanager
               xmass1(j,ks)=xmass1(j,ks)*decfact
             endif
 
-
-            if (mdomainfill.eq.0) then
+! Skip check on mass fraction when npoint represents particle number
+            if (mdomainfill.eq.0.and.mquasilag.eq.0) then
               if (xmass(npoint(j),ks).gt.0.)then 
                    xmassfract=max(xmassfract,real(npart(npoint(j)))* &
                    xmass1(j,ks)/xmass(npoint(j),ks))
