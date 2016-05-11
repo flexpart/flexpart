@@ -252,6 +252,7 @@ subroutine timemanager
       if (memstat.gt.0..and.memstat.lt.32.and.lmp_use_reader.and.lmpreader) then
         if (mp_dev_mode) write(*,*) 'Reader process: calling mpif_gf_send_vars_async' 
         call mpif_gf_send_vars_async(memstat)
+        if (numbnests>0) call mpif_gf_send_vars_nest_async(memstat)
       end if
 
 ! Completion check:
@@ -266,6 +267,7 @@ subroutine timemanager
       if (memstat.gt.0.and.lmp_use_reader.and..not.lmpreader) then
         if (mp_dev_mode) write(*,*) 'Receiving process: calling mpif_gf_send_vars_async. PID: ', mp_pid
         call mpif_gf_recv_vars_async(memstat)
+        if (numbnests>0) call mpif_gf_recv_vars_nest_async(memstat)
       end if
 
     end if

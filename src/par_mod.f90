@@ -186,7 +186,7 @@ module par_mod
   !**************************************************
 
   integer,parameter :: maxpart=1000000
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxspec=2
   real,parameter :: minmass=0.0001
 
   ! maxpart                 Maximum number of particles
