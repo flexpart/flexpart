@@ -36,14 +36,13 @@ mkdir $path_tests
 #declare -a test_names=('2' 'Volc')
 #declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
 
-#blabla
 #Print the Whole Bash Array
 s_test_names=${test_names[@]}
 # Length of the Bash Array
 n_tests=${#test_names[@]}
 #echo n_tests=$n_tests
-echo run $n_tests  tests:  $s_test_names
-
+echo run $s_test_names
+echo total $n_tests tests
 #test
 #tests_dir='tests_15-08-19_113139/'
 #path_tests=${path_flextest}/$tests_dir
@@ -56,10 +55,13 @@ while [ $i -lt $i_end ] ;
 do
   let j=i+1
   name=${test_names[i]};
-  echo test no. $j name= $name
-  echo in $path_tests/test_$name
+  echo run test no. $j  
+#  echo name= $name
+#  echo working dir= $path_tests/test_$name
+#  echo executable= $FP_exec 
+#  echo default options from $options_default 
   ./run_test test_$name  $FP_exec $path_tests $options_default
-  echo terminated
+  echo test $name terminated
   success="$(cat $path_tests/test_$name/$outlog  | grep CONGRATULATIONS  | wc -l)"
   echo success=$success
 let i=i+1;
