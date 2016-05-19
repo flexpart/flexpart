@@ -499,7 +499,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
 !         end do
 ! 887     nsp=min(nsp,nspec)
         if (nspec.eq.1.and.density(1).gt.0.) then
-          call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
+          call get_settling(itime,real(xt),real(yt),zt,nspec,settling)  !bugfix
         end if
         w=w+settling
       endif
@@ -663,7 +663,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
 ! 888   nsp=min(nsp,nspec)
 !        if (density(nsp).gt.0.) then
       if (nspec.eq.1.and.density(1).gt.0.) then
-        call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
+        call get_settling(itime,real(xt),real(yt),zt,nspec,settling)  !bugfix
       end if
       w=w+settling
     endif
@@ -869,7 +869,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
 ! 889   nsp=min(nsp,nspec)
 !      if (density(nsp).gt.0.) then
     if (nspec.eq.1.and.density(1).gt.0.) then
-      call get_settling(itime+ldt,real(xt),real(yt),zt,nsp,settling)  !bugfix
+      call get_settling(itime+ldt,real(xt),real(yt),zt,nspec,settling)  !bugfix
     end if
     w=w+settling
   endif
