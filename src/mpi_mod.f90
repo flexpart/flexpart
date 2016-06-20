@@ -2022,7 +2022,7 @@ contains
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(gridunc, gridunc, grid_size3d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(gridunc, 0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
 
@@ -2044,7 +2044,7 @@ contains
            & mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(creceptor,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
+      call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
            & mp_comm_used,mp_ierr)
     end if
 
@@ -2098,7 +2098,7 @@ contains
            & mp_comm_used, mp_ierr)
       if (mp_ierr /= 0) goto 600
     else
-      call MPI_Reduce(griduncn, griduncn, grid_size3d, mp_sp, MPI_SUM, id_root, &
+      call MPI_Reduce(griduncn, 0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
 
