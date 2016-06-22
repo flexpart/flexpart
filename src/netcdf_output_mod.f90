@@ -39,6 +39,8 @@
   ! ESO 2016
   !  - Deposition fields can be calculated in double precision, see variable
   !    'dep_prec' in par_mod
+  !  - Hardcoded options 'write_vol' and 'write_area' for grid cell
+  !    volume and area
   !*****************************************************************************
 
 
@@ -105,6 +107,10 @@ module netcdf_output_mod
 
   ! switch output of release point information on/off
   logical, parameter :: write_releases = .true.
+
+  ! switch output of grid cell volume and area on/off
+  logical, parameter :: write_vol = .false.
+  logical, parameter :: write_area = .false.
 
 contains
 
@@ -389,12 +395,11 @@ subroutine writeheader_netcdf(lnest)
   call nf90_err(nf90_put_att(ncid, levID, 'long_name', 'height above ground'))
 
   ! volume
-  call nf90_err(nf90_def_var(ncid, 'volume', nf90_float, (/ lonDimID, latDimID, levDimID /), &
-       volID))
-
+  if (write_vol) call nf90_err(nf90_def_var(ncid, 'volume', nf90_float, &
+       &(/ lonDimID, latDimID, levDimID /), volID))
   ! area 
-  call nf90_err(nf90_def_var(ncid, 'area', nf90_float, (/ lonDimID, latDimID /), &
-       areaID))
+  if (write_area) call nf90_err(nf90_def_var(ncid, 'area', nf90_float, &
+       &(/ lonDimID, latDimID /), areaID))
 
 
   if (write_releases.eqv..true.) then
@@ -632,17 +637,21 @@ subroutine writeheader_netcdf(lnest)
   call nf90_err(nf90_put_var(ncid, levID, outheight(1:numzgrid)))
 
   ! volume
-  if (lnest) then
-    call nf90_err(nf90_put_var(ncid, volID, volumen(:,:,:)))
-  else
-    call nf90_err(nf90_put_var(ncid, volID, volume(:,:,:)))
+  if (write_vol) then
+    if (lnest) then
+      call nf90_err(nf90_put_var(ncid, volID, volumen(:,:,:)))
+    else
+      call nf90_err(nf90_put_var(ncid, volID, volume(:,:,:)))
+    end if
   end if
 
   ! area
-  if (lnest) then
-    call nf90_err(nf90_put_var(ncid, areaID, arean(:,:)))
-  else
-    call nf90_err(nf90_put_var(ncid, areaID, area(:,:)))
+  if (write_area) then
+    if (lnest) then
+      call nf90_err(nf90_put_var(ncid, areaID, arean(:,:)))
+    else
+      call nf90_err(nf90_put_var(ncid, areaID, area(:,:)))
+    end if
   end if
 
   if (write_releases.eqv..true.) then

@@ -7,7 +7,7 @@
  LOUTSTEP=       3600,
  LOUTAVER=       3600,
  LOUTSAMPLE=        900,
- ITSPLIT=  99997200,
+ ITSPLIT=  99999999,
  LSYNCTIME=        900,
  CTL= -5.0000000    ,
  IFINE=          4,
