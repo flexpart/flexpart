@@ -338,6 +338,21 @@ subroutine readcommand
     stop
   endif
 
+ if ((ldirect.eq.-1).and.(iout.eq.6)) then
+      if ((ind_receptor .eq. 1) .and.  (ind_source .eq. 1)) then
+         write(*,*) ' #### FLEXPART SCAVENGING DEPOSIT BACKWARD MODE    #### '
+         SCAVDEP=.true.
+         allocate(xscav_frac1(maxpart,maxspec))
+      else
+        write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
+        write(*,*) '#### FOR SCAVDEP MODE ind_source and         ####'
+        write(*,*) '#### ind_receptor have to be 1 !             ####'
+        stop
+      endif
+    else
+      SCAVDEP=.false.
+    endif
+
   ! Check input dates
   !******************
 
@@ -383,9 +398,9 @@ subroutine readcommand
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
-  if ((iout.lt.1).or.(iout.gt.5)) then
+  if ((iout.lt.1).or.(iout.gt.6)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, OR 5 FOR       #### '
+    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, 5 OR 6 FOR     #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
     write(*,*) ' #### FOR NETCDF OUTPUT                       #### '
     stop

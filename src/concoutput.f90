@@ -263,6 +263,12 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
       write(unitoutgridppt) itime
     endif
 
+    if (iout.eq.6) then !scavdep output
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_scav_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+      write(unitoutgrid) itime
+     endif
+
     do kp=1,maxpointspec_act
       do nage=1,nageclass
 
@@ -341,7 +347,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
 ! Concentration output
 !*********************
-        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5).or.(iout.eq.6)) then
 
 ! Wet deposition
           sp_count_i=0

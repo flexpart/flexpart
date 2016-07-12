@@ -375,7 +375,7 @@ subroutine timemanager
   !*****************************************************
 
       if ((itime.eq.loutend).and.(outnum.gt.0.)) then
-        if ((iout.le.3.).or.(iout.eq.5)) then
+        if ((iout.le.3.).or.(iout.eq.5).or.(iout.eq.6)) then
           if (surf_only.ne.1) then 
             if (lnetcdfout.eq.1) then 
               call concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)

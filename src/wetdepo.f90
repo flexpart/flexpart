@@ -173,7 +173,20 @@ subroutine wetdepo(itime,ltsample,loutnext)
     endif
 
 !  If total precipitation is less than 0.01 mm/h - no scavenging occurs
-    if ((lsp.lt.0.01).and.(convp.lt.0.01)) goto 20
+!  sec this is just valid if release is over a point
+    if ((lsp.lt.0.01).and.(convp.lt.0.01)) then
+          if (SCAVDEP) then
+             do ks=1,nspec
+                if (xscav_frac1(jpart,ks).lt.0) then ! first timestep no scavenging
+                   xmass1(jpart,ks)=0.
+                   xscav_frac1(jpart,ks)=0.
+!                  write (*,*) 'paricle removed - no scavenging: ',jpart,ks
+                endif
+             end do
+          endif
+          goto 20
+    endif
+
 
 ! get the level were the actual particle is in
     do il=2,nz
@@ -411,6 +424,22 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !   gridded deposited mass was calculated
       if (decay(ks).gt.0.) then
         wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
+      endif
+
+      if (SCAVDEP) then
+! the calculation of the scavenged mass shall only be done once after release
+! xscav_frac1 was initialised with a negative value
+          if (xscav_frac1(jpart,ks).lt.0) then
+             if (wetdeposit(ks).eq.0) then
+! terminate particle
+                xmass1(jpart,ks)=0.
+                xscav_frac1(jpart,ks)=0.
+             else
+                xscav_frac1(jpart,ks)=xscav_frac1(jpart,ks)*(-1.)* &
+                   wetdeposit(ks)/xmass1(jpart,ks)
+!                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks)
+             endif
+          endif
       endif
 
 

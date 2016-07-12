@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine conccalc(itime,weight)
-  !                 i     i
+  !                      i     i
   !*****************************************************************************
   !                                                                            *
   !     Calculation of the concentrations on a regular grid using volume       *
@@ -60,6 +60,12 @@ subroutine conccalc(itime,weight)
   real,parameter :: factor=.596831, hxmax=6.0, hymax=4.0, hzmax=150.
 
 
+  integer :: usekernel
+
+  usekernel=0
+  if (usekernel.ne.1) then
+     write (*,*) 'NOT USING THE KERNEL!'
+  endif
   ! For forward simulations, make a loop over the number of species;
   ! for backward simulations, make an additional loop over the
   ! releasepoints
@@ -180,16 +186,24 @@ subroutine conccalc(itime,weight)
   ! If a particle is close to the domain boundary, do not use the kernel either.
   !*****************************************************************************
 
-      if ((itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
+      if (((itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
            (xl.gt.real(numxgrid-1)-0.5).or. &
-           (yl.gt.real(numygrid-1)-0.5)) then             ! no kernel, direct attribution to grid cell
+           (yl.gt.real(numygrid-1)-0.5)).or.(usekernel.eq.0)) then             ! no kernel, direct attribution to grid cell
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
              (jy.le.numygrid-1)) then
-          do ks=1,nspec
-            gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+          if (SCAVDEP) then
+             do ks=1,nspec
+               gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                 xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*xscav_frac1(i,ks)
+             end do
+          else
+             do ks=1,nspec
+               gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                  gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                  xmass1(i,ks)/rhoi*weight
-          end do
+             end do
+          endif
         endif
 
       else                                 ! attribution via uniform kernel
@@ -219,46 +233,76 @@ subroutine conccalc(itime,weight)
         if ((ix.ge.0).and.(ix.le.numxgrid-1)) then
           if ((jy.ge.0).and.(jy.le.numygrid-1)) then
             w=wx*wy
-            do ks=1,nspec
-              gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (SCAVDEP) then
+               do ks=1,nspec
+                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*w*weight*xscav_frac1(i,ks)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
 
           if ((jyp.ge.0).and.(jyp.le.numygrid-1)) then
             w=wx*(1.-wy)
-            do ks=1,nspec
-              gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (SCAVDEP) then
+              do ks=1,nspec
+                 gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+               end do
+             else
+              do ks=1,nspec
+                 gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+             endif
           endif
-        endif
+        endif !ix ge 0
 
 
         if ((ixp.ge.0).and.(ixp.le.numxgrid-1)) then
           if ((jyp.ge.0).and.(jyp.le.numygrid-1)) then
             w=(1.-wx)*(1.-wy)
-            do ks=1,nspec
-              gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (SCAVDEP) then
+               do ks=1,nspec
+                 gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*w*weight*xscav_frac1(i,ks)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
 
           if ((jy.ge.0).and.(jy.le.numygrid-1)) then
             w=(1.-wx)*wy
-            do ks=1,nspec
-              gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (SCAVDEP) then
+               do ks=1,nspec
+                 gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
-        endif
-      endif
-
-
+        endif !ixp ge 0
+     endif
 
   !************************************
   ! Do everything for the nested domain
@@ -284,11 +328,19 @@ subroutine conccalc(itime,weight)
              (yl.gt.real(numygridn-1)-0.5)) then             ! no kernel, direct attribution to grid cell
           if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgridn-1).and. &
                (jy.le.numygridn-1)) then
-            do ks=1,nspec
-              griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (SCAVDEP) then
+               do ks=1,nspec
+                 griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*xscav_frac1(i,ks)
+               end do
+            else
+               do ks=1,nspec
+                 griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight
-            end do
+               end do
+            endif
           endif
 
         else                                 ! attribution via uniform kernel
@@ -318,20 +370,36 @@ subroutine conccalc(itime,weight)
           if ((ix.ge.0).and.(ix.le.numxgridn-1)) then
             if ((jy.ge.0).and.(jy.le.numygridn-1)) then
               w=wx*wy
-              do ks=1,nspec
-                griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (SCAVDEP) then
+                 do ks=1,nspec
+                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+                 end do
+              else
+                do ks=1,nspec
+                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
 
             if ((jyp.ge.0).and.(jyp.le.numygridn-1)) then
               w=wx*(1.-wy)
-              do ks=1,nspec
-                griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (SCAVDEP) then
+                 do ks=1,nspec
+                   griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+                 end do
+              else
+                 do ks=1,nspec
+                   griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
           endif
 
@@ -339,24 +407,39 @@ subroutine conccalc(itime,weight)
           if ((ixp.ge.0).and.(ixp.le.numxgridn-1)) then
             if ((jyp.ge.0).and.(jyp.le.numygridn-1)) then
               w=(1.-wx)*(1.-wy)
-              do ks=1,nspec
-                griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (SCAVDEP) then
+                 do ks=1,nspec
+                   griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+                 end do
+              else
+                 do ks=1,nspec
+                   griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
 
             if ((jy.ge.0).and.(jy.le.numygridn-1)) then
               w=(1.-wx)*wy
-              do ks=1,nspec
-                griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (SCAVDEP) then
+                 do ks=1,nspec
+                   griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/(1-xscav_frac1(i,ks))/rhoi*weight*w*xscav_frac1(i,ks)
+                 end do
+              else
+                 do ks=1,nspec
+                    griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
           endif
         endif
-
       endif
     endif
 20  continue

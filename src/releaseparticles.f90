@@ -56,6 +56,7 @@ subroutine releaseparticles(itime)
   !real xaux,yaux,zaux,ran1,rfraction,xmasssave(maxpoint)
   real :: xaux,yaux,zaux,rfraction
   real :: topo,rhoaux(2),r,t,rhoout,ddx,ddy,rddx,rddy,p1,p2,p3,p4
+  real :: rhosum(nspec)
   real :: dz1,dz2,dz,xtn,ytn,xlonav,timecorrect(maxspec),press,pressold
   real :: presspart,average_timecorrect
   integer :: itime,numrel,i,j,k,n,ix,jy,ixp,jyp,ipart,minpart,ii
@@ -85,6 +86,9 @@ subroutine releaseparticles(itime)
 
   minpart=1
   do i=1,numpoint
+    do k=1,nspec
+      rhosum(k)=0
+    end do
     if ((itime.ge.ireleasestart(i)).and. &! are we within release interval?
          (itime.le.ireleaseend(i))) then
 
@@ -175,11 +179,24 @@ subroutine releaseparticles(itime)
   ! correction factor, by which the number of particles released this time has been
   ! scaled. Adjust the mass per particle by the species-dependent time correction factor
   ! divided by the species-average one
+  ! for the scavenging calculation the mass needs to be multiplied with rho of the particle layer and
+  ! divided by the sum of rho of all particles.
   !*****************************************************************************
             do k=1,nspec
                xmass1(ipart,k)=xmass(i,k)/real(npart(i)) &
                     *timecorrect(k)/average_timecorrect
-  !            write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
+              if (SCAVDEP) then ! if there is no scavenging in wetdepo it will be set to 0
+!              if ( henry(k).gt.0 .or. &
+!                   crain_aero(k).gt.0. .or. csnow_aero(k).gt.0. .or. &
+!                   ccn_aero(k).gt.0. .or. in_aero(k).gt.0. )  then
+                xscav_frac1(ipart,k)=-1.
+!               write(*,*) '190: ',xscav_frac1(ipart,k),k,ipart,rhosum(k),rhoout,i
+!               xscav_frac1(ipart,k)=(-1.)/real(npart(i)) &
+!                    *timecorrect(k)/average_timecorrect
+!                  else
+!                     xscav_frac1(ipart,k)=0
+!                  endif   
+               endif
   ! Assign certain properties to particle
   !**************************************
             end do
@@ -371,6 +388,12 @@ subroutine releaseparticles(itime)
 
               do k=1,nspec
                 xmass1(ipart,k)=xmass1(ipart,k)*rhoout
+                if (SCAVDEP) then
+                     xscav_frac1(ipart,k)=xscav_frac1(ipart,k)
+!mctest                     xscav_frac1(ipart,k)=xscav_frac1(ipart,k)*rhoout
+                     rhosum(k)=rhosum(k)+rhoout
+!               write(*,*) '391: ',xscav_frac1(ipart,k),k,ipart,rhosum(k),rhoout,i
+                endif
               end do
             endif
 
@@ -378,12 +401,22 @@ subroutine releaseparticles(itime)
             numpart=max(numpart,ipart)
             goto 34      ! Storage space has been found, stop searching
           endif
-        end do
+        end do  ! i=1:numpoint
         if (ipart.gt.maxpart) goto 996
 
 34      minpart=ipart+1
-      end do
+      end do ! ipart=minpart,maxpart
+      if (SCAVDEP) then
+         do ipart=minpart,maxpart
+            do k=1,nspec
+              if (xscav_frac1(ipart,k).lt.0) then
+!mctest                   xscav_frac1(ipart,k)=xscav_frac1(ipart,k)/rhosum(k)
+!                 write(*,*) '409: ',xscav_frac1(ipart,k),k,ipart,rhosum(k),rhoout,i
+               endif   
+            end do
+         end do
       endif
+      endif ! j=1,numrel
   end do
 
 
