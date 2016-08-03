@@ -304,12 +304,12 @@ subroutine init_domainfill
   end do
 
 
-! Check whether numpart is really smaller than maxpart
-!*****************************************************
+! Check whether numpart is really smaller than maxpart per process
+!*****************************************************************
 
-  if (numpart.gt.maxpart) then
+  if (numpart.gt.maxpart_mpi) then
     write(*,*) 'numpart too large: change source in init_atm_mass.f'
-    write(*,*) 'numpart: ',numpart,' maxpart: ',maxpart
+    write(*,*) 'numpart: ',numpart,' maxpart: ',maxpart_mpi
   endif
 
 

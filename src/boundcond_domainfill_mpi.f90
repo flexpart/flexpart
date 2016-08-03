@@ -231,7 +231,7 @@ subroutine boundcond_domainfill(itime,loutend)
         endif
 
         do m=1,mmass
-          do ipart=minpart,maxpart
+          do ipart=minpart,maxpart_mpi
 
   ! If a vacant storage space is found, attribute everything to this array element
   !*****************************************************************************
@@ -330,7 +330,7 @@ subroutine boundcond_domainfill(itime,loutend)
               goto 73      ! Storage space has been found, stop searching
             endif
           end do
-          if (ipart.gt.maxpart) &
+          if (ipart.gt.maxpart_mpi) &
                stop 'boundcond_domainfill.f: too many particles required'
 73        minpart=ipart+1
 71        continue
@@ -463,7 +463,7 @@ subroutine boundcond_domainfill(itime,loutend)
         endif
 
         do m=1,mmass
-          do ipart=minpart,maxpart
+          do ipart=minpart,maxpart_mpi
 
   ! If a vacant storage space is found, attribute everything to this array element
   !*****************************************************************************
@@ -561,7 +561,7 @@ subroutine boundcond_domainfill(itime,loutend)
               goto 173      ! Storage space has been found, stop searching
             endif
           end do
-          if (ipart.gt.maxpart) &
+          if (ipart.gt.maxpart_mpi) &
                stop 'boundcond_domainfill.f: too many particles required'
 173       minpart=ipart+1
 171       continue

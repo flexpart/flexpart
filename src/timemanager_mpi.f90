@@ -274,12 +274,6 @@ subroutine timemanager
 
     if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',1)
 
-! For validation and tests: call the function below to set all fields to simple
-! homogeneous values
-!    if (mp_dev_mode) call set_fields_synthetic
-
-!*******************************************************************************
-
     if (lmpreader.and.nstop1.gt.1) stop 'NO METEO FIELDS AVAILABLE'
 
 ! Reader process goes back to top of time loop (unless simulation end)
