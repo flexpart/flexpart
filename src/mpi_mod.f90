@@ -89,9 +89,12 @@ module mpi_mod
 
 ! MPI tags/requests for send/receive operation
   integer :: tm1
-  integer, parameter :: nvar_async=26 !27 !29 :DBG:
+  integer, parameter :: nvar_async=26
 !integer, dimension(:), allocatable :: tags
   integer, dimension(:), allocatable :: reqs
+
+! Status array used for certain MPI operations (MPI_RECV)
+  integer, dimension(MPI_STATUS_SIZE) :: mp_status
 
 
   integer :: id_read   ! readwind/getfield process
@@ -118,7 +121,7 @@ module mpi_mod
   logical, parameter :: mp_dbg_mode = .false.
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
-  logical, parameter :: mp_time_barrier=.true.
+  logical, parameter :: mp_time_barrier=.false.
   logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
 
@@ -147,6 +150,22 @@ module mpi_mod
 
 ! dat_lun           logical unit number for i/o
   integer, private :: dat_lun 
+
+! Temporary arrays for particles (allocated and deallocated as needed)
+  integer, allocatable, dimension(:) :: nclass_tmp, npoint_tmp, itra1_tmp, idt_tmp, &
+       & itramem_tmp, itrasplit_tmp
+  real(kind=dp), allocatable, dimension(:) :: xtra1_tmp, ytra1_tmp
+  real, allocatable, dimension(:) :: ztra1_tmp 
+  real, allocatable, dimension(:,:) :: xmass1_tmp
+
+! mp_redist_fract        Exchange particles between processes if relative difference
+!                        is larger. A good value is between 0.0 and 0.5
+! mp_maxpart_factor      Allocate more memory per process than strictly needed
+!                        (safety factor). Recommended value between 1.5 and 2.5
+! mp_min_redist          Do not redistribute particles if below this limit
+  real, parameter :: mp_redist_fract=0.2, mp_maxpart_factor=1.5
+  integer,parameter :: mp_min_redist=100000
+
 
 contains
 
@@ -194,7 +213,7 @@ contains
 !************************************************************
     if (dep_prec==dp) then
       mp_cp = MPI_REAL8
-      ! TODO: write info message for serial version as well 
+! TODO: write info message for serial version as well 
       if (lroot.and.verbosity>0) write(*,*) 'Using double precision for deposition fields'
     else if (dep_prec==sp) then
       mp_cp = MPI_REAL4
@@ -241,7 +260,6 @@ contains
 ! as running with one process less but not using separate read process
 !**********************************************************************
 
-!    id_read = min(mp_np-1, 1)
     id_read = mp_np-1
 
     if (mp_pid.eq.id_read) lmpreader=.true.
@@ -310,8 +328,8 @@ contains
     end if
 
 ! Set maxpart per process
-    if (mp_partid.lt.mod(maxpart,mp_partgroup_np)) addmaxpart=1
-    maxpart_mpi=int(maxpart/mp_partgroup_np)+addmaxpart
+! eso 08/2016: Increase maxpart per process, in case of unbalanced distribution
+    maxpart_mpi=int(mp_maxpart_factor*maxpart/mp_partgroup_np)
 
 ! Do not allocate particle data arrays for readwind process
     if (lmpreader.and.lmp_use_reader) then
@@ -320,14 +338,10 @@ contains
 
 ! Set random seed for each non-root process
     if (mp_pid.gt.0) then
-!    if (mp_pid.ge.0) then
-!      call system_clock(s)
       s = 244
       mp_seed = -abs(mod((s*181)*((mp_pid-83)*359), 104729))
     end if
-    if (mp_dev_mode) write(*,*) 'PID, mp_seed: ',mp_pid, mp_seed
     if (mp_dbg_mode) then
-! :DBG: For debugging, set all seed to 0 and maxrand to e.g. 20
       mp_seed=0
       if (lroot) write(*,*) 'MPI: setting seed=0'
     end if
@@ -453,6 +467,366 @@ contains
   end subroutine mpif_tm_send_dims
 
 
+  subroutine mpif_send_part_properties(num_part)
+!***********************************************************************
+! Distribute particle properties from root to all processes.
+!  
+! Used by init_domainfill_mpi
+!
+! Variables:
+! 
+! num_part        input, number of particles per process (rounded up)
+!
+!***********************************************************************
+    use com_mod
+
+    implicit none
+
+    integer,intent(in) :: num_part
+    integer :: i,jj, addone
+
+! Time for MPI communications
+!****************************
+    if (mp_measure_time) call mpif_mtime('commtime',0)
+
+! Distribute variables, send from pid 0 to other processes (including itself)
+!****************************************************************************
+
+    call MPI_SCATTER(nclass_tmp,num_part,MPI_INTEGER,nclass,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(npoint_tmp,num_part,MPI_INTEGER,npoint,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(itra1_tmp,num_part,MPI_INTEGER,itra1,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(idt_tmp,num_part,MPI_INTEGER,idt,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(itramem_tmp,num_part,MPI_INTEGER,itramem,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(itrasplit_tmp,num_part,MPI_INTEGER,itrasplit,&
+         &num_part,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(xtra1_tmp,num_part,mp_dp,xtra1,&
+         &num_part,mp_dp,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(ytra1_tmp,num_part,mp_dp,ytra1,&
+         &num_part,mp_dp,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    call MPI_SCATTER(ztra1_tmp,num_part,mp_sp,ztra1,&
+         &num_part,mp_sp,id_root,mp_comm_used,mp_ierr)
+    if (mp_ierr /= 0) goto 600 
+    do i=1,nspec
+      call MPI_SCATTER(xmass1_tmp(:,i),num_part,mp_sp,xmass1(:,i),&
+           &num_part,mp_sp,id_root,mp_comm_used,mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+    end do
+
+    if (mp_measure_time) call mpif_mtime('commtime',1)
+    write(*,*) "PID ", mp_partid, "ending MPI_Scatter operation"
+
+    goto 601
+
+600 write(*,*) "mpi_mod> mp_ierr \= 0", mp_ierr
+    stop
+
+! After the transfer of particles it it possible that the value of
+! "numpart" is larger than the actual, so we reduce it if there are
+! invalid particles at the end of the arrays
+601 do i=num_part, 1, -1
+      if (itra1(i).eq.-999999999) then
+        numpart=numpart-1
+      else
+        exit
+      end if
+    end do
+
+
+!601 end subroutine mpif_send_part_properties
+  end subroutine mpif_send_part_properties
+
+
+  subroutine mpif_calculate_part_redist(itime)
+!***********************************************************************
+! Calculate number of particles to redistribute between processes. This routine 
+! can be called at regular time intervals to keep a level number of
+! particles on each process.
+!
+! First, all processes report their local "numpart" to each other, which is
+! stored in array "numpart_mpi(np)". This array is sorted from low to
+! high values, along with a corresponding process ID array "idx_arr(np)".
+! If the relative difference between the highest and lowest "numpart_mpi" value
+! is above a threshold, particles are transferred from process idx_arr(np-1)
+! to process idx_arr(0). Repeat for processes idx_arr(np-i) and idx_arr(i)
+! for all valid i. 
+! Note: If np is an odd number, the process with the median
+! number of particles is left unchanged
+!
+! VARIABLES
+! itime        input, current time
+!***********************************************************************
+    use com_mod
+
+    implicit none
+    
+    integer, intent(in) :: itime
+    real :: pmin,z
+    integer :: i,jj,nn, num_part=1,m,imin, num_trans
+    logical :: first_iter
+    integer,allocatable,dimension(:) :: numparticles_mpi, idx_arr
+    real,allocatable,dimension(:) :: sorted ! TODO: we don't really need this
+
+! Exit if running with only 1 process
+!************************************************************************
+    if (mp_np.eq.1) return
+
+! All processes exchange information on number of particles
+!****************************************************************************
+    allocate(numparticles_mpi(0:mp_partgroup_np-1), &
+         &idx_arr(0:mp_partgroup_np-1), sorted(0:mp_partgroup_np-1))
+
+    call MPI_Allgather(numpart, 1, MPI_INTEGER, numparticles_mpi, &
+         & 1, MPI_INTEGER, mp_comm_used, mp_ierr)
+
+
+! Sort from lowest to highest
+! Initial guess: correct order
+    sorted(:) = numparticles_mpi(:)
+    do i=0, mp_partgroup_np-1
+      idx_arr(i) = i
+    end do
+
+! For each successive element in index array, see if a lower value exists
+    do i=0, mp_partgroup_np-2
+      pmin=sorted(i)
+      imin=idx_arr(i)
+      m=i+1
+      do jj=m, mp_partgroup_np-1
+        if (pmin.le.sorted(jj)) cycle
+        z=pmin
+        pmin=sorted(jj)
+        sorted(jj)=z
+
+        nn=imin
+        imin=idx_arr(jj)
+        idx_arr(jj)=nn
+      end do
+      sorted(i)=pmin
+      idx_arr(i)=imin
+    end do
+
+! For each pair of processes, transfer particles if the difference is above a
+! limit, and numpart at sending process large enough
+
+    m=mp_partgroup_np-1 ! index for last sorted process (most particles)
+    do i=0,mp_partgroup_np/2-1
+      num_trans = numparticles_mpi(idx_arr(m)) - numparticles_mpi(idx_arr(i))
+      if (mp_partid.eq.idx_arr(m).or.mp_partid.eq.idx_arr(i)) then
+        if ( numparticles_mpi(idx_arr(m)).gt.mp_min_redist.and.&
+             & real(num_trans)/real(numparticles_mpi(idx_arr(m))).gt.mp_redist_fract) then
+          call mpif_redist_part(itime, idx_arr(m), idx_arr(i), num_trans/2)
+        end if
+      end if
+      m=m-1
+    end do
+
+    deallocate(numparticles_mpi, idx_arr, sorted)
+
+  end subroutine mpif_calculate_part_redist
+
+
+  subroutine mpif_redist_part(itime, src_proc, dest_proc, num_trans)
+!***********************************************************************
+! Transfer particle properties between two arbitrary processes.
+! 
+! VARIABLES
+!
+! itime           input, current time
+! src_proc        input, ID of source process
+! dest_proc       input, ID of destination process
+! num_trans       input, number of particles to transfer
+!
+!************************************************************************
+    use com_mod !TODO:  ,only: nclass etc
+
+    implicit none 
+
+    integer, intent(in) :: itime, src_proc, dest_proc, num_trans
+    integer :: ll, ul ! lower and upper indices in arrays
+    integer :: arr_sz ! size of temporary arrays
+    integer :: mtag   ! MPI message tag
+    integer :: i, j, minpart, ipart, maxnumpart
+ 
+! Measure time for MPI communications
+!************************************
+    if (mp_measure_time) call mpif_mtime('commtime',0)
+
+! Send particles
+!***************
+    if (mp_partid.eq.src_proc) then
+      mtag = 2000
+
+! Array indices for the transferred particles
+      ll=numpart-num_trans+1
+      ul=numpart
+
+      ! if (mp_dev_mode) then
+      !   write(*,FMT='(72("#"))')
+      !   write(*,*) "Sending ", num_trans, "particles (from/to)", src_proc, dest_proc
+      !   write(*,*) "numpart before: ", numpart
+      ! end if
+
+      call MPI_SEND(nclass(ll:ul),num_trans,&
+           & MPI_INTEGER,dest_proc,mtag+1,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(npoint(ll:ul),num_trans,&
+           & MPI_INTEGER,dest_proc,mtag+2,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(itra1(ll:ul),num_trans, &
+           & MPI_INTEGER,dest_proc,mtag+3,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(idt(ll:ul),num_trans, &
+           & MPI_INTEGER,dest_proc,mtag+4,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(itramem(ll:ul),num_trans, &
+           & MPI_INTEGER,dest_proc,mtag+5,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(itrasplit(ll:ul),num_trans,&
+           & MPI_INTEGER,dest_proc,mtag+6,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(xtra1(ll:ul),num_trans, &
+           & mp_dp,dest_proc,mtag+7,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(ytra1(ll:ul),num_trans,&
+           & mp_dp,dest_proc,mtag+8,mp_comm_used,mp_ierr)
+
+      call MPI_SEND(ztra1(ll:ul),num_trans,&
+           & mp_sp,dest_proc,mtag+9,mp_comm_used,mp_ierr)
+
+      do j=1,nspec
+        call MPI_SEND(xmass1(ll:ul,j),num_trans,&
+             & mp_sp,dest_proc,mtag+(9+j),mp_comm_used,mp_ierr)
+      end do
+
+! Terminate transferred particles, update numpart
+      itra1(ll:ul) = -999999999
+
+      numpart = numpart-num_trans
+
+      ! if (mp_dev_mode) then
+      !   write(*,*) "numpart after: ", numpart
+      !   write(*,FMT='(72("#"))')
+      ! end if
+
+    else if (mp_partid.eq.dest_proc) then
+
+! Receive particles
+!******************
+      mtag = 2000
+      ! Array indices for the transferred particles
+      ll=numpart+1
+      ul=numpart+num_trans
+
+      ! if (mp_dev_mode) then
+      !   write(*,FMT='(72("#"))')
+      !   write(*,*) "Receiving ", num_trans, "particles (from/to)", src_proc, dest_proc
+      !   write(*,*) "numpart before: ", numpart
+      ! end if
+
+! We could receive the data directly at nclass(ll:ul) etc., but this leaves
+! vacant spaces at lower indices. Using temporary arrays instead.
+      arr_sz = ul-ll+1
+      allocate(itra1_tmp(arr_sz),npoint_tmp(arr_sz),nclass_tmp(arr_sz),&
+           & idt_tmp(arr_sz),itramem_tmp(arr_sz),itrasplit_tmp(arr_sz),&
+           & xtra1_tmp(arr_sz),ytra1_tmp(arr_sz),ztra1_tmp(arr_sz),&
+           & xmass1_tmp(arr_sz, maxspec))
+      
+      call MPI_RECV(nclass_tmp,num_trans,&
+           & MPI_INTEGER,src_proc,mtag+1,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(npoint_tmp,num_trans,&
+           & MPI_INTEGER,src_proc,mtag+2,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(itra1_tmp,num_trans, &
+           & MPI_INTEGER,src_proc,mtag+3,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(idt_tmp,num_trans, &
+           & MPI_INTEGER,src_proc,mtag+4,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(itramem_tmp,num_trans, &
+           & MPI_INTEGER,src_proc,mtag+5,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(itrasplit_tmp,num_trans,&
+           & MPI_INTEGER,src_proc,mtag+6,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(xtra1_tmp,num_trans, &
+           & mp_dp,src_proc,mtag+7,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(ytra1_tmp,num_trans,&
+           & mp_dp,src_proc,mtag+8,mp_comm_used,mp_status,mp_ierr)
+
+      call MPI_RECV(ztra1_tmp,num_trans,&
+           & mp_sp,src_proc,mtag+9,mp_comm_used,mp_status,mp_ierr)
+
+      do j=1,nspec
+        call MPI_RECV(xmass1_tmp(:,j),num_trans,&
+             & mp_sp,src_proc,mtag+(9+j),mp_comm_used,mp_status,mp_ierr)
+      end do
+
+! This is the maximum value numpart can possibly have after the transfer
+      maxnumpart=numpart+num_trans
+
+! Search for vacant space and copy from temporary storage
+!********************************************************
+      minpart=1
+      do i=1, num_trans
+! Take into acount that we may have transferred invalid particles
+        if (itra1_tmp(minpart).ne.itime) goto 200
+        do ipart=minpart,maxnumpart
+          if (itra1(ipart).ne.itime) then
+            itra1(ipart) = itra1_tmp(minpart)
+            npoint(ipart) = npoint_tmp(minpart)
+            nclass(ipart) = nclass_tmp(minpart)
+            idt(ipart) = idt_tmp(minpart)
+            itramem(ipart) = itramem_tmp(minpart)
+            itrasplit(ipart) = itrasplit_tmp(minpart)
+            xtra1(ipart) = xtra1_tmp(minpart)
+            ytra1(ipart) = ytra1_tmp(minpart)
+            ztra1(ipart) = ztra1_tmp(minpart)
+            xmass1(ipart,:) = xmass1_tmp(minpart,:)
+! Increase numpart, if necessary
+            numpart=max(numpart,ipart)
+            goto 200 ! Storage space has been found, stop searching
+          end if
+        end do
+200     minpart=minpart+1
+      end do
+
+      deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,itrasplit_tmp,&
+           & xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
+
+      ! if (mp_dev_mode) then
+      !   write(*,*) "numpart after: ", numpart
+      !   write(*,FMT='(72("#"))')
+      ! end if
+
+    else
+! This routine should only be called by the two participating processes
+      write(*,*) "ERROR: wrong process has entered mpi_mod::mpif_redist_part"
+      stop
+      return
+    end if
+
+! Measure time for MPI communications
+!************************************
+    if (mp_measure_time) call mpif_mtime('commtime',1)
+
+  end subroutine mpif_redist_part
+
+
   subroutine mpif_tm_send_vars
 !***********************************************************************
 ! Distribute particle variables from pid0 to all processes.
@@ -476,120 +850,120 @@ contains
 ! integers
     if (lroot) then
       call MPI_SCATTER(npoint,numpart_mpi,MPI_INTEGER,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(idt,numpart_mpi,MPI_INTEGER,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(itra1,numpart_mpi,MPI_INTEGER,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(nclass,numpart_mpi,MPI_INTEGER,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(itramem,numpart_mpi,MPI_INTEGER,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
 ! int2
       call MPI_SCATTER(cbt,numpart_mpi,MPI_INTEGER2,MPI_IN_PLACE,&
-           &numpart_mpi,MPI_INTEGER2,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER2,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
 ! real
       call MPI_SCATTER(uap,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(ucp,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(uzp,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(us,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(vs,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(ws,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(xtra1,numpart_mpi,mp_dp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(ytra1,numpart_mpi,mp_dp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(ztra1,numpart_mpi,mp_sp,MPI_IN_PLACE,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
       do i=1,nspec
         call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_sp,MPI_IN_PLACE,&
-             &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+             & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
         if (mp_ierr /= 0) goto 600 
       end do
 
     else ! (mp_pid >= 1)
 ! integers
       call MPI_SCATTER(npoint,numpart_mpi,MPI_INTEGER,npoint,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(idt,numpart_mpi,MPI_INTEGER,idt,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(itra1,numpart_mpi,MPI_INTEGER,itra1,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(nclass,numpart_mpi,MPI_INTEGER,nclass,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(itramem,numpart_mpi,MPI_INTEGER,itramem,&
-           &numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
 ! int2
       call MPI_SCATTER(cbt,numpart_mpi,MPI_INTEGER2,cbt,&
-           &numpart_mpi,MPI_INTEGER2,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,MPI_INTEGER2,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
 ! reals
       call MPI_SCATTER(uap,numpart_mpi,mp_sp,uap,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(ucp,numpart_mpi,mp_sp,ucp,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(uzp,numpart_mpi,mp_sp,uzp,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(us,numpart_mpi,mp_sp,us,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(vs,numpart_mpi,mp_sp,vs,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
       call MPI_SCATTER(ws,numpart_mpi,mp_sp,ws,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600
 
       call MPI_SCATTER(xtra1,numpart_mpi,mp_dp,xtra1,&
-           &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(ytra1,numpart_mpi,mp_dp,ytra1,&
-           &numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_dp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
       call MPI_SCATTER(ztra1,numpart_mpi,mp_sp,ztra1,&
-           &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+           & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
       if (mp_ierr /= 0) goto 600 
 
       do i=1,nspec
         call MPI_SCATTER(xmass1(:,i),numpart_mpi,mp_sp,xmass1(:,i),&
-             &numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
+             & numpart_mpi,mp_sp,id_root,mp_comm_used,mp_ierr)
         if (mp_ierr /= 0) goto 600 
       end do
 
@@ -1144,12 +1518,12 @@ contains
       if (mp_ierr /= 0) goto 600
 
 ! cloud water/ice:
-    if (readclouds_nest(i)) then
-      ! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
-      ! if (mp_ierr /= 0) goto 600
-      call MPI_Bcast(ctwcn(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
-      if (mp_ierr /= 0) goto 600
-    end if
+      if (readclouds_nest(i)) then
+! call MPI_Bcast(icloud_stats(:,:,:,li:ui),d2s1*5,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+! if (mp_ierr /= 0) goto 600
+        call MPI_Bcast(ctwcn(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
+        if (mp_ierr /= 0) goto 600
+      end if
 
 ! 2D fields
       call MPI_Bcast(cloudshn(:,:,li:ui,i),d2s1,mp_sp,id_read,MPI_COMM_WORLD,mp_ierr)
@@ -1397,7 +1771,7 @@ contains
     integer :: d3s2 = nxmax*nymax*nuvzmax
     integer :: d2s1 = nxmax*nymax
     integer :: d2s2 = nxmax*nymax*maxspec
-    !integer :: d1_size1 = maxwf
+!integer :: d1_size1 = maxwf
 
 !    integer :: d3s1,d3s2,d2s1,d2s2
 !*******************************************************************************
@@ -1644,93 +2018,93 @@ contains
 ! TODO: use mp_partgroup_np here
       if (dest.eq.id_read) cycle
       do k=1, numbnests 
-      i=dest*nvar_async
-      call MPI_Isend(uun(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(vvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(wwn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(ttn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(rhon(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(drhodzn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(tthn(:,:,:,mind,k),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(qvhn(:,:,:,mind,k),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(qvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(pvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(cloudsn(:,:,:,mind,k),d3s1,MPI_INTEGER1,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      i=i+1
-      if (mp_ierr /= 0) goto 600 
-      call MPI_Isend(cloudshn(:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(vdepn(:,:,:,mind,k),d2s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(psn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(sdn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
+        i=dest*nvar_async
+        call MPI_Isend(uun(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(vvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(wwn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(ttn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(rhon(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(drhodzn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(tthn(:,:,:,mind,k),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(qvhn(:,:,:,mind,k),d3s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(qvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(pvn(:,:,:,mind,k),d3s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(cloudsn(:,:,:,mind,k),d3s1,MPI_INTEGER1,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        i=i+1
+        if (mp_ierr /= 0) goto 600 
+        call MPI_Isend(cloudshn(:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(vdepn(:,:,:,mind,k),d2s2,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(psn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(sdn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
 ! 15
-      call MPI_Isend(tccn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(tt2n(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(td2n(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(lsprecn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(convprecn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(ustarn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(wstarn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(hmixn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600 
-      i=i+1
-      call MPI_Isend(tropopausen(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-      i=i+1
-      call MPI_Isend(olin(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
-      if (mp_ierr /= 0) goto 600
+        call MPI_Isend(tccn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(tt2n(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(td2n(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(lsprecn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(convprecn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(ustarn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(wstarn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(hmixn(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600 
+        i=i+1
+        call MPI_Isend(tropopausen(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+        i=i+1
+        call MPI_Isend(olin(:,:,:,mind,k),d2s1,mp_sp,dest,tm1,MPI_COMM_WORLD,reqs(i),mp_ierr)
+        if (mp_ierr /= 0) goto 600
 ! 25
 
 ! Send cloud water if it exists. Increment counter always (as on receiving end)
-      if (readclouds) then
-        i=i+1
-        call MPI_Isend(ctwcn(:,:,mind,k),d2s1,mp_sp,dest,tm1,&
-             &MPI_COMM_WORLD,reqs(i),mp_ierr)
-        if (mp_ierr /= 0) goto 600
-      end if
+        if (readclouds) then
+          i=i+1
+          call MPI_Isend(ctwcn(:,:,mind,k),d2s1,mp_sp,dest,tm1,&
+               &MPI_COMM_WORLD,reqs(i),mp_ierr)
+          if (mp_ierr /= 0) goto 600
+        end if
+      end do
     end do
-  end do
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
@@ -1809,115 +2183,115 @@ contains
 
     do k=1, numbnests 
 ! Get MPI tags/requests for communications
-    j=mp_pid*nvar_async
-    call MPI_Irecv(uun(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(vvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(wwn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(ttn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(rhon(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(drhodzn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(tthn(:,:,:,mind,k),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(qvhn(:,:,:,mind,k),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(qvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(pvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(cloudsn(:,:,:,mind,k),d3s1,MPI_INTEGER1,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)    
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(cloudshn(:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(vdepn(:,:,:,mind,k),d2s2,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(psn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(sdn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(tccn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(tt2n(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(td2n(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(lsprecn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(convprecn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    call MPI_Irecv(ustarn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(wstarn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(hmixn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
-    j=j+1
-    call MPI_Irecv(tropopausen(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600
-    j=j+1
-    call MPI_Irecv(olin(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
-         &MPI_COMM_WORLD,reqs(j),mp_ierr)
-    if (mp_ierr /= 0) goto 600 
+      j=mp_pid*nvar_async
+      call MPI_Irecv(uun(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(vvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(wwn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(ttn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(rhon(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(drhodzn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(tthn(:,:,:,mind,k),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(qvhn(:,:,:,mind,k),d3s2,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(qvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(pvn(:,:,:,mind,k),d3s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(cloudsn(:,:,:,mind,k),d3s1,MPI_INTEGER1,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)    
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(cloudshn(:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(vdepn(:,:,:,mind,k),d2s2,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(psn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(sdn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(tccn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(tt2n(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(td2n(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(lsprecn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(convprecn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      call MPI_Irecv(ustarn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(wstarn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(hmixn(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
+      j=j+1
+      call MPI_Irecv(tropopausen(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      j=j+1
+      call MPI_Irecv(olin(:,:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+           &MPI_COMM_WORLD,reqs(j),mp_ierr)
+      if (mp_ierr /= 0) goto 600 
 
 ! Post request for clwc. These data are possibly not sent, request must then be cancelled
 ! For now assume that data at all steps either have or do not have water 
-    if (readclouds) then
-      j=j+1
-      call MPI_Irecv(ctwcn(:,:,mind,k),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
-           &MPI_COMM_WORLD,reqs(j),mp_ierr)
-      if (mp_ierr /= 0) goto 600
-    end if
-  end do
+      if (readclouds) then
+        j=j+1
+        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
+             &MPI_COMM_WORLD,reqs(j),mp_ierr)
+        if (mp_ierr /= 0) goto 600
+      end if
+    end do
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
@@ -2348,10 +2722,10 @@ contains
                & mp_wetdepo_time_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR CONCCALC:',&
                & mp_conccalc_time_total
-          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR VERTTRANSFORM:',&
-          !      & mp_vt_wtime_total
-          ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR VERTTRANSFORM:',&
-          !      & mp_vt_time_total
+! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR VERTTRANSFORM:',&
+!      & mp_vt_wtime_total
+! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR VERTTRANSFORM:',&
+!      & mp_vt_time_total
 ! NB: the 'flush' function is possibly a gfortran-specific extension
           call flush()
         end if
@@ -2387,60 +2761,135 @@ contains
     end if
 
 
-    end subroutine mpif_finalize
+  end subroutine mpif_finalize
 
 
-    subroutine get_lun(my_lun)
+  subroutine get_lun(my_lun)
 !***********************************************************************
 ! get_lun: 
 !   Starting from 100, get next free logical unit number
 !***********************************************************************
 
-      implicit none
+    implicit none
 
-      integer, intent(inout) :: my_lun
-      integer, save :: free_lun=100
-      logical :: exists, iopen
+    integer, intent(inout) :: my_lun
+    integer, save :: free_lun=100
+    logical :: exists, iopen
 
 !***********************************************************************
 
-      loop1: do
-        inquire(UNIT=free_lun, EXIST=exists, OPENED=iopen)
-        if (exists .and. .not.iopen) exit loop1
-        free_lun = free_lun+1
-      end do loop1
-      my_lun = free_lun
+    loop1: do
+      inquire(UNIT=free_lun, EXIST=exists, OPENED=iopen)
+      if (exists .and. .not.iopen) exit loop1
+      free_lun = free_lun+1
+    end do loop1
+    my_lun = free_lun
 
-    end subroutine get_lun
+  end subroutine get_lun
 
 
-    subroutine write_data_dbg(array_in, array_name, tstep, ident)
+  subroutine write_data_dbg(array_in, array_name, tstep, ident)
 !***********************************************************************
 ! Write one-dimensional arrays to file (for debugging purposes)
 !***********************************************************************
-      implicit none 
+    implicit none 
 
-      real, intent(in), dimension(:) :: array_in
-      integer, intent(in) :: tstep
-      integer :: lios
-      character(LEN=*), intent(in) :: ident, array_name
+    real, intent(in), dimension(:) :: array_in
+    integer, intent(in) :: tstep
+    integer :: lios
+    character(LEN=*), intent(in) :: ident, array_name
 
-      character(LEN=8) :: c_ts
-      character(LEN=40) :: fn_1, fn_2
+    character(LEN=8) :: c_ts
+    character(LEN=40) :: fn_1, fn_2
 
 !***********************************************************************
 
-      write(c_ts, FMT='(I8.8,BZ)') tstep
-      fn_1='-'//trim(adjustl(c_ts))//'-'//trim(ident)
-      write(c_ts, FMT='(I2.2,BZ)') mp_np
-      fn_2= trim(adjustl(array_name))//trim(adjustl(fn_1))//'-np'//trim(adjustl(c_ts))//'.dat'
+    write(c_ts, FMT='(I8.8,BZ)') tstep
+    fn_1='-'//trim(adjustl(c_ts))//'-'//trim(ident)
+    write(c_ts, FMT='(I2.2,BZ)') mp_np
+    fn_2= trim(adjustl(array_name))//trim(adjustl(fn_1))//'-np'//trim(adjustl(c_ts))//'.dat'
 
-      call get_lun(dat_lun)
-      open(UNIT=dat_lun, FILE=fn_2, IOSTAT=lios, ACTION='WRITE', &
-           FORM='UNFORMATTED', STATUS='REPLACE')
-      write(UNIT=dat_lun, IOSTAT=lios) array_in
-      close(UNIT=dat_lun)
+    call get_lun(dat_lun)
+    open(UNIT=dat_lun, FILE=fn_2, IOSTAT=lios, ACTION='WRITE', &
+         FORM='UNFORMATTED', STATUS='REPLACE')
+    write(UNIT=dat_lun, IOSTAT=lios) array_in
+    close(UNIT=dat_lun)
 
-    end subroutine write_data_dbg
+  end subroutine write_data_dbg
+
+
+  subroutine set_fields_synthetic()
+!*******************************************************************************
+! DESCRIPTION
+!   Set all meteorological fields to synthetic (usually constant/homogeneous)
+!   values.
+!   Used for validation and error-checking
+!
+! NOTE
+!   This version uses asynchronious communications.
+!
+! VARIABLES
+!   
+!
+!
+!*******************************************************************************
+    use com_mod
+
+    implicit none
+
+    integer :: li=1, ui=2 ! wfmem indices (i.e, operate on entire field)
+
+    if (.not.lmp_sync) ui=3
+
+
+! Variables transferred at initialization only
+!*********************************************
+!    readclouds=readclouds_
+    oro(:,:)=0.0
+    excessoro(:,:)=0.0
+    lsm(:,:)=0.0
+    xlanduse(:,:,:)=0.0
+!    wftime
+!    numbwf
+!    nmixz
+!    height
+
+! Time-varying fields:
+    uu(:,:,:,li:ui) = 10.0
+    vv(:,:,:,li:ui) = 0.0
+    uupol(:,:,:,li:ui) = 10.0
+    vvpol(:,:,:,li:ui)=0.0
+    ww(:,:,:,li:ui)=0.
+    tt(:,:,:,li:ui)=300.
+    rho(:,:,:,li:ui)=1.3
+    drhodz(:,:,:,li:ui)=.0
+    tth(:,:,:,li:ui)=0.0
+    qvh(:,:,:,li:ui)=1.0
+    qv(:,:,:,li:ui)=1.0
+
+    pv(:,:,:,li:ui)=1.0
+    clouds(:,:,:,li:ui)=0
+
+    clwc(:,:,:,li:ui)=0.0
+    ciwc(:,:,:,li:ui)=0.0
+
+! 2D fields
+
+    cloudsh(:,:,li:ui)=0
+    vdep(:,:,:,li:ui)=0.0
+    ps(:,:,:,li:ui)=1.0e5
+    sd(:,:,:,li:ui)=0.0
+    tcc(:,:,:,li:ui)=0.0
+    tt2(:,:,:,li:ui)=300.
+    td2(:,:,:,li:ui)=250.
+    lsprec(:,:,:,li:ui)=0.0
+    convprec(:,:,:,li:ui)=0.0
+    ustar(:,:,:,li:ui)=1.0
+    wstar(:,:,:,li:ui)=1.0
+    hmix(:,:,:,li:ui)=10000.
+    tropopause(:,:,:,li:ui)=10000.
+    oli(:,:,:,li:ui)=0.01
+
+  end subroutine set_fields_synthetic
 
 end module mpi_mod

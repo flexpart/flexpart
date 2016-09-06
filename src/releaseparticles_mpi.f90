@@ -20,34 +20,34 @@
 !**********************************************************************
 
 subroutine releaseparticles(itime)
-  !                              o
-  !*****************************************************************************
-  !                                                                            *
-  !     This subroutine releases particles from the release locations.         *
-  !                                                                            *
-  !     It searches for a "vacant" storage space and assigns all particle      *
-  !     information to that space. A space is vacant either when no particle   *
-  !     is yet assigned to it, or when it's particle is expired and, thus,     *
-  !     the storage space is made available to a new particle.                 *
-  !                                                                            *
-  !     Author: A. Stohl                                                       *
-  !                                                                            *
-  !     29 June 2002                                                           *
-  !                                                                            *
-  !   CHANGES                                                                  *
-  !     12/2014 eso: MPI version                                               *
-  !                                                                            *
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  ! itime [s]            current time                                          *
-  ! ireleasestart, ireleaseend          start and end times of all releases    *
-  ! npart(maxpoint)      number of particles to be released in total           *
-  ! numrel               number of particles to be released during this time   *
-  !                      step                                                  *
-  ! addpart              extra particle assigned to MPI process if             *
-  !                      mod(npart(i),mp_partgroup_np) .ne. 0)                 *
-  !*****************************************************************************
+!                              o
+!*****************************************************************************
+!                                                                            *
+!     This subroutine releases particles from the release locations.         *
+!                                                                            *
+!     It searches for a "vacant" storage space and assigns all particle      *
+!     information to that space. A space is vacant either when no particle   *
+!     is yet assigned to it, or when it's particle is expired and, thus,     *
+!     the storage space is made available to a new particle.                 *
+!                                                                            *
+!     Author: A. Stohl                                                       *
+!                                                                            *
+!     29 June 2002                                                           *
+!                                                                            *
+!   CHANGES                                                                  *
+!     12/2014 eso: MPI version                                               *
+!                                                                            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+! itime [s]            current time                                          *
+! ireleasestart, ireleaseend          start and end times of all releases    *
+! npart(maxpoint)      number of particles to be released in total           *
+! numrel               number of particles to be released during this time   *
+!                      step                                                  *
+! addone               extra particle assigned to MPI process if             *
+!                      mod(npart(i),mp_partgroup_np) .ne. 0)                 *
+!*****************************************************************************
 
   use point_mod
   use xmass_mod
@@ -58,7 +58,7 @@ subroutine releaseparticles(itime)
 
   implicit none
 
-  !real xaux,yaux,zaux,ran1,rfraction,xmasssave(maxpoint)
+!real xaux,yaux,zaux,ran1,rfraction,xmasssave(maxpoint)
   real :: xaux,yaux,zaux,rfraction
   real :: topo,rhoaux(2),r,t,rhoout,ddx,ddy,rddx,rddy,p1,p2,p3,p4
   real :: dz1,dz2,dz,xtn,ytn,xlonav,timecorrect(maxspec),press,pressold
@@ -72,13 +72,13 @@ subroutine releaseparticles(itime)
 ! mind2        eso: pointer to 2nd windfield in memory
 
   integer :: idummy = -7
-  !save idummy,xmasssave
-  !data idummy/-7/,xmasssave/maxpoint*0./
+!save idummy,xmasssave
+!data idummy/-7/,xmasssave/maxpoint*0./
 
   logical :: first_call=.true.
 
-  ! Use different seed for each process.
-  !****************************************************************************
+! Use different seed for each process.
+!****************************************************************************
   if (first_call) then
     idummy=idummy+mp_seed
     first_call=.false.
@@ -86,8 +86,8 @@ subroutine releaseparticles(itime)
 
   mind2=memind(2)
 
-  ! Determine the actual date and time in Greenwich (i.e., UTC + correction for daylight savings time)
-  !*****************************************************************************
+! Determine the actual date and time in Greenwich (i.e., UTC + correction for daylight savings time)
+!*****************************************************************************
 
   julmonday=juldate(19000101,0)          ! this is a Monday
   jul=bdate+real(itime,kind=dp)/86400._dp    ! this is the current day
@@ -96,16 +96,16 @@ subroutine releaseparticles(itime)
   if ((mm.ge.4).and.(mm.le.9)) jul=jul+1._dp/24._dp   ! daylight savings time in summer
 
 
-  ! For every release point, check whether we are in the release time interval
-  !***************************************************************************
+! For every release point, check whether we are in the release time interval
+!***************************************************************************
 
   minpart=1
   do i=1,numpoint
     if ((itime.ge.ireleasestart(i)).and. &! are we within release interval?
          (itime.le.ireleaseend(i))) then
 
-  ! Determine the local day and time
-  !*********************************
+! Determine the local day and time
+!*********************************
 
       xlonav=xlon0+(xpoint2(i)+xpoint1(i))/2.*dx  ! longitude needed to determine local time
       if (xlonav.lt.-180.) xlonav=xlonav+360.
@@ -123,10 +123,10 @@ subroutine releaseparticles(itime)
         if (ndayofweek.eq.0) ndayofweek=7
       endif
 
-  ! Calculate a species- and time-dependent correction factor, distinguishing between
-  ! area (those with release starting at surface) and point (release starting above surface) sources
-  ! Also, calculate an average time correction factor (species independent)
-  !*****************************************************************************
+! Calculate a species- and time-dependent correction factor, distinguishing between
+! area (those with release starting at surface) and point (release starting above surface) sources
+! Also, calculate an average time correction factor (species independent)
+!*****************************************************************************
       average_timecorrect=0.
       do k=1,nspec
         if (zpoint1(i).gt.0.5) then      ! point source
@@ -138,9 +138,9 @@ subroutine releaseparticles(itime)
       end do
       average_timecorrect=average_timecorrect/real(nspec)
 
-  ! Determine number of particles to be released this time; at start and at end of release,
-  ! only half the particles are released
-  !*****************************************************************************
+! Determine number of particles to be released this time; at start and at end of release,
+! only half the particles are released
+!*****************************************************************************
 
       if (ireleasestart(i).ne.ireleaseend(i)) then
         rfraction=abs(real(npart(i))*real(lsynctime)/ &
@@ -148,16 +148,16 @@ subroutine releaseparticles(itime)
         if ((itime.eq.ireleasestart(i)).or. &
              (itime.eq.ireleaseend(i))) rfraction=rfraction/2.
 
-  ! Take the species-average time correction factor in order to scale the
-  ! number of particles released this time
-  ! Also scale by number of MPI processes
-  !**********************************************************************
+! Take the species-average time correction factor in order to scale the
+! number of particles released this time
+! Also scale by number of MPI processes
+!**********************************************************************
 
         rfraction=rfraction*average_timecorrect
 
         rfraction=rfraction+xmasssave(i)  ! number to be released at this time
 
-        ! number to be released for one process
+! number to be released for one process
         if (mp_partid.lt.mod(int(rfraction),mp_partgroup_np)) then
           addone=1
         else
@@ -179,23 +179,23 @@ subroutine releaseparticles(itime)
 
         numrel=npart(i)/mp_partgroup_np+addone
       endif
-     
+
       xaux=xpoint2(i)-xpoint1(i)
       yaux=ypoint2(i)-ypoint1(i)
       zaux=zpoint2(i)-zpoint1(i)
       do j=1,numrel                       ! loop over particles to be released this time
         do ipart=minpart,maxpart_mpi     ! search for free storage space
 
-  ! If a free storage space is found, attribute everything to this array element
-  !*****************************************************************************
+! If a free storage space is found, attribute everything to this array element
+!*****************************************************************************
 
           if (itra1(ipart).ne.itime) then
 
-  ! Particle coordinates are determined by using a random position within the release volume
-  !*****************************************************************************
+! Particle coordinates are determined by using a random position within the release volume
+!*****************************************************************************
 
-  ! Determine horizontal particle position
-  !***************************************
+! Determine horizontal particle position
+!***************************************
 
             xtra1(ipart)=xpoint1(i)+ran1(idummy)*xaux
             if (xglobal) then
@@ -206,18 +206,18 @@ subroutine releaseparticles(itime)
             endif
             ytra1(ipart)=ypoint1(i)+ran1(idummy)*yaux
 
-  ! Assign mass to particle: Total mass divided by total number of particles.
-  ! Time variation has partly been taken into account already by a species-average
-  ! correction factor, by which the number of particles released this time has been
-  ! scaled. Adjust the mass per particle by the species-dependent time correction factor
-  ! divided by the species-average one
-  !*****************************************************************************
+! Assign mass to particle: Total mass divided by total number of particles.
+! Time variation has partly been taken into account already by a species-average
+! correction factor, by which the number of particles released this time has been
+! scaled. Adjust the mass per particle by the species-dependent time correction factor
+! divided by the species-average one
+!*****************************************************************************
             do k=1,nspec
-               xmass1(ipart,k)=xmass(i,k)/real(npart(i)) &
-                    *timecorrect(k)/average_timecorrect
-  !             write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
-  ! Assign certain properties to particle
-  !**************************************
+              xmass1(ipart,k)=xmass(i,k)/real(npart(i)) &
+                   *timecorrect(k)/average_timecorrect
+!             write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
+! Assign certain properties to particle
+!**************************************
             end do
             nclass(ipart)=min(int(ran1(idummy)*real(nclassunc))+1, &
                  nclassunc)
@@ -233,16 +233,16 @@ subroutine releaseparticles(itime)
             itrasplit(ipart)=itra1(ipart)+ldirect*itsplit
 
 
-  ! Determine vertical particle position
-  !*************************************
+! Determine vertical particle position
+!*************************************
 
             ztra1(ipart)=zpoint1(i)+ran1(idummy)*zaux
 
-  ! Interpolation of topography and density
-  !****************************************
+! Interpolation of topography and density
+!****************************************
 
-  ! Determine the nest we are in
-  !*****************************
+! Determine the nest we are in
+!*****************************
 
             ngrid=0
             do k=numbnests,1,-1
@@ -256,8 +256,8 @@ subroutine releaseparticles(itime)
             end do
 43          continue
 
-  ! Determine (nested) grid coordinates and auxiliary parameters used for interpolation
-  !*****************************************************************************
+! Determine (nested) grid coordinates and auxiliary parameters used for interpolation
+!*****************************************************************************
 
             if (ngrid.gt.0) then
               xtn=(xtra1(ipart)-xln(ngrid))*xresoln(ngrid)
@@ -293,8 +293,8 @@ subroutine releaseparticles(itime)
                    + p4*oro(ixp,jyp)
             endif
 
-  ! If starting height is in pressure coordinates, retrieve pressure profile and convert zpart1 to meters
-  !*****************************************************************************
+! If starting height is in pressure coordinates, retrieve pressure profile and convert zpart1 to meters
+!*****************************************************************************
             if (kindz(i).eq.3) then
               presspart=ztra1(ipart)
               do kz=1,nz
@@ -336,9 +336,9 @@ subroutine releaseparticles(itime)
 71            continue
             endif
 
-  ! If release positions are given in meters above sea level, subtract the
-  ! topography from the starting height
-  !***********************************************************************
+! If release positions are given in meters above sea level, subtract the
+! topography from the starting height
+!***********************************************************************
 
             if (kindz(i).eq.2) ztra1(ipart)=ztra1(ipart)-topo
             if (ztra1(ipart).lt.eps2) ztra1(ipart)=eps2   ! Minimum starting height is eps2
@@ -347,28 +347,28 @@ subroutine releaseparticles(itime)
 
 
 
-  ! For special simulations, multiply particle concentration air density;
-  ! Simply take the 2nd field in memory to do this (accurate enough)
-  !***********************************************************************
-  !AF IND_SOURCE switches between different units for concentrations at the source
-  !Af    NOTE that in backward simulations the release of particles takes place at the
-  !Af         receptor and the sampling at the source.
-  !Af          1="mass"
-  !Af          2="mass mixing ratio"
-  !Af IND_RECEPTOR switches between different units for concentrations at the receptor
-  !Af          1="mass"
-  !Af          2="mass mixing ratio"
+! For special simulations, multiply particle concentration air density;
+! Simply take the 2nd field in memory to do this (accurate enough)
+!***********************************************************************
+!AF IND_SOURCE switches between different units for concentrations at the source
+!Af    NOTE that in backward simulations the release of particles takes place at the
+!Af         receptor and the sampling at the source.
+!Af          1="mass"
+!Af          2="mass mixing ratio"
+!Af IND_RECEPTOR switches between different units for concentrations at the receptor
+!Af          1="mass"
+!Af          2="mass mixing ratio"
 
-  !Af switches for the releasefile:
-  !Af IND_REL =  1 : xmass * rho
-  !Af IND_REL =  0 : xmass * 1
+!Af switches for the releasefile:
+!Af IND_REL =  1 : xmass * rho
+!Af IND_REL =  0 : xmass * 1
 
-  !Af ind_rel is defined in readcommand.f
+!Af ind_rel is defined in readcommand.f
 
             if (ind_rel .eq. 1) then
 
-  ! Interpolate the air density
-  !****************************
+! Interpolate the air density
+!****************************
 
               do ii=2,nz
                 if (height(ii).gt.ztra1(ipart)) then
@@ -402,8 +402,8 @@ subroutine releaseparticles(itime)
               rho_rel(i)=rhoout
 
 
-  ! Multiply "mass" (i.e., mass mixing ratio in forward runs) with density
-  !********************************************************************
+! Multiply "mass" (i.e., mass mixing ratio in forward runs) with density
+!********************************************************************
 
               do k=1,nspec
                 xmass1(ipart,k)=xmass1(ipart,k)*rhoout
@@ -415,17 +415,18 @@ subroutine releaseparticles(itime)
             goto 34      ! Storage space has been found, stop searching
           endif
         end do
-        if (ipart.gt.maxpart) goto 996
+! ESO TODO: Here we could use dynamic allocation and increase array sizes
+        if (ipart.gt.maxpart_mpi) goto 996
 
 34      minpart=ipart+1
       end do
-      endif
+    endif
   end do
 
 
   return
 
-996   continue
+996 continue
   write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL SUBROUTINE RELEASEPARTICLES: ####'
   write(*,*) '####                                             ####'

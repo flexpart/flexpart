@@ -103,7 +103,7 @@ subroutine timemanager
   implicit none
 
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
-  integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0 !,mind
+  integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0
 ! integer :: ksp
   integer :: ip
   integer :: loutnext,loutstart,loutend
@@ -154,6 +154,7 @@ subroutine timemanager
 
 
   do itime=0,ideltas,lsynctime
+    
 
 ! Computation of wet deposition, OH reaction and mass transfer
 ! between two species every lsynctime seconds
@@ -165,7 +166,7 @@ subroutine timemanager
 ! changed by Petra Seibert 9/02
 !********************************************************************
 
-    if (mp_dev_mode) write(*,*) 'myid, itime: ',mp_pid,itime
+    if (mp_dbg_mode) write(*,*) 'myid, itime: ',mp_pid,itime
     
     if (WETDEP .and. itime .ne. 0 .and. numpart .gt. 0) then
       if (verbosity.gt.0) then
@@ -274,6 +275,12 @@ subroutine timemanager
 
     if (mp_measure_time.and..not.(lmpreader.and.lmp_use_reader)) call mpif_mtime('getfields',1)
 
+! For validation and tests: call the function below to set all fields to simple
+! homogeneous values
+!    if (mp_dev_mode) call set_fields_synthetic
+
+!*******************************************************************************
+
     if (lmpreader.and.nstop1.gt.1) stop 'NO METEO FIELDS AVAILABLE'
 
 ! Reader process goes back to top of time loop (unless simulation end)
@@ -323,6 +330,11 @@ subroutine timemanager
       endif
       call releaseparticles(itime)
     endif
+
+
+! Check if particles should be redistributed among processes
+!***********************************************************
+    call mpif_calculate_part_redist(itime)
 
 
 ! Compute convective mixing for forward runs
@@ -541,20 +553,20 @@ subroutine timemanager
 
 ! Decide whether to write an estimate of the number of particles released, 
 ! or exact number (require MPI reduce operation)
-        if (mp_dev_mode) then
+        if (mp_dbg_mode) then
           numpart_tot_mpi = numpart
         else
           numpart_tot_mpi = numpart*mp_partgroup_np
         end if
 
         if (mp_exact_numpart.and..not.(lmpreader.and.lmp_use_reader).and.&
-             &.not.mp_dev_mode) then
+             &.not.mp_dbg_mode) then
           call MPI_Reduce(numpart, numpart_tot_mpi, 1, MPI_INTEGER, MPI_SUM, id_root, &
                & mp_comm_used, mp_ierr)
         endif
         
         !CGZ-lifetime: output species lifetime
-        if (lroot.or.mp_dev_mode) then
+        if (lroot.or.mp_dbg_mode) then
         !   write(*,*) 'Overview species lifetime in days', &
         !        real((species_lifetime(:,1)/species_lifetime(:,2))/real(3600.0*24.0))
         !   write(*,*) 'all info:',species_lifetime
@@ -564,6 +576,10 @@ subroutine timemanager
         !     write (*,*) 'timemanager> starting simulation'
         !   end if
         end if
+
+        ! Write particles for all processes
+        if (mp_dev_mode) write(*,*) "PID, itime, numpart", mp_pid,itime,numpart
+
 
 45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
