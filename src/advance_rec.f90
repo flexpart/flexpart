@@ -1,0 +1,497 @@
+!**********************************************************************
+! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
+! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
+! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
+!                                                                     *
+! This file is part of FLEXPART.                                      *
+!                                                                     *
+! FLEXPART is free software: you can redistribute it and/or modify    *
+! it under the terms of the GNU General Public License as published by*
+! the Free Software Foundation, either version 3 of the License, or   *
+! (at your option) any later version.                                 *
+!                                                                     *
+! FLEXPART is distributed in the hope that it will be useful,         *
+! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+! GNU General Public License for more details.                        *
+!                                                                     *
+! You should have received a copy of the GNU General Public License   *
+! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
+!**********************************************************************
+
+subroutine advance_rec(itime,nrelpoint,ldt,up,vp,wp, &
+       usigold,vsigold,wsigold,nstop,xt,yt,zt,prob,icbt)
+  !                     i    i  i/oi/oi/o
+  !  i/o     i/o     i/o     o  i/oi/oi/o i/o  i/o
+  !*****************************************************************************
+  !                                                                            *
+  !  Calculation of turbulent particle trajectories utilizing a                *
+  !  zero-acceleration scheme, which is corrected by a numerically more        *
+  !  accurate Petterssen scheme whenever possible.                             *
+  !                                                                            *
+  !  Particle positions are read in, incremented, and returned to the calling  *
+  !  program.                                                                  *
+  !                                                                            *
+  !  In different regions of the atmosphere (PBL vs. free troposphere),        *
+  !  different parameters are needed for advection, parameterizing turbulent   *
+  !  velocities, etc. For efficiency, different interpolation routines have    *
+  !  been written for these different cases, with the disadvantage that there  *
+  !  exist several routines doing almost the same. They all share the          *
+  !  included file 'interpol_mod'. The following                               *
+  !  interpolation routines are used:                                          *
+  !                                                                            *
+  !  interpol_all(_nests)     interpolates everything (called inside the PBL)  *
+  !  interpol_misslev(_nests) if a particle moves vertically in the PBL,       *
+  !                           additional parameters are interpolated if it     *
+  !                           crosses a model level                            *
+  !  interpol_wind(_nests)    interpolates the wind and determines the         *
+  !                           standard deviation of the wind (called outside   *
+  !                           PBL) also interpolates potential vorticity       *
+  !  interpol_wind_short(_nests) only interpolates the wind (needed for the    *
+  !                           Petterssen scheme)                               *
+  !  interpol_vdep(_nests)    interpolates deposition velocities               *
+  !                                                                            *
+  !                                                                            *
+  !     Author: A. Stohl                                                       *
+  !                                                                            *
+  !     16 December 1997                                                       *
+  !                                                                            *
+  !  Changes:                                                                  *
+  !                                                                            *
+  !  8 April 2000: Deep convection parameterization                            *
+  !                                                                            *
+  !  May 2002: Petterssen scheme introduced                                    *
+  !                                                                            *
+  !*****************************************************************************
+  !                                                                            *
+  ! Variables:                                                                 *
+  ! icbt               1 if particle not transferred to forbidden state,       *
+  !                    else -1                                                 *
+  ! dawsave            accumulated displacement in along-wind direction        *
+  ! dcwsave            accumulated displacement in cross-wind direction        *
+  ! dxsave             accumulated displacement in longitude                   *
+  ! dysave             accumulated displacement in latitude                    *
+  ! h [m]              Mixing height                                           *
+  ! lwindinterv [s]    time interval between two wind fields                   *
+  ! itime [s]          time at which this subroutine is entered                *
+  ! itimec [s]         actual time, which is incremented in this subroutine    *
+  ! href [m]           height for which dry deposition velocity is calculated  *
+  ! ladvance [s]       Total integration time period                           *
+  ! ldirect            1 forward, -1 backward                                  *
+  ! ldt [s]            Time step for the next integration                      *
+  ! lsynctime [s]      Synchronisation interval of FLEXPART                    *
+  ! ngrid              index which grid is to be used                          *
+  ! nrand              index for a variable to be picked from rannumb          *
+  ! nstop              if > 1 particle has left domain and must be stopped     *
+  ! prob               probability of absorption due to dry deposition         *
+  ! rannumb(maxrand)   normally distributed random variables                   *
+  ! rhoa               air density                                             *
+  ! rhograd            vertical gradient of the air density                    *
+  ! up,vp,wp           random velocities due to turbulence (along wind, cross  *
+  !                    wind, vertical wind                                     *
+  ! usig,vsig,wsig     mesoscale wind fluctuations                             *
+  ! usigold,vsigold,wsigold  like usig, etc., but for the last time step       *
+  ! vdepo              Deposition velocities for all species                   *
+  ! xt,yt,zt           Particle position                                       *
+  !                                                                            *
+  !*****************************************************************************
+
+  use point_mod
+  use par_mod
+  use com_mod
+  use interpol_mod
+  use hanna_mod
+  use cmapf_mod
+  use random_mod, only: ran3
+
+  implicit none
+
+  real(kind=dp) :: xt,yt
+  real :: zt,xts,yts,weight
+  integer :: itime,itimec,nstop,ldt,i,j,k,nrand,loop,memindnext,mind
+  integer :: ngr,nix,njy,ks,nsp,nrelpoint
+  real :: dz,dz1,dz2,xlon,ylat,xpol,ypol,gridsize
+  real :: ru,rv,rw,dt,ux,vy,cosfact,xtn,ytn,tropop
+  real :: prob(maxspec),up,vp,wp,dxsave,dysave,dawsave
+  real :: dcwsave
+  real :: usigold,vsigold,wsigold,r,rs
+  real :: uold,vold,wold,vdepo(maxspec)
+  !real uprof(nzmax),vprof(nzmax),wprof(nzmax)
+  !real usigprof(nzmax),vsigprof(nzmax),wsigprof(nzmax)
+  !real rhoprof(nzmax),rhogradprof(nzmax)
+  real :: rhoa,rhograd,delz,dtf,rhoaux,dtftlw,uxscale,wpscale
+  integer(kind=2) :: icbt
+  real,parameter :: eps=nxmax/3.e5,eps2=1.e-9
+  real :: ptot_lhh,Q_lhh,phi_lhh,ath,bth !modified by mc 
+  real :: old_wp_buf,dcas,dcas1,del_test !added by mc
+  integer :: i_well,jj,flagrein !test well mixed: modified by mc
+
+
+  integer :: idummy = -7
+  real    :: settling = 0.
+
+
+  nstop=0
+  do i=1,nmixz
+    indzindicator(i)=.true.
+  end do
+
+
+  if (DRYDEP) then    ! reset probability for deposition
+    do ks=1,nspec
+      depoindicator(ks)=.true.
+      prob(ks)=0.
+    end do
+  endif
+
+  dxsave=0.           ! reset position displacements
+  dysave=0.           ! due to mean wind
+  dawsave=0.          ! and turbulent wind
+  dcwsave=0.
+
+  itimec=itime
+
+  nrand=int(ran3(idummy)*real(maxrand-1))+1
+
+
+  ! Determine whether lat/long grid or polarstereographic projection
+  ! is to be used
+  ! Furthermore, determine which nesting level to be used
+  !*****************************************************************
+
+  if (nglobal.and.(yt.gt.switchnorthg)) then
+    ngrid=-1
+  else if (sglobal.and.(yt.lt.switchsouthg)) then
+    ngrid=-2
+  else
+    ngrid=0
+    do j=numbnests,1,-1
+      if ((xt.gt.xln(j)+eps).and.(xt.lt.xrn(j)-eps).and. &
+           (yt.gt.yln(j)+eps).and.(yt.lt.yrn(j)-eps)) then
+        ngrid=j
+        goto 23
+      endif
+    end do
+23   continue
+  endif
+
+
+  !***************************
+  ! Interpolate necessary data
+  !***************************
+
+  if (abs(itime-memtime(1)).lt.abs(itime-memtime(2))) then
+    memindnext=1
+  else
+    memindnext=2
+  endif
+
+  ! Determine nested grid coordinates
+  !**********************************
+
+  if (ngrid.gt.0) then
+    xtn=(xt-xln(ngrid))*xresoln(ngrid)
+    ytn=(yt-yln(ngrid))*yresoln(ngrid)
+    ix=int(xtn)
+    jy=int(ytn)
+    nix=nint(xtn)
+    njy=nint(ytn)
+  else
+    ix=int(xt)
+    jy=int(yt)
+    nix=nint(xt)
+    njy=nint(yt)
+  endif
+  ixp=ix+1
+  jyp=jy+1
+
+
+  ! Compute maximum mixing height around particle position
+  !*******************************************************
+
+  h=0.
+  if (ngrid.le.0) then
+    do k=1,2
+      mind=memind(k) ! eso: compatibility with 3-field version
+      do j=jy,jyp
+        do i=ix,ixp
+          if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
+        end do
+      end do
+    end do
+    tropop=tropopause(nix,njy,1,1)
+  else
+    do k=1,2
+      mind=memind(k)
+      do j=jy,jyp
+        do i=ix,ixp
+          if (hmixn(i,j,1,mind,ngrid).gt.h) h=hmixn(i,j,1,mind,ngrid)
+        end do
+      end do
+    end do
+    tropop=tropopausen(nix,njy,1,1,ngrid)
+  endif
+
+  zeta=zt/h
+
+
+
+  !*************************************************************
+  ! If particle is in the PBL, interpolate once and then make a
+  ! time loop until end of interval is reached
+  !*************************************************************
+
+  if (zeta.le.1.) then
+
+  ! BEGIN TIME LOOP
+  !================
+
+    loop=0
+100   loop=loop+1
+      if (method.eq.1) then
+        ldt=min(ldt,abs(lsynctime-itimec+itime))
+        itimec=itimec+ldt*ldirect
+      else
+        ldt=abs(lsynctime)
+        itimec=itime+lsynctime
+      endif
+      dt=real(ldt)
+
+      zeta=zt/h
+
+
+      if (loop.eq.1) then
+        if (ngrid.le.0) then
+          xts=real(xt)
+          yts=real(yt)
+          call interpol_all(itime,xts,yts,zt)
+        else
+          call interpol_all_nests(itime,xtn,ytn,zt)
+        endif
+
+      else
+
+
+  ! Determine the level below the current position for u,v,rho
+  !***********************************************************
+
+        do i=2,nz
+          if (height(i).gt.zt) then
+            indz=i-1
+            indzp=i
+            goto 6
+          endif
+        end do
+6       continue
+
+  ! If one of the levels necessary is not yet available,
+  ! calculate it
+  !*****************************************************
+
+        do i=indz,indzp
+          if (indzindicator(i)) then
+            if (ngrid.le.0) then
+              call interpol_misslev(i)
+            else
+              call interpol_misslev_nests(i)
+            endif
+          endif
+        end do
+      endif
+
+
+  ! Vertical interpolation of u,v,w,rho and drhodz
+  !***********************************************
+
+  ! Vertical distance to the level below and above current position
+  ! both in terms of (u,v) and (w) fields
+  !****************************************************************
+
+      dz=1./(height(indzp)-height(indz))
+      dz1=(zt-height(indz))*dz
+      dz2=(height(indzp)-zt)*dz
+
+      u=dz1*uprof(indzp)+dz2*uprof(indz)
+      v=dz1*vprof(indzp)+dz2*vprof(indz)
+      w=dz1*wprof(indzp)+dz2*wprof(indz)
+      rhoa=dz1*rhoprof(indzp)+dz2*rhoprof(indz)
+      rhograd=dz1*rhogradprof(indzp)+dz2*rhogradprof(indz)
+
+
+  ! Compute the turbulent disturbances
+  ! Determine the sigmas and the timescales
+  !****************************************
+
+      if (turbswitch) then
+        call hanna(zt)
+      else
+        call hanna1(zt)
+      endif
+
+
+  !*****************************************
+  ! Determine the new diffusivity velocities
+  !*****************************************
+
+  ! Horizontal components
+  !**********************
+
+      if (nrand+1.gt.maxrand) nrand=1
+      if (dt/tlu.lt..5) then
+        up=(1.-dt/tlu)*up+rannumb(nrand)*sigu*sqrt(2.*dt/tlu)
+      else
+        ru=exp(-dt/tlu)
+        up=ru*up+rannumb(nrand)*sigu*sqrt(1.-ru**2)
+      endif
+      if (dt/tlv.lt..5) then
+        vp=(1.-dt/tlv)*vp+rannumb(nrand+1)*sigv*sqrt(2.*dt/tlv)
+      else
+        rv=exp(-dt/tlv)
+        vp=rv*vp+rannumb(nrand+1)*sigv*sqrt(1.-rv**2)
+      endif
+      nrand=nrand+2
+
+
+      if (nrand+ifine.gt.maxrand) nrand=1
+      rhoaux=rhograd/rhoa
+      dtf=dt*fine
+
+      dtftlw=dtf/tlw
+
+  ! Loop over ifine short time steps for vertical component
+  !********************************************************
+
+      do i=1,ifine
+
+  ! Determine the drift velocity and density correction velocity
+  !*************************************************************
+
+        if (turbswitch) then
+          if (dtftlw.lt..5) then
+  !*************************************************************
+  !************** CBL options added by mc see routine cblf90 ***
+            if (cblflag.eq.1) then  !modified by mc
+              if (-h/ol.gt.5) then  !modified by mc
+              !if (ol.lt.0.) then   !modified by mc  
+              !if (ol.gt.0.) then   !modified by mc : for test
+                  !print  *,zt,wp,ath,bth,tlw,dtf,'prima'
+                  flagrein=0
+                  nrand=nrand+1
+                  old_wp_buf=wp
+                  call cbl(wp,zt,ust,wst,h,rhoa,rhograd,sigw,dsigwdz,tlw,ptot_lhh,Q_lhh,phi_lhh,ath,bth,ol,flagrein) !inside the routine for inverse time
+                  wp=(wp+ath*dtf+bth*rannumb(nrand)*sqrt(dtf))*real(icbt) 
+                  ! wp=(wp+ath*dtf+bth*gasdev2(mydum)*sqrt(dtf))*real(icbt) 
+                  delz=wp*dtf
+                  if (flagrein.eq.1) then
+                      call re_initialize_particle(zt,ust,wst,h,sigw,old_wp_buf,nrand,ol)
+                      wp=old_wp_buf
+                      delz=wp*dtf
+                      nan_count=nan_count+1
+                  end if
+                  !print  *,zt,wp,ath,bth,tlw,dtf,rannumb(nrand+i),icbt
+                  !pause                  
+              else 
+                  nrand=nrand+1
+                  old_wp_buf=wp
+                  ath=-wp/tlw+sigw*dsigwdz+wp*wp/sigw*dsigwdz+sigw*sigw/rhoa*rhograd  !1-note for inverse time should be -wp/tlw*ldirect+... calculated for wp=-wp
+                                                                                      !2-but since ldirect =-1 for inverse time and this must be calculated for (-wp) and
+                                                                                      !3-the gaussian pdf is symmetric (i.e. pdf(w)=pdf(-w) ldirect can be discarded
+                  bth=sigw*rannumb(nrand)*sqrt(2.*dtftlw)
+                  wp=(wp+ath*dtf+bth)*real(icbt)  
+                  delz=wp*dtf
+                  del_test=(1.-wp)/wp !catch infinity value
+                  if (isnan(wp).or.isnan(del_test)) then 
+                      nrand=nrand+1                      
+                      wp=sigw*rannumb(nrand)
+                      delz=wp*dtf
+                      nan_count2=nan_count2+1
+                      !print *,'NaN coutner equal to:', nan_count,'reduce ifine if this number became a non-negligible fraction of the particle number'
+                  end if  
+              end if
+  !******************** END CBL option *******************************            
+  !*******************************************************************            
+            else
+                 wp=((1.-dtftlw)*wp+rannumb(nrand+i)*sqrt(2.*dtftlw) &
+                 +dtf*(dsigwdz+rhoaux*sigw))*real(icbt) 
+                 delz=wp*sigw*dtf
+            end if
+          else
+            rw=exp(-dtftlw)
+            wp=(rw*wp+rannumb(nrand+i)*sqrt(1.-rw**2) &
+                 +tlw*(1.-rw)*(dsigwdz+rhoaux*sigw))*real(icbt)
+            delz=wp*sigw*dtf
+          endif
+          
+        else
+          rw=exp(-dtftlw)
+          wp=(rw*wp+rannumb(nrand+i)*sqrt(1.-rw**2)*sigw &
+               +tlw*(1.-rw)*(dsigw2dz+rhoaux*sigw**2))*real(icbt)
+          delz=wp*dtf
+        endif
+
+  !****************************************************
+  ! Compute turbulent vertical displacement of particle
+  !****************************************************
+
+        if (abs(delz).gt.h) delz=mod(delz,h)
+
+  ! Determine if particle transfers to a "forbidden state" below the ground
+  ! or above the mixing height
+  !************************************************************************
+
+        if (delz.lt.-zt) then         ! reflection at ground
+          icbt=-1
+          zt=-zt-delz
+        else if (delz.gt.(h-zt)) then ! reflection at h
+          icbt=-1
+          zt=-zt-delz+2.*h
+        else                         ! no reflection
+          icbt=1
+          zt=zt+delz
+        endif
+
+        if (i.ne.ifine) then
+          zeta=zt/h
+          call hanna_short(zt)
+        endif
+
+      end do
+      if (cblflag.ne.1) nrand=nrand+i
+
+  ! Determine time step for next integration
+  !*****************************************
+
+      if (turbswitch) then
+        ldt=int(min(tlw,h/max(2.*abs(wp*sigw),1.e-5), &
+             0.5/abs(dsigwdz))*ctl)
+      else
+        ldt=int(min(tlw,h/max(2.*abs(wp),1.e-5))*ctl)
+      endif
+      ldt=max(ldt,mintime)
+
+  ! Determine probability of deposition
+  !************************************
+
+      if ((DRYDEP).and.(zt.lt.2.*href)) then
+        do ks=1,nspec
+          if (DRYDEPSPEC(ks)) then
+            if (depoindicator(ks)) then
+              if (ngrid.le.0) then
+                call interpol_vdep(ks,vdepo(ks))
+              else
+                call interpol_vdep_nests(ks,vdepo(ks))
+              endif
+            endif
+  ! correction by Petra Seibert, 10 April 2001
+  !   this formulation means that prob(n) = 1 - f(0)*...*f(n)
+  !   where f(n) is the exponential term
+               prob(ks)=1.+(prob(ks)-1.)* &
+                    exp(-vdepo(ks)*abs(dt)/(2.*href))
+          endif
+        end do
+      endif
+
+  endif
+
+end subroutine advance_rec
+
