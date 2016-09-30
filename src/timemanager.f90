@@ -114,6 +114,7 @@ subroutine timemanager
   real(dep_prec) :: drydeposit(maxspec),wetgridtotalunc,drygridtotalunc
   real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
+  logical :: firstdepocalc
   !double precision xm(maxspec,maxpointspec_act),
   !    +                 xm_depw(maxspec,maxpointspec_act),
   !    +                 xm_depd(maxspec,maxpointspec_act)
@@ -170,7 +171,7 @@ subroutine timemanager
         if (verbosity.gt.0) then
            write (*,*) 'timemanager> call wetdepo'
         endif     
-         call wetdepo(itime,lsynctime,loutnext)
+         call wetdepo(itime,lsynctime,loutnext,.false.)
     endif
 
     if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) &
@@ -540,12 +541,60 @@ subroutine timemanager
         yold=ytra1(j)
         zold=ztra1(j)
 
+   
+  ! RECEPTOR: dry/wet depovel
+  !****************************
+  ! Before the particle is moved 
+  ! the calculation of the scavenged mass shall only be done once after release
+  ! xscav_frac1 was initialised with a negative value
+      do ks=1,nspec
+         if  (DRYBKDEP.and.(xscav_frac1(j,ks).lt.0)) then
+         if (ks.eq.1) then
+         call advance_rec(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
+            us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
+            cbt(j))
+         endif
+            if (decay(ks).gt.0.) then             ! radioactive decay
+                decfact=exp(-real(abs(lsynctime))*decay(ks))
+            else
+                 decfact=1.
+            endif
+            if (DRYDEPSPEC(ks)) then        ! dry deposition
+               drydeposit(ks)=xmass1(j,ks)*prob(ks)*decfact
+               xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
+               drydeposit(ks)/xmass1(j,ks)
+               if (decay(ks).gt.0.) then   ! correct for decay (see wetdepo)
+                  drydeposit(ks)=drydeposit(ks)* &
+                  exp(real(abs(ldeltat))*decay(ks))
+                endif
+             else
+                xmass1(j,ks)=0
+                xscav_frac1(j,ks)=0.
+             endif
+         endif
+       enddo
+
+       firstdepocalc=.false.
+       do ks=1,nspec
+          if ((WETBKDEP).and.(xscav_frac1(j,ks).lt.0) &
+                 .and.firstdepocalc.eqv..false.) then 
+             ! Backward wetdeposition and first timestep after release
+             call wetdepo(itime,lsynctime,loutnext,.true.)
+             firstdepocalc=.true.
+          endif
+       enddo
+
   ! Integrate Lagevin equation for lsynctime seconds
   !*************************************************
 
-        call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
-             us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
-             cbt(j))
+        if (verbosity.gt.0) then
+           if (j.eq.1) then
+           write (*,*) 'timemanager> call advance'
+        endif     
+        endif     
+         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
+            us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
+            cbt(j))
 
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************

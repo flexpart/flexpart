@@ -19,8 +19,8 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine wetdepo(itime,ltsample,loutnext)
-!                  i      i        i
+subroutine wetdepo(itime,ltsample,loutnext,forreceptor)
+!                  i      i        i            i
 !*****************************************************************************
 !                                                                            *
 ! Calculation of wet deposition using the concept of scavenging coefficients.*
@@ -29,6 +29,8 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! grid cell, but that only a fraction of the grid cell experiences rainfall. *
 ! This fraction is parameterized from total cloud cover and rates of large   *
 ! scale and convective precipitation.                                        *
+! SEC: if forrecptor is true then the wetdeposition fraction is only applied *
+! on the xscav_frac and not on the xmass                                     *
 !                                                                            *
 !    Author: A. Stohl                                                        *
 !                                                                            *
@@ -91,7 +93,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
   integer :: blc_count, inc_count
   real    :: Si_dummy, wetscav_dummy
-  logical :: readclouds_this_nest
+  logical :: readclouds_this_nest,forreceptor
 
 
 ! Compute interval since radioactive decay of deposited mass was computed
@@ -171,22 +173,6 @@ subroutine wetdepo(itime,ltsample,loutnext)
            nxmaxn,nymaxn,1,maxnests,ngrid,nxn,nyn,memind,xtn,ytn,1, &
            memtime(1),memtime(2),interp_time,lsp,convp,cc)
     endif
-
-!  If total precipitation is less than 0.01 mm/h - no scavenging occurs
-!  sec this is just valid if release is over a point
-    if ((lsp.lt.0.01).and.(convp.lt.0.01)) then
-          if (SCAVDEP) then
-             do ks=1,nspec
-                if (xscav_frac1(jpart,ks).lt.0) then ! first timestep no scavenging
-                   xmass1(jpart,ks)=0.
-                   xscav_frac1(jpart,ks)=0.
-!                  write (*,*) 'paricle removed - no scavenging: ',jpart,ks
-                endif
-             end do
-          endif
-          goto 20
-    endif
-
 
 ! get the level were the actual particle is in
     do il=2,nz
@@ -412,36 +398,30 @@ subroutine wetdepo(itime,ltsample,loutnext)
       else
         kp=1
       endif
-      if (restmass .gt. smallnum) then
-        xmass1(jpart,ks)=restmass
+      if (forreceptor .eqv. .false.) then
+         if (restmass .gt. smallnum) then
+           xmass1(jpart,ks)=restmass
 !   depostatistic
 !   wetdepo_sum(ks,kp)=wetdepo_sum(ks,kp)+wetdeposit(ks)
 !   depostatistic
-      else
-        xmass1(jpart,ks)=0.
-      endif
+         else
+           xmass1(jpart,ks)=0.
+        endif
+     else ! for the backward deposition calculation
+         if (wetdeposit(ks).gt.0) then ! deposition occured
+                xscav_frac1(jpart,ks)=xscav_frac1(jpart,ks)*(-1.)* &
+                   wetdeposit(ks)/xmass1(jpart,ks)
+!                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks)
+         else
+                xmass1(jpart,ks)=0.
+                xscav_frac1(jpart,ks)=0.
+         endif
+     endif
 !   Correct deposited mass to the last time step when radioactive decay of
 !   gridded deposited mass was calculated
       if (decay(ks).gt.0.) then
         wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
       endif
-
-      if (SCAVDEP) then
-! the calculation of the scavenged mass shall only be done once after release
-! xscav_frac1 was initialised with a negative value
-          if (xscav_frac1(jpart,ks).lt.0) then
-             if (wetdeposit(ks).eq.0) then
-! terminate particle
-                xmass1(jpart,ks)=0.
-                xscav_frac1(jpart,ks)=0.
-             else
-                xscav_frac1(jpart,ks)=xscav_frac1(jpart,ks)*(-1.)* &
-                   wetdeposit(ks)/xmass1(jpart,ks)
-!                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks)
-             endif
-          endif
-      endif
-
 
     end do !all species
 

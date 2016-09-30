@@ -295,6 +295,8 @@ subroutine readcommand
   !Af IND_RECEPTOR switches between different units for concentrations at the receptor
   !Af          1 = mass units
   !Af          2 = mass mixing ratio units
+  !Af          3 = wet deposition in outputfield
+  !Af          4 = dry deposition in outputfield
 
   if ( ldirect .eq. 1 ) then  ! FWD-Run
   !Af set release-switch
@@ -317,11 +319,24 @@ subroutine readcommand
         ind_samp = 0
      endif
   !Af set release-switch
-     if (ind_receptor .eq. 1) then !mass
+     WETBKDEP=.false.
+     DRYBKDEP=.false.
+     select case (ind_receptor)
+     case (1)  !  1 .. concentration at receptor
         ind_rel = 1
-     else ! mass mix
+     case (2)  !  2 .. mixing ratio at receptor
         ind_rel = 0
-     endif
+     case (3)  ! 3 .. wet deposition in outputfield 
+        ind_rel = 3
+         write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
+         WETBKDEP=.true.
+         allocate(xscav_frac1(maxpart,maxspec))
+     case (4)  ! 4 .. dry deposition in outputfield
+         ind_rel = 4
+         write(*,*) ' #### FLEXPART DRY DEPOSITION BACKWARD MODE    #### '
+         DRYBKDEP=.true.
+         allocate(xscav_frac1(maxpart,maxspec))
+     end select
   endif
 
   !*************************************************************
@@ -337,21 +352,6 @@ subroutine readcommand
     write(*,*) ' #### FOR LINIT_COND IN FILE "COMMAND".       #### '
     stop
   endif
-
- if ((ldirect.eq.-1).and.(iout.eq.6)) then
-      if ((ind_receptor .eq. 1) .and.  (ind_source .eq. 1)) then
-         write(*,*) ' #### FLEXPART SCAVENGING DEPOSIT BACKWARD MODE    #### '
-         SCAVDEP=.true.
-         allocate(xscav_frac1(maxpart,maxspec))
-      else
-        write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
-        write(*,*) '#### FOR SCAVDEP MODE ind_source and         ####'
-        write(*,*) '#### ind_receptor have to be 1 !             ####'
-        stop
-      endif
-    else
-      SCAVDEP=.false.
-    endif
 
   ! Check input dates
   !******************
@@ -400,7 +400,7 @@ subroutine readcommand
 
   if ((iout.lt.1).or.(iout.gt.6)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, 5 OR 6 FOR     #### '
+    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4 OR 5 FOR        #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
     write(*,*) ' #### FOR NETCDF OUTPUT                       #### '
     stop

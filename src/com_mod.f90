@@ -575,7 +575,8 @@ module com_mod
   integer :: numxgridn,numygridn
   real :: dxoutn,dyoutn,outlon0n,outlat0n,xoutshiftn,youtshiftn
   !real outheight(maxzgrid),outheighthalf(maxzgrid)
-  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,OHREA,ASSSPEC,SCAVDEP
+  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,OHREA,ASSSPEC
+  logical :: DRYBKDEP,WETBKDEP
 
   ! numxgrid,numygrid       number of grid points in x,y-direction
   ! numxgridn,numygridn     number of grid points in x,y-direction for nested output grid
@@ -594,7 +595,7 @@ module com_mod
   ! WETDEP                  .true., if wet deposition is switched on
   ! OHREA                   .true., if OH reaction is switched on
   ! ASSSPEC                 .true., if there are two species asscoiated
-  ! SCAVDEP                 .true., for bkwd runs, where mass deposited and source regions is calculated
+  ! DRYBKDEP,WETBKDEP        .true., for bkwd runs, where mass deposited and source regions is calculated - either for dry or for wet deposition
   !                    (i.e. transfer of mass between these two occurs
 
 
