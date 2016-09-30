@@ -67,7 +67,7 @@ O_LEV_DBG = g # [0,g]
 ## LIBRARIES
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff # -fopenmp
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER) # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
 DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
@@ -151,7 +151,7 @@ raerod.o 		readcommand.o 	\
 drydepokernel.o         readreceptors.o \
 erf.o                   readavailable.o \
 ew.o			readreleases.o  \
-readdepo.o \
+readdepo.o              advance_rec.o   \
 psim.o			outgrid_init.o 	\
 outgrid_init_nest.o   	\
 photo_O1D.o 		readlanduse.o \
@@ -270,6 +270,8 @@ cleanall:
 .SUFFIXES = $(SUFFIXES) .f90
 
 ## DEPENDENCIES
+advance_rec.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
+	point_mod.o random_mod.o
 advance.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
 	point_mod.o random_mod.o
 assignland.o: com_mod.o par_mod.o
