@@ -171,7 +171,7 @@ subroutine timemanager
         if (verbosity.gt.0) then
            write (*,*) 'timemanager> call wetdepo'
         endif     
-         call wetdepo(itime,lsynctime,loutnext,.false.)
+         call wetdepo(itime,lsynctime,loutnext)
     endif
 
     if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) &
@@ -547,13 +547,13 @@ subroutine timemanager
   ! Before the particle is moved 
   ! the calculation of the scavenged mass shall only be done once after release
   ! xscav_frac1 was initialised with a negative value
+
+      if  (DRYBKDEP) then
       do ks=1,nspec
-         if  (DRYBKDEP.and.(xscav_frac1(j,ks).lt.0)) then
-         if (ks.eq.1) then
+         if  ((xscav_frac1(j,ks).lt.0)) then
          call advance_rec(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
             us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
             cbt(j))
-         endif
             if (decay(ks).gt.0.) then             ! radioactive decay
                 decfact=exp(-real(abs(lsynctime))*decay(ks))
             else
@@ -573,26 +573,30 @@ subroutine timemanager
              endif
          endif
        enddo
+       endif
 
-       firstdepocalc=.false.
-       do ks=1,nspec
-          if ((WETBKDEP).and.(xscav_frac1(j,ks).lt.0) &
-                 .and.firstdepocalc.eqv..false.) then 
-             ! Backward wetdeposition and first timestep after release
-             call wetdepo(itime,lsynctime,loutnext,.true.)
-             firstdepocalc=.true.
-          endif
-       enddo
+!      if (WETBKDEP) then 
+!      firstdepocalc=.false.
+!      do ks=1,nspec
+!         if ((xscav_frac1(j,ks).lt.0) &
+!                .and.firstdepocalc.eqv..false.) then 
+!            ! Backward wetdeposition and first timestep after release
+!            call wetdepo(itime,lsynctime,loutnext,.true.)
+!            firstdepocalc=.true.
+!         endif
+!      enddo
+!      endif
 
   ! Integrate Lagevin equation for lsynctime seconds
   !*************************************************
 
         if (verbosity.gt.0) then
            if (j.eq.1) then
-           write (*,*) 'timemanager> call advance'
-        endif     
-        endif     
-         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
+             write (*,*) 'timemanager> call advance'
+           endif     
+        endif
+     
+        call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
             us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
             cbt(j))
 
