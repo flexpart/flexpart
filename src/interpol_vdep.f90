@@ -53,7 +53,7 @@ subroutine interpol_vdep(level,vdepo)
   real :: y(2),vdepo
 
   ! a) Bilinear horizontal interpolation
-
+! write(*,*) 'interpol: ',dt1,dt2,dtt,lsynctime,ix,jy
   do m=1,2
     indexh=memind(m)
 

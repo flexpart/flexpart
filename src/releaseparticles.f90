@@ -208,7 +208,6 @@ subroutine releaseparticles(itime)
   !*************************************
 
             ztra1(ipart)=zpoint1(i)+ran1(idummy)*zaux
-
   ! Interpolation of topography and density
   !****************************************
 

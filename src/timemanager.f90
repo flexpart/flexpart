@@ -106,7 +106,7 @@ subroutine timemanager
   integer :: loutnext,loutstart,loutend
   integer :: ix,jy,ldeltat,itage,nage
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
-  real :: outnum,weight,prob(maxspec),decfact
+  real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact
   ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
   ! real :: us(maxpart),vs(maxpart),ws(maxpart)
   ! integer(kind=2) :: cbt(maxpart)
@@ -551,18 +551,17 @@ subroutine timemanager
       if  (DRYBKDEP) then
       do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
-         call advance_rec(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
-            us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
-            cbt(j))
+         call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
             if (decay(ks).gt.0.) then             ! radioactive decay
                 decfact=exp(-real(abs(lsynctime))*decay(ks))
             else
                  decfact=1.
             endif
             if (DRYDEPSPEC(ks)) then        ! dry deposition
-               drydeposit(ks)=xmass1(j,ks)*prob(ks)*decfact
+               drydeposit(ks)=xmass1(j,ks)*prob_rec(ks)*decfact
                xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
                drydeposit(ks)/xmass1(j,ks)
+!               write (*,*) 'notance: ',prob(ks),xmass1(j,ks),ztra1(j)
                if (decay(ks).gt.0.) then   ! correct for decay (see wetdepo)
                   drydeposit(ks)=drydeposit(ks)* &
                   exp(real(abs(ldeltat))*decay(ks))
@@ -571,6 +570,7 @@ subroutine timemanager
                 xmass1(j,ks)=0
                 xscav_frac1(j,ks)=0.
              endif
+!         write (*,*) 'xscav: ',j,ks,xscav_frac1(j,ks)
          endif
        enddo
        endif
@@ -599,6 +599,7 @@ subroutine timemanager
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
             us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
             cbt(j))
+!        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
 
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************
