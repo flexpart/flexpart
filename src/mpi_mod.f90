@@ -121,7 +121,7 @@ module mpi_mod
   logical, parameter :: mp_dbg_mode = .false.
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
-  logical, parameter :: mp_time_barrier=.false.
+  logical, parameter :: mp_time_barrier=.true.
   logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
 
@@ -250,7 +250,7 @@ contains
              & 'all procs call getfields. Setting lmp_sync=.true.'
         write(*,FMT='(80("#"))')
       end if
-      lmp_sync=.true. ! :DBG: eso fix this...
+      lmp_sync=.true.
     end if
 
 ! TODO: Add more warnings for unimplemented flexpart features
@@ -260,6 +260,7 @@ contains
 ! as running with one process less but not using separate read process
 !**********************************************************************
 
+!    id_read = min(mp_np-1, 1)
     id_read = mp_np-1
 
     if (mp_pid.eq.id_read) lmpreader=.true.
@@ -485,6 +486,19 @@ contains
     integer,intent(in) :: num_part
     integer :: i,jj, addone
 
+! Exit if too many particles
+    if (num_part.gt.maxpart_mpi) then
+      write(*,*) '#####################################################'
+      write(*,*) '#### ERROR - TOTAL NUMBER OF PARTICLES REQUIRED  ####'
+      write(*,*) '#### EXCEEDS THE MAXIMUM ALLOWED NUMBER. REDUCE  ####'
+      write(*,*) '#### EITHER NUMBER OF PARTICLES PER RELEASE POINT####'
+      write(*,*) '#### OR INCREASE MAXPART.                        ####'
+      write(*,*) '#####################################################'
+!      call MPI_FINALIZE(mp_ierr)
+      stop
+    end if
+
+
 ! Time for MPI communications
 !****************************
     if (mp_measure_time) call mpif_mtime('commtime',0)
@@ -526,7 +540,6 @@ contains
     end do
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
-    write(*,*) "PID ", mp_partid, "ending MPI_Scatter operation"
 
     goto 601
 
@@ -534,7 +547,7 @@ contains
     stop
 
 ! After the transfer of particles it it possible that the value of
-! "numpart" is larger than the actual, so we reduce it if there are
+! "numpart" is larger than the actual used, so we reduce it if there are
 ! invalid particles at the end of the arrays
 601 do i=num_part, 1, -1
       if (itra1(i).eq.-999999999) then
@@ -627,6 +640,10 @@ contains
       if (mp_partid.eq.idx_arr(m).or.mp_partid.eq.idx_arr(i)) then
         if ( numparticles_mpi(idx_arr(m)).gt.mp_min_redist.and.&
              & real(num_trans)/real(numparticles_mpi(idx_arr(m))).gt.mp_redist_fract) then
+! DBG
+          ! write(*,*) 'mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, numparticles_mpi', &
+          !      &mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, numparticles_mpi
+! DBG
           call mpif_redist_part(itime, idx_arr(m), idx_arr(i), num_trans/2)
         end if
       end if
@@ -660,6 +677,14 @@ contains
     integer :: mtag   ! MPI message tag
     integer :: i, j, minpart, ipart, maxnumpart
  
+! Check for invalid input arguments
+!**********************************
+ if (src_proc.eq.dest_proc) then
+   write(*,*) '<mpi_mod::mpif_redist_part>: Error: &
+        &src_proc.eq.dest_proc' 
+   stop
+ end if
+
 ! Measure time for MPI communications
 !************************************
     if (mp_measure_time) call mpif_mtime('commtime',0)
@@ -673,11 +698,11 @@ contains
       ll=numpart-num_trans+1
       ul=numpart
 
-      ! if (mp_dev_mode) then
-      !   write(*,FMT='(72("#"))')
-      !   write(*,*) "Sending ", num_trans, "particles (from/to)", src_proc, dest_proc
-      !   write(*,*) "numpart before: ", numpart
-      ! end if
+      if (mp_dev_mode) then
+        write(*,FMT='(72("#"))')
+        write(*,*) "Sending ", num_trans, "particles (from/to)", src_proc, dest_proc
+        write(*,*) "numpart before: ", numpart
+      end if
 
       call MPI_SEND(nclass(ll:ul),num_trans,&
            & MPI_INTEGER,dest_proc,mtag+1,mp_comm_used,mp_ierr)
@@ -716,10 +741,10 @@ contains
 
       numpart = numpart-num_trans
 
-      ! if (mp_dev_mode) then
-      !   write(*,*) "numpart after: ", numpart
-      !   write(*,FMT='(72("#"))')
-      ! end if
+      if (mp_dev_mode) then
+        write(*,*) "numpart after: ", numpart
+        write(*,FMT='(72("#"))')
+      end if
 
     else if (mp_partid.eq.dest_proc) then
 
@@ -730,11 +755,11 @@ contains
       ll=numpart+1
       ul=numpart+num_trans
 
-      ! if (mp_dev_mode) then
-      !   write(*,FMT='(72("#"))')
-      !   write(*,*) "Receiving ", num_trans, "particles (from/to)", src_proc, dest_proc
-      !   write(*,*) "numpart before: ", numpart
-      ! end if
+      if (mp_dev_mode) then
+        write(*,FMT='(72("#"))')
+        write(*,*) "Receiving ", num_trans, "particles (from/to)", src_proc, dest_proc
+        write(*,*) "numpart before: ", numpart
+      end if
 
 ! We could receive the data directly at nclass(ll:ul) etc., but this leaves
 ! vacant spaces at lower indices. Using temporary arrays instead.
@@ -784,34 +809,35 @@ contains
       minpart=1
       do i=1, num_trans
 ! Take into acount that we may have transferred invalid particles
-        if (itra1_tmp(minpart).ne.itime) goto 200
+        if (itra1_tmp(i).ne.itime) cycle
         do ipart=minpart,maxnumpart
           if (itra1(ipart).ne.itime) then
-            itra1(ipart) = itra1_tmp(minpart)
-            npoint(ipart) = npoint_tmp(minpart)
-            nclass(ipart) = nclass_tmp(minpart)
-            idt(ipart) = idt_tmp(minpart)
-            itramem(ipart) = itramem_tmp(minpart)
-            itrasplit(ipart) = itrasplit_tmp(minpart)
-            xtra1(ipart) = xtra1_tmp(minpart)
-            ytra1(ipart) = ytra1_tmp(minpart)
-            ztra1(ipart) = ztra1_tmp(minpart)
-            xmass1(ipart,:) = xmass1_tmp(minpart,:)
-! Increase numpart, if necessary
-            numpart=max(numpart,ipart)
+            itra1(ipart) = itra1_tmp(i)
+            npoint(ipart) = npoint_tmp(i)
+            nclass(ipart) = nclass_tmp(i)
+            idt(ipart) = idt_tmp(i)
+            itramem(ipart) = itramem_tmp(i)
+            itrasplit(ipart) = itrasplit_tmp(i)
+            xtra1(ipart) = xtra1_tmp(i)
+            ytra1(ipart) = ytra1_tmp(i)
+            ztra1(ipart) = ztra1_tmp(i)
+            xmass1(ipart,:) = xmass1_tmp(i,:)
             goto 200 ! Storage space has been found, stop searching
           end if
+! :TODO: add check for if too many particles requiried
         end do
-200     minpart=minpart+1
+200     minpart=ipart+1
       end do
+! Increase numpart, if necessary
+      numpart=max(numpart,ipart)
 
       deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,itrasplit_tmp,&
            & xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
 
-      ! if (mp_dev_mode) then
-      !   write(*,*) "numpart after: ", numpart
-      !   write(*,FMT='(72("#"))')
-      ! end if
+      if (mp_dev_mode) then
+        write(*,*) "numpart after: ", numpart
+        write(*,FMT='(72("#"))')
+      end if
 
     else
 ! This routine should only be called by the two participating processes
@@ -2726,8 +2752,9 @@ contains
 !      & mp_vt_wtime_total
 ! write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR VERTTRANSFORM:',&
 !      & mp_vt_time_total
-! NB: the 'flush' function is possibly a gfortran-specific extension
-          call flush()
+! NB: the 'flush' function is possibly a gfortran-specific extension,
+! comment out if it gives problems
+!          call flush()
         end if
       end do
     end if

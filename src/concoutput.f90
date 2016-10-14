@@ -625,24 +625,24 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! Reinitialization of grid
 !*************************
 
-  ! do ks=1,nspec
-  !   do kp=1,maxpointspec_act
-  !     do i=1,numreceptor
-  !       creceptor(i,ks)=0.
-  !     end do
-  !     do jy=0,numygrid-1
-  !       do ix=0,numxgrid-1
-  !         do l=1,nclassunc
-  !           do nage=1,nageclass
-  !             do kz=1,numzgrid
-  !               gridunc(ix,jy,kz,ks,kp,l,nage)=0.
-  !             end do
-  !           end do
-  !         end do
-  !       end do
-  !     end do
-  !   end do
-  ! end do
+! do ks=1,nspec
+!   do kp=1,maxpointspec_act
+!     do i=1,numreceptor
+!       creceptor(i,ks)=0.
+!     end do
+!     do jy=0,numygrid-1
+!       do ix=0,numxgrid-1
+!         do l=1,nclassunc
+!           do nage=1,nageclass
+!             do kz=1,numzgrid
+!               gridunc(ix,jy,kz,ks,kp,l,nage)=0.
+!             end do
+!           end do
+!         end do
+!       end do
+!     end do
+!   end do
+! end do
   creceptor(:,:)=0.
   gridunc(:,:,:,:,:,:,:)=0.
 

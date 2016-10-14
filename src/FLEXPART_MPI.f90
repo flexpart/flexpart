@@ -54,15 +54,15 @@ program flexpart
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
 
 
-! Initialize mpi
-!*********************
+  ! Initialize mpi
+  !*********************
   call mpif_init
 
   if (mp_measure_time) call mpif_mtime('flexpart',0)
 
-! Initialize arrays in com_mod 
-!*****************************
-  call com_mod_allocate_part(maxpart_mpi)
+  ! Initialize arrays in com_mod 
+  !*****************************
+  if (.not.lmpreader) call com_mod_allocate_part(maxpart_mpi)
 
   ! Generate a large number of random numbers
   !******************************************
@@ -305,9 +305,11 @@ program flexpart
     print*,'Initialize all particles to non-existent'
   endif
 
-  do j=1, size(itra1) ! maxpart_mpi
-    itra1(j)=-999999999
-  end do
+  if (.not.lmpreader) then
+    do j=1, size(itra1) ! maxpart_mpi
+      itra1(j)=-999999999
+    end do
+  end if
 
   ! For continuation of previous run, read in particle positions
   !*************************************************************
@@ -462,8 +464,10 @@ program flexpart
 
   if (lroot) then
     write(*,*) '**********************************************'
-    write(*,*) 'Total number of occurences of below-cloud scavenging', tot_blc_count
-    write(*,*) 'Total number of occurences of in-cloud    scavenging', tot_inc_count
+    write(*,*) 'Total number of occurences of below-cloud scavenging', &
+         & tot_blc_count
+    write(*,*) 'Total number of occurences of in-cloud    scavenging', &
+         & tot_inc_count
     write(*,*) '**********************************************'
 
     write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&

@@ -125,7 +125,7 @@ subroutine conccalc(itime,weight)
   ! Take density from 2nd wind field in memory (accurate enough, no time interpolation needed)
   !*****************************************************************************
       do ind=indz,indzp
-        rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,2) &
+        rhoprof(ind-indz+1)=p1*rho(ix ,jy ,ind,memind(2)) &
              +p2*rho(ixp,jy ,ind,2) &
              +p3*rho(ix ,jyp,ind,2) &
              +p4*rho(ixp,jyp,ind,2)

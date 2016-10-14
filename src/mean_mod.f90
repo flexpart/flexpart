@@ -63,9 +63,9 @@ contains
     ! real(sp) :: x_sp(number),xm,xs,xl,xq,xaux
     ! real(sp),parameter :: eps=1.0e-30
 
+    integer,intent(in) :: number
     real(sp), intent(in) :: x_sp(number)
     real(sp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(sp) :: xl,xq,xaux
     real(sp),parameter :: eps=1.0e-30
     integer :: i
@@ -115,9 +115,9 @@ contains
 
     implicit none
 
+    integer,intent(in) :: number
     real(dp), intent(in) :: x_dp(number)
     real(dp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(dp) :: xl,xq,xaux
     real(dp),parameter :: eps=1.0e-30
     integer :: i
@@ -167,9 +167,9 @@ contains
 
     implicit none
 
+    integer,intent(in) :: number
     real(dp), intent(in) :: x_dp(number)
     real(sp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(sp) :: xl,xq,xaux
     real(sp),parameter :: eps=1.0e-30
     integer :: i
