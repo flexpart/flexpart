@@ -295,8 +295,8 @@ subroutine readcommand
   !Af IND_RECEPTOR switches between different units for concentrations at the receptor
   !Af          1 = mass units
   !Af          2 = mass mixing ratio units
-  !Af          3 = wet deposition in outputfield
-  !Af          4 = dry deposition in outputfield
+  !            3 = wet deposition in outputfield
+  !            4 = dry deposition in outputfield
 
   if ( ldirect .eq. 1 ) then  ! FWD-Run
   !Af set release-switch

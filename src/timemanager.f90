@@ -597,8 +597,8 @@ subroutine timemanager
         endif
      
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
-            us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
-            cbt(j))
+             us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
+             cbt(j))
 !        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
 
   ! Calculate the gross fluxes across layer interfaces
