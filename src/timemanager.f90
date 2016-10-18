@@ -562,8 +562,8 @@ subroutine timemanager
                xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
                drydeposit(ks)/xmass1(j,ks)
                !if (xscav_frac1(j,ks).eq.1) then
-                  write (*,*) 'xscav 1: ',j,prob_rec(ks),xmass1(j,ks), &
-                                ztra1(j),drydeposit(ks),decfact
+!                  write (*,*) 'xscav 1: ',j,prob_rec(ks),xmass1(j,ks), &
+!                                ztra1(j),drydeposit(ks),decfact
               !     stop
               ! endif
              else
