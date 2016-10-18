@@ -62,7 +62,7 @@ subroutine conccalc(itime,weight)
 
   integer :: usekernel
 
-  usekernel=0
+  usekernel=1
   if (usekernel.ne.1) then
      write (*,*) 'NOT USING THE KERNEL!'
   endif

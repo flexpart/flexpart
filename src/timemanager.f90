@@ -114,7 +114,7 @@ subroutine timemanager
   real(dep_prec) :: drydeposit(maxspec),wetgridtotalunc,drygridtotalunc
   real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
-  logical :: firstdepocalc
+
   !double precision xm(maxspec,maxpointspec_act),
   !    +                 xm_depw(maxspec,maxpointspec_act),
   !    +                 xm_depd(maxspec,maxpointspec_act)
@@ -376,7 +376,7 @@ subroutine timemanager
   !*****************************************************
 
       if ((itime.eq.loutend).and.(outnum.gt.0.)) then
-        if ((iout.le.3.).or.(iout.eq.5).or.(iout.eq.6)) then
+        if ((iout.le.3.).or.(iout.eq.5)) then
           if (surf_only.ne.1) then 
             if (lnetcdfout.eq.1) then 
               call concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
@@ -551,21 +551,21 @@ subroutine timemanager
       if  (DRYBKDEP) then
       do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
-         call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+            call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
             if (decay(ks).gt.0.) then             ! radioactive decay
                 decfact=exp(-real(abs(lsynctime))*decay(ks))
             else
-                 decfact=1.
+                decfact=1.
             endif
             if (DRYDEPSPEC(ks)) then        ! dry deposition
                drydeposit(ks)=xmass1(j,ks)*prob_rec(ks)*decfact
                xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
                drydeposit(ks)/xmass1(j,ks)
-!               write (*,*) 'notance: ',prob(ks),xmass1(j,ks),ztra1(j)
-               if (decay(ks).gt.0.) then   ! correct for decay (see wetdepo)
-                  drydeposit(ks)=drydeposit(ks)* &
-                  exp(real(abs(ldeltat))*decay(ks))
-                endif
+               !if (xscav_frac1(j,ks).eq.1) then
+                  write (*,*) 'xscav 1: ',j,prob_rec(ks),xmass1(j,ks), &
+                                ztra1(j),drydeposit(ks),decfact
+              !     stop
+              ! endif
              else
                 xmass1(j,ks)=0
                 xscav_frac1(j,ks)=0.
