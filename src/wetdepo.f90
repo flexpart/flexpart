@@ -89,11 +89,11 @@ subroutine wetdepo(itime,ltsample,loutnext)
   real, parameter :: bcls(6) = (/22.7, 0.0, 0.0, 1321.0, 381.0, 0.0/) !now (Kyro et al 2009)
   real :: frac_act, liq_frac, dquer_m
 
-  integer :: blc_count, inc_count
+  integer :: blc_count, inc_count, firsttimerem
   real    :: Si_dummy, wetscav_dummy
   logical :: readclouds_this_nest
 
-
+  firsttimerem=0
 ! Compute interval since radioactive decay of deposited mass was computed
 !************************************************************************
 
@@ -435,9 +435,12 @@ subroutine wetdepo(itime,ltsample,loutnext)
                 xmass1(jpart,ks)=0.
                 xscav_frac1(jpart,ks)=0.
              else
+                 if (xmass1(jpart,ks).eq.0) then
+                     firsttimerem=firsttimerem+1
+                endif
                 xscav_frac1(jpart,ks)=xscav_frac1(jpart,ks)*(-1.)* &
                    wetdeposit(ks)/xmass1(jpart,ks)
-!                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks)
+!                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks),xmass(jpart,ks)
              endif
           endif
       endif
@@ -462,5 +465,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! count the total number of below-cloud and in-cloud occurences:
   tot_blc_count=tot_blc_count+blc_count
   tot_inc_count=tot_inc_count+inc_count
+
+!  write (*,*) 'First time removed: ',firsttimerem
 
 end subroutine wetdepo
