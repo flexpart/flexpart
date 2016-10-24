@@ -552,6 +552,7 @@ subroutine timemanager
       do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
             call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+
             if (decay(ks).gt.0.) then             ! radioactive decay
                 decfact=exp(-real(abs(lsynctime))*decay(ks))
             else
@@ -561,11 +562,6 @@ subroutine timemanager
                drydeposit(ks)=xmass1(j,ks)*prob_rec(ks)*decfact
                xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
                drydeposit(ks)/xmass1(j,ks)
-               !if (xscav_frac1(j,ks).eq.1) then
-!                  write (*,*) 'xscav 1: ',j,prob_rec(ks),xmass1(j,ks), &
-!                                ztra1(j),drydeposit(ks),decfact
-              !     stop
-              ! endif
              else
                 xmass1(j,ks)=0
                 xscav_frac1(j,ks)=0.

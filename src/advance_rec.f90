@@ -167,7 +167,7 @@ subroutine advance_rec(itime,xt,yt,zt,prob)
   !   this formulation means that prob(n) = 1 - f(0)*...*f(n)
   !   where f(n) is the exponential term
                prob(ks)=1.+(prob(ks)-1.)* &
-                    exp(-vdepo(ks)*abs(ideltas)/(2.*href))
+                    exp(-vdepo(ks)*abs(lsynctime)/(2.*href))
           endif
         end do
       endif

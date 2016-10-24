@@ -568,7 +568,6 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !   where f(n) is the exponential term
                prob(ks)=1.+(prob(ks)-1.)* &
                     exp(-vdepo(ks)*abs(dt)/(2.*href))
-!              write(*,*) 'Prob calc: ',zt,href,prob(ks)
           endif
         end do
       endif
