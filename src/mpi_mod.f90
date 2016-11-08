@@ -330,7 +330,7 @@ contains
 
 ! Set maxpart per process
 ! eso 08/2016: Increase maxpart per process, in case of unbalanced distribution
-    maxpart_mpi=int(mp_maxpart_factor*maxpart/mp_partgroup_np)
+    maxpart_mpi=int(mp_maxpart_factor*real(maxpart)/real(mp_partgroup_np))
 
 ! Do not allocate particle data arrays for readwind process
     if (lmpreader.and.lmp_use_reader) then
@@ -831,8 +831,8 @@ contains
 ! Increase numpart, if necessary
       numpart=max(numpart,ipart)
 
-      deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,itrasplit_tmp,&
-           & xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
+      deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,&
+           &itrasplit_tmp,xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
 
       if (mp_dev_mode) then
         write(*,*) "numpart after: ", numpart
@@ -2339,7 +2339,9 @@ contains
 !   implicit synchronisation between all processes takes place here
 !
 ! TODO
-!   take into account nested wind fields
+!   NB: take into account nested wind fields by using a separate 
+!   subroutine mpif_gf_request_nest (and separate request arrays for the
+!   nested variables)
 !
 !*******************************************************************************
 !    use com_mod,only: readclouds

@@ -62,7 +62,9 @@ program flexpart
 
   ! Initialize arrays in com_mod 
   !*****************************
-  if (.not.lmpreader) call com_mod_allocate_part(maxpart_mpi)
+
+  if(.not.(lmpreader.and.lmp_use_reader)) call com_mod_allocate_part(maxpart_mpi)
+
 
   ! Generate a large number of random numbers
   !******************************************
@@ -78,7 +80,7 @@ program flexpart
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
 !  flexversion='Ver. 10 Beta MPI (2015-05-01)'
-  flexversion='Ver. '//trim(flexversion_major)//' Beta MPI (2015-05-01)'
+  flexversion='Ver. '//trim(flexversion_major)//'.1beta MPI (2016-11-02)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -305,7 +307,7 @@ program flexpart
     print*,'Initialize all particles to non-existent'
   endif
 
-  if (.not.lmpreader) then
+  if (.not.(lmpreader.and.lmp_use_reader)) then
     do j=1, size(itra1) ! maxpart_mpi
       itra1(j)=-999999999
     end do
@@ -319,7 +321,7 @@ program flexpart
       print*,'call readpartpositions'
     endif
     ! readwind process skips this step
-    if (lmp_use_reader.and..not.lmpreader) call readpartpositions
+    if (.not.(lmpreader.and.lmp_use_reader)) call readpartpositions
   else
     if (verbosity.gt.0 .and. lroot) then
       print*,'numpart=0, numparticlecount=0'
@@ -426,6 +428,16 @@ program flexpart
     end do
   end do
 
+  ! Inform whether output kernel is used or not
+  !*********************************************
+
+  if (lroot) then
+    if (lnokernel) then
+      write(*,*) "Concentrations are calculated without using kernel"
+    else
+      write(*,*) "Concentrations are calculated using kernel"
+    end if
+  end if
 
 ! Calculate particle trajectories
 !********************************

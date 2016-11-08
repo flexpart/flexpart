@@ -66,9 +66,10 @@ program flexpart
   end do
   call gasdev1(idummy,rannumb(maxrand),rannumb(maxrand-1))
 
+
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
-  flexversion='Version '//trim(flexversion_major)//'.0beta (2015-05-01)'
+  flexversion='Version '//trim(flexversion_major)//'.1beta (2016-11-02)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -382,6 +383,17 @@ program flexpart
       end do
     end do
   end do
+
+  ! Inform whether output kernel is used or not
+  !*********************************************
+  if (lroot) then
+    if (lnokernel) then
+      write(*,*) "Concentrations are calculated without using kernel"
+    else
+      write(*,*) "Concentrations are calculated using kernel"
+    end if
+  end if
+
 
   ! Calculate particle trajectories
   !********************************

@@ -39,6 +39,11 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
   ! deposit          amount (kg) to be deposited                               *
   !                                                                            *
   !*****************************************************************************
+  ! Changes:
+  ! eso 10/2016: Added option to disregard kernel 
+  ! 
+  !*****************************************************************************
+
 
   use unc_mod
   use par_mod
@@ -46,7 +51,8 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
 
   implicit none
 
-  real :: x,y,deposit(maxspec),ddx,ddy,xl,yl,wx,wy,w
+  real(dep_prec), dimension(maxspec) :: deposit
+  real :: x,y,ddx,ddy,xl,yl,wx,wy,w
   integer :: ix,jy,ixp,jyp,ks,nunc,nage,kp
 
 
@@ -73,20 +79,35 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
     wy=0.5+ddy
   endif
 
+  ! If no kernel is used, direct attribution to grid cell
+  !******************************************************
+
+  if (lnokernel) then
+    do ks=1,nspec
+      if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
+        if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
+             (jy.le.numygrid-1)) then
+          drygridunc(ix,jy,ks,kp,nunc,nage)= &
+               drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
+        end if
+      end if
+    end do
+  else ! use kernel 
+
 
   ! Determine mass fractions for four grid points
   !**********************************************
-    do ks=1,nspec
+  do ks=1,nspec
 
-    if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
+   if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
 
    if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
         (jy.le.numygrid-1)) then
-    w=wx*wy
-      drygridunc(ix,jy,ks,kp,nunc,nage)= &
-           drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)*w
-      continue
-  endif
+     w=wx*wy
+     drygridunc(ix,jy,ks,kp,nunc,nage)= &
+          drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)*w
+     continue
+   endif
 
   if ((ixp.ge.0).and.(jyp.ge.0).and.(ixp.le.numxgrid-1).and. &
        (jyp.le.numygrid-1)) then
@@ -111,6 +132,7 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
 
   endif
 
-    end do
+  end do
+end if
 
 end subroutine drydepokernel

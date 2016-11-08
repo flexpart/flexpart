@@ -420,18 +420,19 @@ subroutine gridcheck
   ! Output of grid info
   !********************
 
-  write(*,*)
-  write(*,*)
-  write(*,'(a,2i7)') 'Vertical levels in NCEP data: ', &
-       nuvz,nwz
-  write(*,*)
-  write(*,'(a)') 'Mother domain:'
-  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Longitude range: ', &
-       xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
-  write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range : ', &
-       ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
-  write(*,*)
-
+  if (lroot) then
+    write(*,*)
+    write(*,*)
+    write(*,'(a,2i7)') 'Vertical levels in NCEP data: ', &
+         nuvz,nwz
+    write(*,*)
+    write(*,'(a)') 'Mother domain:'
+    write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Longitude range: ', &
+         xlon0,' to ',xlon0+(nx-1)*dx,'   Grid distance: ',dx
+    write(*,'(a,f10.2,a1,f10.2,a,f10.2)') '  Latitude range : ', &
+         ylat0,' to ',ylat0+(ny-1)*dy,'   Grid distance: ',dy
+    write(*,*)
+  end if
 
   ! CALCULATE VERTICAL DISCRETIZATION OF ECMWF MODEL
   ! PARAMETER akm,bkm DESCRIBE THE HYBRID "ETA" COORDINATE SYSTEM

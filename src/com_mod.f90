@@ -131,9 +131,9 @@ module com_mod
   ! gdomainfill             .T., if domain-filling is global, .F. if not
 
 !ZHG SEP 2015 wheather or not to read clouds from GRIB
-  logical :: readclouds
+  logical :: readclouds=.false.
 !ESO DEC 2015 whether or not both clwc and ciwc are present (if so they are summed)
-  logical :: sumclouds
+  logical :: sumclouds=.false.
 
   logical,dimension(maxnests) :: readclouds_nest, sumclouds_nest
   
@@ -742,7 +742,7 @@ module com_mod
   logical, parameter :: nmlout=.true.
 
   ! These variables are used to avoid having separate versions of
-  ! files in cases where differences with MPI version is minor (eso)
+  ! files in cases where differences with MPI version are minor (eso)
   !*****************************************************************
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process

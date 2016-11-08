@@ -418,7 +418,7 @@ shift_field_0.o: par_mod.o
 timemanager.o: com_mod.o flux_mod.o netcdf_output_mod.o oh_mod.o outg_mod.o \
 	par_mod.o point_mod.o unc_mod.o xmass_mod.o
 timemanager_mpi.o: com_mod.o flux_mod.o mpi_mod.o oh_mod.o outg_mod.o \
-	par_mod.o point_mod.o unc_mod.o xmass_mod.o
+	par_mod.o point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o	
 unc_mod.o: par_mod.o
 verttransform.o: cmapf_mod.o com_mod.o par_mod.o 
 verttransform_gfs.o: cmapf_mod.o com_mod.o par_mod.o

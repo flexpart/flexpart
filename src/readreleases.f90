@@ -217,6 +217,8 @@ subroutine readreleases
 
   rewind(unitreleases)
 
+  if (nspec.gt.maxspec) goto 994
+
   ! allocate arrays of matching size for number of species (namelist output)
   deallocate(mass)
   allocate(mass(nspec),stat=stat)
@@ -573,6 +575,7 @@ subroutine readreleases
     endif
   endif
 
+
   ! Determine the release rate (particles per second) and total number
   ! of particles released during the simulation
   !*******************************************************************
@@ -631,6 +634,10 @@ subroutine readreleases
       write(*,*) 'Maximum allowed number of particles is: ',maxpart
     endif
   endif
+
+  if (lroot) then
+    write(*,FMT='(A,ES14.7)') ' Total mass released:', sum(xmass(1:numpoint,1:nspec))
+  end if
 
   return
 

@@ -18,14 +18,15 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
+
   !*****************************************************************************
   !                                                                            *
   !  This module handles all gridded netcdf output for concentration or        *
   !  residence time and wet and dry deposition output.                         *
   !                                                                            *
-  !  - writeheader_netcdf generates file including all information previously    *
+  !  - writeheader_netcdf generates file including all information previously  *
   !    stored in separate header files                                         *
-  !  - concoutput_netcdf write concentration output and wet and dry deposition   *
+  !  - concoutput_netcdf write concentration output and wet and dry deposition *
   !                                                                            *
   !     Author: D. Brunner                                                     *
   !                                                                            *
@@ -892,12 +893,12 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
   gridtotal=0.
   gridsigmatotal=0.
   gridtotalunc=0.
-  wetgridtotal=0.
-  wetgridsigmatotal=0.
-  wetgridtotalunc=0.
-  drygridtotal=0.
-  drygridsigmatotal=0.
-  drygridtotalunc=0.
+  wetgridtotal=0._dep_prec
+  wetgridsigmatotal=0._dep_prec
+  wetgridtotalunc=0._dep_prec
+  drygridtotal=0._dep_prec
+  drygridsigmatotal=0._dep_prec
+  drygridtotalunc=0._dep_prec
 
   do ks=1,nspec
 
@@ -921,7 +922,7 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
               call mean(auxgrid,wetgrid(ix,jy), &
                    wetgridsigma(ix,jy),nclassunc)
               ! Multiply by number of classes to get total concentration
-              wetgrid(ix,jy)=wetgrid(ix,jy)*real(nclassunc,kind=dep_prec)
+              wetgrid(ix,jy)=wetgrid(ix,jy)*real(nclassunc,kind=sp)
               wetgridtotal=wetgridtotal+wetgrid(ix,jy)
               ! Calculate standard deviation of the mean
               wetgridsigma(ix,jy)= &
@@ -945,12 +946,12 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
               call mean(auxgrid,drygrid(ix,jy), &
                    drygridsigma(ix,jy),nclassunc)
               ! Multiply by number of classes to get total concentration
-              drygrid(ix,jy)=drygrid(ix,jy)*real(nclassunc)
+              drygrid(ix,jy)=drygrid(ix,jy)*real(nclassunc,kind=sp)
               drygridtotal=drygridtotal+drygrid(ix,jy)
               ! Calculate standard deviation of the mean
               drygridsigma(ix,jy)= &
                    drygridsigma(ix,jy)* &
-                   sqrt(real(nclassunc))
+                   sqrt(real(nclassunc, kind=dep_prec))
               drygridsigmatotal=drygridsigmatotal+ &
                    drygridsigma(ix,jy)
             endif
@@ -1053,8 +1054,8 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
   if (gridtotal.gt.0.) gridtotalunc=gridsigmatotal/gridtotal
   if (wetgridtotal.gt.0.) wetgridtotalunc=wetgridsigmatotal/ &
        wetgridtotal
-  if (drygridtotal.gt.0.) drygridtotalunc=drygridsigmatotal/ &
-       drygridtotal
+  if (drygridtotal.gt.0.) drygridtotalunc=real(drygridsigmatotal/ &
+       drygridtotal, kind=dep_prec)
 
   ! Dump of receptor concentrations
 
@@ -1297,7 +1298,7 @@ subroutine concoutput_nest_netcdf(itime,outnum)
               ! Calculate standard deviation of the mean
               wetgridsigma(ix,jy)= &
                    wetgridsigma(ix,jy)* &
-                   sqrt(real(nclassunc))
+                   sqrt(real(nclassunc,kind=dep_prec))
             endif
 
             ! DRY DEPOSITION
@@ -1318,7 +1319,7 @@ subroutine concoutput_nest_netcdf(itime,outnum)
               ! Calculate standard deviation of the mean
               drygridsigma(ix,jy)= &
                    drygridsigma(ix,jy)* &
-                   sqrt(real(nclassunc))
+                   sqrt(real(nclassunc,kind=dep_prec))
             endif
 
             ! CONCENTRATION OR MIXING RATIO

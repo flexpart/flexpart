@@ -235,12 +235,12 @@ subroutine readavailable
 
   do i=2,numbwf
     idiff=abs(wftime(i)-wftime(i-1))
-    if (idiff.gt.idiffmax) then
+    if (idiff.gt.idiffmax.and.lroot) then
       write(*,*) 'FLEXPART WARNING: TIME DIFFERENCE BETWEEN TWO'
       write(*,*) 'WIND FIELDS IS TOO BIG FOR TRANSPORT CALCULATION.&
            &'
       write(*,*) 'THEREFORE, TRAJECTORIES HAVE TO BE SKIPPED.'
-    else if (idiff.gt.idiffnorm) then
+    else if (idiff.gt.idiffnorm.and.lroot) then
       write(*,*) 'FLEXPART WARNING: TIME DIFFERENCE BETWEEN TWO'
       write(*,*) 'WIND FIELDS IS BIG. THIS MAY CAUSE A DEGRADATION'
       write(*,*) 'OF SIMULATION QUALITY.'
