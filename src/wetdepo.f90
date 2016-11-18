@@ -438,8 +438,8 @@ subroutine wetdepo(itime,ltsample,loutnext)
                  if (xmass1(jpart,ks).eq.0) then
                      firsttimerem=firsttimerem+1
                 endif
-                xscav_frac1(jpart,ks)=xscav_frac1(jpart,ks)*(-1.)* &
-                   wetdeposit(ks)/xmass1(jpart,ks)
+                 !xscav_frac1(jpart,ks)=wetdeposit(ks)/(xmass1(jpart,ks)+wetdeposit(ks))
+                 xscav_frac1(jpart,ks)=wetscav*(zpoint2(jpart)-zpoint1(jpart))
 !                write (*,*) 'paricle kept: ',jpart,ks,wetdeposit(ks),xscav_frac1(jpart,ks),xmass(jpart,ks)
              endif
           endif

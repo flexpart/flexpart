@@ -166,8 +166,9 @@ subroutine advance_rec(itime,xt,yt,zt,prob)
   ! correction by Petra Seibert, 10 April 2001
   !   this formulation means that prob(n) = 1 - f(0)*...*f(n)
   !   where f(n) is the exponential term
-               prob(ks)=1.+(prob(ks)-1.)* &
-                    exp(-vdepo(ks)*abs(lsynctime)/(2.*href))
+               prob(ks)=vdepo(ks)
+!               prob(ks)=vdepo(ks)/2./href
+! instead of prob - return vdepo -> result kg/m2/s
           endif
         end do
       endif

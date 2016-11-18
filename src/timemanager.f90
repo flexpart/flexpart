@@ -559,9 +559,7 @@ subroutine timemanager
                 decfact=1.
             endif
             if (DRYDEPSPEC(ks)) then        ! dry deposition
-               drydeposit(ks)=xmass1(j,ks)*prob_rec(ks)*decfact
-               xscav_frac1(j,ks)=xscav_frac1(j,ks)*(-1.)* &
-               drydeposit(ks)/xmass1(j,ks)
+               xscav_frac1(j,ks)=prob_rec(ks)
              else
                 xmass1(j,ks)=0
                 xscav_frac1(j,ks)=0.
