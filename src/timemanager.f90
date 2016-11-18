@@ -104,15 +104,16 @@ subroutine timemanager
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage
+  integer :: ix,jy,ldeltat,itage,nage,idummy
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
-  real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact
+  real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact,wetscav(maxspec)
   ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
   ! real :: us(maxpart),vs(maxpart),ws(maxpart)
   ! integer(kind=2) :: cbt(maxpart)
   real(sp) :: gridtotalunc
   real(dep_prec) :: drydeposit(maxspec),wetgridtotalunc,drygridtotalunc
   real :: xold,yold,zold,xmassfract
+  real :: grfraction(3)
   real, parameter :: e_inv = 1.0/exp(1.0)
 
   !double precision xm(maxspec,maxpointspec_act),
@@ -549,37 +550,32 @@ subroutine timemanager
   ! xscav_frac1 was initialised with a negative value
 
       if  (DRYBKDEP) then
-      do ks=1,nspec
+       do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
             call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
-
-            if (decay(ks).gt.0.) then             ! radioactive decay
-                decfact=exp(-real(abs(lsynctime))*decay(ks))
-            else
-                decfact=1.
-            endif
             if (DRYDEPSPEC(ks)) then        ! dry deposition
                xscav_frac1(j,ks)=prob_rec(ks)
              else
                 xmass1(j,ks)=0
                 xscav_frac1(j,ks)=0.
              endif
-!         write (*,*) 'xscav: ',j,ks,xscav_frac1(j,ks)
          endif
-       enddo
+        enddo
        endif
 
-!      if (WETBKDEP) then 
-!      firstdepocalc=.false.
-!      do ks=1,nspec
-!         if ((xscav_frac1(j,ks).lt.0) &
-!                .and.firstdepocalc.eqv..false.) then 
-!            ! Backward wetdeposition and first timestep after release
-!            call wetdepo(itime,lsynctime,loutnext,.true.)
-!            firstdepocalc=.true.
-!         endif
-!      enddo
-!      endif
+       if (WETBKDEP) then 
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_wetscav(itime,lsynctime,loutnext,j,grfraction,idummy,idummy,wetscav)
+            if (wetscav(ks).gt.0) then
+                xscav_frac1(j,ks)=wetscav(ks)*(zpoint2(j)-zpoint1(j))
+            else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+            endif
+         endif
+        enddo
+       endif
 
   ! Integrate Lagevin equation for lsynctime seconds
   !*************************************************
