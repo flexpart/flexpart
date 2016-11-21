@@ -19,46 +19,13 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine advance_rec(itime,xt,yt,zt,prob)
+subroutine get_vdep_prob(itime,xt,yt,zt,prob)
   !                    i     i  i  i  o
   !*****************************************************************************
   !                                                                            *
-  !  Calculation of turbulent particle trajectories utilizing a                *
-  !  zero-acceleration scheme, which is corrected by a numerically more        *
-  !  accurate Petterssen scheme whenever possible.                             *
+  !  Calculation of the probability for dyr deposition                         * 
   !                                                                            *
-  !  Particle positions are read in, incremented, and returned to the calling  *
-  !  program.                                                                  *
-  !                                                                            *
-  !  In different regions of the atmosphere (PBL vs. free troposphere),        *
-  !  different parameters are needed for advection, parameterizing turbulent   *
-  !  velocities, etc. For efficiency, different interpolation routines have    *
-  !  been written for these different cases, with the disadvantage that there  *
-  !  exist several routines doing almost the same. They all share the          *
-  !  included file 'interpol_mod'. The following                               *
-  !  interpolation routines are used:                                          *
-  !                                                                            *
-  !  interpol_all(_nests)     interpolates everything (called inside the PBL)  *
-  !  interpol_misslev(_nests) if a particle moves vertically in the PBL,       *
-  !                           additional parameters are interpolated if it     *
-  !                           crosses a model level                            *
-  !  interpol_wind(_nests)    interpolates the wind and determines the         *
-  !                           standard deviation of the wind (called outside   *
-  !                           PBL) also interpolates potential vorticity       *
-  !  interpol_wind_short(_nests) only interpolates the wind (needed for the    *
-  !                           Petterssen scheme)                               *
-  !  interpol_vdep(_nests)    interpolates deposition velocities               *
-  !                                                                            *
-  !                                                                            *
-  !     Author: A. Stohl                                                       *
-  !                                                                            *
-  !     16 December 1997                                                       *
-  !                                                                            *
-  !  Changes:                                                                  *
-  !                                                                            *
-  !  8 April 2000: Deep convection parameterization                            *
-  !                                                                            *
-  !  May 2002: Petterssen scheme introduced                                    *
+  !  Particle positions are read in - prob returned                            *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -174,5 +141,5 @@ subroutine advance_rec(itime,xt,yt,zt,prob)
       endif
 
 
-end subroutine advance_rec
+end subroutine get_vdep_prob
 

@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine get_wetscav(itime,ltsample,loutnext,jpart,grfraction,inc_count,blc_count,wetscav)
+subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
 !                          i      i        i     i     o           o
 !*****************************************************************************
 !                                                                            *
@@ -217,7 +217,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,grfraction,inc_count,blc_co
 !    Computation of wet deposition
 !**********************************************************
 
-    do ks=1,nspec      ! loop over species
       wetdeposit(ks)=0. 
       wetscav=0.   
 
@@ -337,7 +336,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,grfraction,inc_count,blc_co
         endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud
 
-    end do ! loop over species
 20  continue
 
 end subroutine get_wetscav

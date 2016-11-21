@@ -102,11 +102,12 @@ subroutine wetdepo(itime,ltsample,loutnext)
      end do
  33  continue
 
+    do ks=1,nspec      ! loop over species
 
 !**************************************************
 ! CALCULATE DEPOSITION 
 !**************************************************
-      call get_wetscav(itime,ltsample,loutnext,jpart,grfraction,inc_count,blc_count,wetscav)
+      call get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
 
       if (wetscav.gt.0.) then
         wetdeposit(ks)=xmass1(jpart,ks)* &
@@ -134,6 +135,8 @@ subroutine wetdepo(itime,ltsample,loutnext)
       if (decay(ks).gt.0.) then
         wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
       endif
+
+    end do ! loop over species
 
 ! Sabine Eckhardt, June 2008 create deposition runs only for forward runs
 ! Add the wet deposition to accumulated amount on output grid and nested output grid
