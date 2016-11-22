@@ -552,7 +552,7 @@ subroutine timemanager
       if  (DRYBKDEP) then
        do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
-            call advance_rec(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+            call get_vdep_prob(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
             if (DRYDEPSPEC(ks)) then        ! dry deposition
                xscav_frac1(j,ks)=prob_rec(ks)
              else
