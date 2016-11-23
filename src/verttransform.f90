@@ -102,8 +102,8 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
   ! CHARACTER(LEN=3)  :: aspec
   ! integer :: virr=0
-  real :: tot_cloud_h
-  real :: dbg_height(nzmax) 
+  !real :: tot_cloud_h
+  !real :: dbg_height(nzmax) 
 !ZHG
 
 !*************************************************************************
@@ -177,7 +177,7 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 
     init=.false.
 
-    dbg_height = height
+!    dbg_height = height
 
   endif
 
@@ -597,13 +597,13 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
         lsp=lsprec(ix,jy,1,n)
         convp=convprec(ix,jy,1,n)
         prec=lsp+convp
-        tot_cloud_h=0
+!        tot_cloud_h=0
 ! Find clouds in the vertical
         do kz=1, nz-1 !go from top to bottom
           if (clwc(ix,jy,kz,n).gt.0) then      
 ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
             clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
-            tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
+!            tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
             
 !            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
             ctwc(ix,jy,n) = ctwc(ix,jy,n)+clw(ix,jy,kz,n)
