@@ -329,11 +329,15 @@ subroutine readcommand
      case (3)  ! 3 .. wet deposition in outputfield 
         ind_rel = 3
          write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
+         write(*,*) ' #### Releaseheight is forced to 0 - 20km      #### '
+         write(*,*) ' #### Release is performed above ground lev    #### '
          WETBKDEP=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      case (4)  ! 4 .. dry deposition in outputfield
          ind_rel = 4
          write(*,*) ' #### FLEXPART DRY DEPOSITION BACKWARD MODE    #### '
+         write(*,*) ' #### Releaseheight is forced to 0 - 2*href    #### '
+         write(*,*) ' #### Release is performed above ground lev    #### '
          DRYBKDEP=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      end select

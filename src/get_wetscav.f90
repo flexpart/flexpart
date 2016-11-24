@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
-!                          i      i        i     i     o           o
+!                          i      i        i     i   i    o           o          o       o
 !*****************************************************************************
 !                                                                            *
 ! Calculation of wet deposition using the concept of scavenging coefficients.*
@@ -138,6 +138,8 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
            memtime(1),memtime(2),interp_time,lsp,convp,cc)
     endif
 
+!  If total precipitation is less than 0.01 mm/h - no scavenging occurs
+    if ((lsp.lt.0.01).and.(convp.lt.0.01)) goto 20
 
 ! get the level were the actual particle is in
     do il=2,nz
