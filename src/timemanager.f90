@@ -568,7 +568,8 @@ subroutine timemanager
          if  ((xscav_frac1(j,ks).lt.0)) then
             call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
             if (wetscav(ks).gt.0) then
-                xscav_frac1(j,ks)=wetscav(ks)*(zpoint2(npoint(j))-zpoint1(npoint(j)))
+                xscav_frac1(j,ks)=wetscav(ks)* &
+                       (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
             else
                 xmass1(j,ks)=0.
                 xscav_frac1(j,ks)=0.

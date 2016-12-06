@@ -112,8 +112,16 @@ subroutine wetdepo(itime,ltsample,loutnext)
       if (wetscav.gt.0.) then
         wetdeposit(ks)=xmass1(jpart,ks)* &
              (1.-exp(-wetscav*abs(ltsample)))*grfraction(1)  ! wet deposition
+!        if (xscav_frac1(jpart,ks).lt.0) then
+!                  xscav_frac1(jpart,ks)=wetscav*grfraction(1)* &
+!                         (zpoint2(npoint(jpart))-zpoint1(npoint(jpart)))
+!        endif
       else ! if no scavenging
         wetdeposit(ks)=0.
+!        if (xscav_frac1(jpart,ks).lt.0) then
+!           xscav_frac1(jpart,ks)=0.
+!           xmass1(jpart,ks)=0.
+!        endif
       endif
  
       restmass = xmass1(jpart,ks)-wetdeposit(ks)
