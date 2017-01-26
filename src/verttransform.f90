@@ -90,6 +90,9 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   real,parameter :: precmin = 0.002 ! minimum prec in mm/h for cloud diagnostics
 
   logical :: init = .true.
+  logical :: init_w = .false.
+  logical :: init_r = .false.
+
 
   !ZHG SEP 2014 tests  
   ! integer :: cloud_ver,cloud_min, cloud_max 
@@ -121,6 +124,19 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
 !  call mpif_mtime('verttransform',0)
 
   if (init) then
+
+
+    if (init_r) then
+
+        open(333,file='heights.txt', &
+          form='formatted')
+        do kz=1,nuvz
+            read(333,*) height(kz)
+        end do
+        close(333)
+        write(*,*) 'height read'
+    else
+
 
 ! Search for a point with high surface pressure (i.e. not above significant topography)
 ! Then, use this point to construct a reference z profile, to be used at all times
@@ -160,6 +176,16 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
       pold(ixm,jym)=pint(ixm,jym)
     end do
 
+    if (init_w) then
+        open(333,file='heights.txt', &
+          form='formatted')
+        do kz=1,nuvz
+              write(333,*) height(kz)
+        end do
+        close(333)
+    endif
+
+    endif ! init
 
 ! Determine highest levels that can be within PBL
 !************************************************
