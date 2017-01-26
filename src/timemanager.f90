@@ -310,7 +310,7 @@ subroutine timemanager
   !!! of mass within FLEXPART
   !   if (itime.eq.loutnext) then
   !   do 247 ksp=1, nspec
-  !   do 247 kp=1, maxpointspec_act
+  !    247 kp=1, maxpointspec_act
   !47         xm(ksp,kp)=0.
 
   !   do 249 ksp=1, nspec
@@ -353,6 +353,47 @@ subroutine timemanager
     if ((ldirect*itime.ge.ldirect*loutstart).and. &
          (ldirect*itime.le.ldirect*loutend)) then ! add to grid
       if (mod(itime-loutstart,loutsample).eq.0) then
+
+   
+    do j=1,numpart
+  ! RECEPTOR: dry/wet depovel
+  !****************************
+  ! Before the particle is moved 
+  ! the calculation of the scavenged mass shall only be done once after release
+  ! xscav_frac1 was initialised with a negative value
+
+!      write (*,*) 'out:',j,xtra1(j),ytra1(j),prob_rec(1),xscav_frac1(j,1)
+      if  (DRYBKDEP) then
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_vdep_prob(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+            if (DRYDEPSPEC(ks)) then        ! dry deposition
+!        write (*,*) 'j,..:',j,xtra1(j),ytra1(j),prob_rec(1),xscav_frac1(j,1)
+               xscav_frac1(j,ks)=prob_rec(ks)
+             else
+                xmass1(j,ks)=0
+                xscav_frac1(j,ks)=0.
+             endif
+         endif
+        enddo
+       endif
+
+       if (WETBKDEP) then 
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
+            if (wetscav(ks).gt.0) then
+                xscav_frac1(j,ks)=wetscav(ks)* &
+                       (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
+            else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+            endif
+         endif
+        enddo
+       endif
+
+  enddo
 
   ! If we are exactly at the start or end of the concentration averaging interval,
   ! give only half the weight to this sample
@@ -542,41 +583,6 @@ subroutine timemanager
         yold=ytra1(j)
         zold=ztra1(j)
 
-   
-  ! RECEPTOR: dry/wet depovel
-  !****************************
-  ! Before the particle is moved 
-  ! the calculation of the scavenged mass shall only be done once after release
-  ! xscav_frac1 was initialised with a negative value
-
-      if  (DRYBKDEP) then
-       do ks=1,nspec
-         if  ((xscav_frac1(j,ks).lt.0)) then
-            call get_vdep_prob(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
-            if (DRYDEPSPEC(ks)) then        ! dry deposition
-               xscav_frac1(j,ks)=prob_rec(ks)
-             else
-                xmass1(j,ks)=0
-                xscav_frac1(j,ks)=0.
-             endif
-         endif
-        enddo
-       endif
-
-       if (WETBKDEP) then 
-       do ks=1,nspec
-         if  ((xscav_frac1(j,ks).lt.0)) then
-            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
-            if (wetscav(ks).gt.0) then
-                xscav_frac1(j,ks)=wetscav(ks)* &
-                       (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
-            else
-                xmass1(j,ks)=0.
-                xscav_frac1(j,ks)=0.
-            endif
-         endif
-        enddo
-       endif
 
   ! Integrate Lagevin equation for lsynctime seconds
   !*************************************************
@@ -587,10 +593,13 @@ subroutine timemanager
            endif     
         endif
      
+!        write (*,*) ' before advanced: ',j,prob(1),xmass1(j,1),ztra1(j)
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
              us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
              cbt(j))
-!        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
+        if (ztra1(j).lt.30) then
+!        write (*,*) 'advanced: ',ztra1(j),j,xtra1(j),ytra1(j)
+        endif
 
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************
