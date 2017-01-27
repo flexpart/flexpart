@@ -248,17 +248,19 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   h=0.
   if (ngrid.le.0) then
     do k=1,2
-      mind=memind(k) ! eso: compatibility with 3-field version
-!      do j=jy,jyp
-!       do i=ix,ixp
-!          if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
-           h1(k)=p1*hmix(ix ,jy ,1,mind) &
-         + p2*hmix(ixp,jy ,1,mind) &
-         + p3*hmix(ix ,jyp,1,mind) &
-         + p4*hmix(ixp,jyp,1,mind)
-
-!       end do
-!     end do
+       mind=memind(k) ! eso: compatibility with 3-field version
+       if (interpolhmix) 
+             h1(k)=p1*hmix(ix ,jy ,1,mind) &
+                 + p2*hmix(ixp,jy ,1,mind) &
+                 + p3*hmix(ix ,jyp,1,mind) &
+                 + p4*hmix(ixp,jyp,1,mind)
+        else
+          do j=jy,jyp
+            do i=ix,ixp
+               if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
+            end do
+          end do
+        endif
     end do
     tropop=tropopause(nix,njy,1,1)
   else
@@ -273,7 +275,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     tropop=tropopausen(nix,njy,1,1,ngrid)
   endif
 
-  h=(h1(1)*dt2+h1(2)*dt1)*dtt 
+  if (interpolhmix) h=(h1(1)*dt2+h1(2)*dt1)*dtt 
   zeta=zt/h
 
 
