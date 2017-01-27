@@ -752,7 +752,7 @@ module com_mod
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process
   
   logical :: usekernel=.false.    ! true if the output kernel shall be switched on
-  logical :: interpolhmxi=.false. ! true if the hmix shall be interpolated
+  logical :: interpolhmix=.false. ! true if the hmix shall be interpolated
   
   
 contains

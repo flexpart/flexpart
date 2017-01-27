@@ -131,9 +131,6 @@ subroutine timemanager
   loutstart=loutnext-loutaver/2
   loutend=loutnext+loutaver/2
 
-  !  open(127,file=path(2)(1:length(2))//'depostat.dat'
-  !    +  ,form='unformatted')
-  !write (*,*) 'writing deposition statistics depostat.dat!'
 
   !**********************************************************************
   ! Loop over the whole modelling period in time steps of mintime seconds
@@ -146,6 +143,8 @@ subroutine timemanager
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
   
+  if (interpolhmix) write(*,*) 'Interpolating hmix'
+
   write(*,46) float(itime)/3600,itime,numpart
 
   if (verbosity.gt.0) then

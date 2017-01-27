@@ -249,7 +249,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   if (ngrid.le.0) then
     do k=1,2
        mind=memind(k) ! eso: compatibility with 3-field version
-       if (interpolhmix) 
+       if (interpolhmix) then
              h1(k)=p1*hmix(ix ,jy ,1,mind) &
                  + p2*hmix(ixp,jy ,1,mind) &
                  + p3*hmix(ix ,jyp,1,mind) &
