@@ -174,7 +174,6 @@ subroutine conccalc(itime,weight)
       jy=int(yl)
       if (yl.lt.0.) jy=jy-1
 
-  ! if (i.eq.10000) write(*,*) itime,xtra1(i),ytra1(i),ztra1(i),xl,yl
 
 
   ! For particles aged less than 3 hours, attribute particle mass to grid cell
@@ -192,7 +191,7 @@ subroutine conccalc(itime,weight)
              do ks=1,nspec
                gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                  gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                 xmass1(i,ks)/rhoi*weight*xscav_frac1(i,ks)
+                 xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
              end do
           else
              do ks=1,nspec
@@ -234,7 +233,7 @@ subroutine conccalc(itime,weight)
                do ks=1,nspec
                  gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*w*weight*xscav_frac1(i,ks)
+                   xmass1(i,ks)/rhoi*w*weight*max(xscav_frac1(i,ks),0.0)
                end do
             else
                do ks=1,nspec
@@ -251,7 +250,7 @@ subroutine conccalc(itime,weight)
               do ks=1,nspec
                  gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                   xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                end do
              else
               do ks=1,nspec
@@ -271,7 +270,7 @@ subroutine conccalc(itime,weight)
                do ks=1,nspec
                  gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*w*weight*xscav_frac1(i,ks)
+                   xmass1(i,ks)/rhoi*w*weight*max(xscav_frac1(i,ks),0.0)
                end do
             else
                do ks=1,nspec
@@ -288,7 +287,7 @@ subroutine conccalc(itime,weight)
                do ks=1,nspec
                  gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                   xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                end do
             else
                do ks=1,nspec
@@ -329,7 +328,7 @@ subroutine conccalc(itime,weight)
                do ks=1,nspec
                  griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*weight*xscav_frac1(i,ks)
+                   xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
                end do
             else
                do ks=1,nspec
@@ -371,7 +370,7 @@ subroutine conccalc(itime,weight)
                  do ks=1,nspec
                    griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                     xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                  end do
               else
                 do ks=1,nspec
