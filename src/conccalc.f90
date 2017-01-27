@@ -60,9 +60,6 @@ subroutine conccalc(itime,weight)
   real,parameter :: factor=.596831, hxmax=6.0, hymax=4.0, hzmax=150.
 
 
-  if (.not.usekernel) then
-     write (*,*) 'NOT USING THE KERNEL!'
-  endif
   ! For forward simulations, make a loop over the number of species;
   ! for backward simulations, make an additional loop over the
   ! releasepoints

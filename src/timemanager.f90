@@ -144,6 +144,7 @@ subroutine timemanager
 !CGZ-lifetime: set lifetime to 0
   
   if (interpolhmix) write(*,*) 'Interpolating hmix'
+  if (.not.usekernel) write(*,*) 'Not using the kernel'
 
   write(*,46) float(itime)/3600,itime,numpart
 
