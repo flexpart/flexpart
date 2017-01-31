@@ -107,21 +107,19 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !**************************************************
 ! CALCULATE DEPOSITION 
 !**************************************************
+       wetscav=0.
+
+       if (((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) &
+          .or. &
+          ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.)))  then
+
       call get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
 
       if (wetscav.gt.0.) then
         wetdeposit(ks)=xmass1(jpart,ks)* &
              (1.-exp(-wetscav*abs(ltsample)))*grfraction(1)  ! wet deposition
-!        if (xscav_frac1(jpart,ks).lt.0) then
-!                  xscav_frac1(jpart,ks)=wetscav*grfraction(1)* &
-!                         (zpoint2(npoint(jpart))-zpoint1(npoint(jpart)))
-!        endif
       else ! if no scavenging
         wetdeposit(ks)=0.
-!        if (xscav_frac1(jpart,ks).lt.0) then
-!           xscav_frac1(jpart,ks)=0.
-!           xmass1(jpart,ks)=0.
-!        endif
       endif
  
       restmass = xmass1(jpart,ks)-wetdeposit(ks)
@@ -144,6 +142,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
         wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
       endif
 
+    endif ! no deposition
     end do ! loop over species
 
 ! Sabine Eckhardt, June 2008 create deposition runs only for forward runs
