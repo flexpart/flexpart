@@ -282,7 +282,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 ! given in species file, or if gas and positive Henry's constant
         if ((ccn_aero(ks).gt.0. .or. in_aero(ks).gt.0.).or.(henry(ks).gt.0.and.dquer(ks).le.0)) then 
           inc_count=inc_count+1
-          write(*,*) 'Incloud: ',inc_count
+!          write(*,*) 'Incloud: ',inc_count
 ! if negative coefficients (turned off) set to zero for use in equation
           if (ccn_aero(ks).lt.0.) ccn_aero(ks)=0.
           if (in_aero(ks).lt.0.) in_aero(ks)=0.
