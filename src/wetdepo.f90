@@ -109,7 +109,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !**************************************************
        wetscav=0.
        
-        write(*,*) ks,dquer(ks), crain_aero(ks),csnow_aero(ks)
+!        write(*,*) ks,dquer(ks), crain_aero(ks),csnow_aero(ks)
 !       if (((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) &
 !          .or. &
 !          ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.).or. &
@@ -145,7 +145,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
         wetdeposit(ks)=wetdeposit(ks)*exp(abs(ldeltat)*decay(ks))
       endif
 
-    endif ! no deposition
+!    endif ! no deposition
     end do ! loop over species
 
 ! Sabine Eckhardt, June 2008 create deposition runs only for forward runs
