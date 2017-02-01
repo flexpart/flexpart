@@ -196,8 +196,8 @@ subroutine readspecies(id_spec,pos_spec)
     decay(pos_spec)=pdecay
     weta_gas(pos_spec)=pweta_gas
     wetb_gas(pos_spec)=pwetb_gas
-    crain_aero=pcrain_aero
-    csnow_aero=pcsnow_aero
+    crain_aero(pos_spec)=pcrain_aero
+    csnow_aero(pos_spec)=pcsnow_aero
     ccn_aero(pos_spec)=pccn_aero
     in_aero(pos_spec)=pin_aero
     reldiff(pos_spec)=preldiff
