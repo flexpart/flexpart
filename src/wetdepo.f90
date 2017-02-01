@@ -108,12 +108,15 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! CALCULATE DEPOSITION 
 !**************************************************
        wetscav=0.
-
-       if (((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) &
-          .or. &
-          ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.)))  then
+       
+        write(*,*) ks,dquer(ks), crain_aero(ks),csnow_aero(ks)
+!       if (((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) &
+!          .or. &
+!          ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.).or. &
+!            (ccn_aero(ks).gt0) .or. (in_aero(ks).gt.0) .or. (henry(ks).gt.0)))  then
 
       call get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
+      
 
       if (wetscav.gt.0.) then
         wetdeposit(ks)=xmass1(jpart,ks)* &
