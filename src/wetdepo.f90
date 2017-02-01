@@ -63,7 +63,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   implicit none
 
   integer :: jpart,itime,ltsample,loutnext,ldeltat,i,j,ix,jy
-  integer :: itage,nage,hz,il,interp_time, n
+  integer :: itage,nage,il,interp_time, n
   integer :: ks, kp
   integer :: blc_count, inc_count 
   real :: grfraction(3),wetscav

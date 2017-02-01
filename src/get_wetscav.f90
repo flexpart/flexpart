@@ -54,7 +54,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 ! lsp [mm/h]         large scale precipitation rate                          *
 ! ltsample [s]       interval over which mass is deposited                   *
 ! prec [mm/h]        precipitation rate in subgrid, where precipitation occurs*
-! wetdeposit         mass that is wet deposited                              *
 ! wetgrid            accumulated deposited mass on output grid               *
 ! wetscav            scavenging coefficient                                  *
 !                                                                            *
@@ -77,7 +76,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
   real :: S_i, act_temp, cl, cle ! in cloud scavenging
   real :: clouds_h ! cloud height for the specific grid point
   real :: xtn,ytn,lsp,convp,cc,grfraction(3),prec(3),wetscav,totprec
-  real :: wetdeposit(maxspec),restmass
+  real :: restmass
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
 !save lfr,cfr
 
@@ -219,8 +218,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !    Computation of wet deposition
 !**********************************************************
 
-      wetdeposit(ks)=0. 
-      wetscav=0.   
 
       if (ngrid.gt.0) then
         act_temp=ttn(ix,jy,hz,n,ngrid)
@@ -285,6 +282,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 ! given in species file, or if gas and positive Henry's constant
         if ((ccn_aero(ks).gt.0. .or. in_aero(ks).gt.0.).or.(henry(ks).gt.0.and.dquer(ks).le.0)) then 
           inc_count=inc_count+1
+          write(*,*) 'Incloud: ',inc_count
 ! if negative coefficients (turned off) set to zero for use in equation
           if (ccn_aero(ks).lt.0.) ccn_aero(ks)=0.
           if (in_aero(ks).lt.0.) in_aero(ks)=0.
