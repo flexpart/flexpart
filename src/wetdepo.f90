@@ -107,7 +107,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !**************************************************
 ! CALCULATE DEPOSITION 
 !**************************************************
-       wetscav=0.
+!       wetscav=0.
        
 !        write(*,*) ks,dquer(ks), crain_aero(ks),csnow_aero(ks)
 !       if (((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) &

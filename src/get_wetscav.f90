@@ -92,6 +92,8 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
   logical :: readclouds_this_nest
 
 
+   wetscav=0.
+
 ! Determine which nesting level to be used
 !*****************************************
     ngrid=0
