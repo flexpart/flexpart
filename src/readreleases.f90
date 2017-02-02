@@ -275,6 +275,7 @@ subroutine readreleases
   OHREA=.false.
   do i=1,maxspec
     DRYDEPSPEC(i)=.false.
+    WETDEPSPEC(i)=.false.
   end do
 
   if (readerror.ne.0) then
@@ -368,6 +369,7 @@ subroutine readreleases
     if ((dquer(i).le.0..and.(weta_gas(i).gt.0. .or. wetb_gas(i).gt.0.)) .or. &
          &(dquer(i).gt.0. .and. (crain_aero(i) .gt. 0. .or. csnow_aero(i).gt.0.)))  then
       WETDEP=.true.
+      WETDEPSPEC(i)=.true.
       if (lroot) then
         write (*,*) '  Below-cloud scavenging: ON'
 !  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
@@ -379,6 +381,7 @@ subroutine readreleases
 ! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
     if (dquer(i).gt.0..and.(ccn_aero(i).gt.0. .or. in_aero(i).gt.0.))  then
       WETDEP=.true.
+      WETDEPSPEC(i)=.true.
       if (lroot) then
         write (*,*) '  In-cloud scavenging: ON'
 !        write (*,*) 'In-cloud scavenging coefficients: ',&
@@ -398,7 +401,7 @@ subroutine readreleases
       DRYDEPSPEC(i)=.true.
     endif
 
-  end do
+  end do ! end loop over species
 
   if (WETDEP.or.DRYDEP) DEP=.true.
 

@@ -139,7 +139,8 @@ module com_mod
   
 
 !NIK 16.02.2015
-  integer(selected_int_kind(16)) :: tot_blc_count=0, tot_inc_count=0
+  integer(selected_int_kind(16)), dimension(maxspec) :: tot_blc_count=0, &
+       &tot_inc_count=0
 
 
   !*********************************************************************
@@ -575,7 +576,8 @@ module com_mod
   integer :: numxgridn,numygridn
   real :: dxoutn,dyoutn,outlon0n,outlat0n,xoutshiftn,youtshiftn
   !real outheight(maxzgrid),outheighthalf(maxzgrid)
-  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,OHREA,ASSSPEC
+  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,WETDEPSPEC(maxspec),&
+       & OHREA,ASSSPEC
 
   ! numxgrid,numygrid       number of grid points in x,y-direction
   ! numxgridn,numygridn     number of grid points in x,y-direction for nested output grid
@@ -592,6 +594,7 @@ module com_mod
   ! DRYDEP                  .true., if dry deposition is switched on
   ! DRYDEPSPEC              .true., if dry deposition is switched on for that species
   ! WETDEP                  .true., if wet deposition is switched on
+  ! WETDEPSPEC              .true., if wet deposition is switched on for that species
   ! OHREA                   .true., if OH reaction is switched on
   ! ASSSPEC                 .true., if there are two species asscoiated
   !                    (i.e. transfer of mass between these two occurs

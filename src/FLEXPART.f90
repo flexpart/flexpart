@@ -413,11 +413,16 @@ program flexpart
   call timemanager
 
 ! NIK 16.02.2005 
-  write(*,*) '**********************************************'
-  write(*,*) 'Total number of occurences of below-cloud scavenging', tot_blc_count
-  write(*,*) 'Total number of occurences of in-cloud    scavenging', tot_inc_count
-  write(*,*) '**********************************************'
-
+  do i=1,nspec
+    write(*,*) '**********************************************'
+    write(*,*) 'Scavenging statistics for species ', species(i), ':'
+    write(*,*) 'Total number of occurences of below-cloud scavenging', &
+         & tot_blc_count(i)
+    write(*,*) 'Total number of occurences of in-cloud    scavenging', &
+         & tot_inc_count(i)
+    write(*,*) '**********************************************'
+  end do
+  
   write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&
        &XPART MODEL RUN!'
 

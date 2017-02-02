@@ -89,7 +89,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   real, parameter :: bcls(6) = (/22.7, 0.0, 0.0, 1321.0, 381.0, 0.0/) !now (Kyro et al 2009)
   real :: frac_act, liq_frac, dquer_m
 
-  integer :: blc_count, inc_count
+  integer(selected_int_kind(16)), dimension(nspec) :: blc_count, inc_count
   real    :: Si_dummy, wetscav_dummy
   logical :: readclouds_this_nest
 
@@ -106,8 +106,8 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! Loop over all particles
 !************************
 
-  blc_count=0
-  inc_count=0
+  blc_count(:)=0
+  inc_count(:)=0
 
   do jpart=1,numpart
 
@@ -255,7 +255,10 @@ subroutine wetdepo(itime,ltsample,loutnext)
 
     do ks=1,nspec      ! loop over species
       wetdeposit(ks)=0. 
-      wetscav=0.   
+      wetscav=0.
+
+! Cycle loop if wet deposition for the species is off
+      if (WETDEPSPEC(ks).eqv..false.) cycle
 
       if (ngrid.gt.0) then
         act_temp=ttn(ix,jy,hz,n,ngrid)
@@ -273,13 +276,13 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !******************************************************************
         if ((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) then
           !        if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then 
-          blc_count=blc_count+1
+          blc_count(ks)=blc_count(ks)+1
           wetscav=weta_gas(ks)*prec(1)**wetb_gas(ks)
 
 ! For aerosols: if positive below-cloud parameters (Crain/Csnow or B), and dquer>0
 !*********************************************************************************
         else if ((dquer(ks).gt.0.).and.(crain_aero(ks).gt.0..or.csnow_aero(ks).gt.0.)) then
-          blc_count=blc_count+1
+          blc_count(ks)=blc_count(ks)+1
 
 !NIK 17.02.2015
 ! For the calculation here particle size needs to be in meter and not um as dquer is
@@ -319,7 +322,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 ! NIK 13 may 2015: only do incloud if positive in-cloud scavenging parameters are
 ! given in species file, or if gas and positive Henry's constant
         if ((ccn_aero(ks).gt.0. .or. in_aero(ks).gt.0.).or.(henry(ks).gt.0.and.dquer(ks).le.0)) then 
-          inc_count=inc_count+1
+          inc_count(ks)=inc_count(ks)+1
 ! if negative coefficients (turned off) set to zero for use in equation
           if (ccn_aero(ks).lt.0.) ccn_aero(ks)=0.
           if (in_aero(ks).lt.0.) in_aero(ks)=0.
@@ -431,7 +434,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
   end do ! all particles
 
 ! count the total number of below-cloud and in-cloud occurences:
-  tot_blc_count=tot_blc_count+blc_count
-  tot_inc_count=tot_inc_count+inc_count
+  tot_blc_count(1:nspec)=tot_blc_count(1:nspec)+blc_count(1:nspec)
+  tot_inc_count(1:nspec)=tot_inc_count(1:nspec)+inc_count(1:nspec)
 
 end subroutine wetdepo

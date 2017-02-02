@@ -461,26 +461,29 @@ program flexpart
 
 ! NIK 16.02.2005 
   if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
   else
     if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, 0, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_blc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, 0, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_inc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
   end if
 
   if (lroot) then
-    write(*,*) '**********************************************'
-    write(*,*) 'Total number of occurences of below-cloud scavenging', &
-         & tot_blc_count
-    write(*,*) 'Total number of occurences of in-cloud    scavenging', &
-         & tot_inc_count
-    write(*,*) '**********************************************'
+    do i=1,nspec
+      write(*,*) '**********************************************'
+      write(*,*) 'Scavenging statistics for species ', species(i), ':'
+      write(*,*) 'Total number of occurences of below-cloud scavenging', &
+           & tot_blc_count(i)
+      write(*,*) 'Total number of occurences of in-cloud    scavenging', &
+           & tot_inc_count(i)
+      write(*,*) '**********************************************'
+    end do
 
     write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&
          &XPART MODEL RUN!'
