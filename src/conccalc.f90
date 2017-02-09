@@ -384,7 +384,7 @@ subroutine conccalc(itime,weight)
                  do ks=1,nspec
                    griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
-                     xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                  end do
               else
                  do ks=1,nspec
@@ -404,7 +404,7 @@ subroutine conccalc(itime,weight)
                  do ks=1,nspec
                    griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
-                     xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                  end do
               else
                  do ks=1,nspec
@@ -421,7 +421,7 @@ subroutine conccalc(itime,weight)
                  do ks=1,nspec
                    griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                     xmass1(i,ks)/rhoi*weight*w*xscav_frac1(i,ks)
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
                  end do
               else
                  do ks=1,nspec
