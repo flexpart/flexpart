@@ -335,7 +335,7 @@ subroutine releaseparticles(itime)
 
   !Af ind_rel is defined in readcommand.f
 
-            if (ind_rel .eq. 1) then
+            if ((ind_rel .eq. 1).or.(ind_rel .eq. 3).or.(ind_rel .eq. 4)) then
 
   ! Interpolate the air density
   !****************************
