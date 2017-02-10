@@ -58,13 +58,13 @@ subroutine conccalc(itime,weight)
   real :: rhoprof(2),rhoi
   real :: xl,yl,wx,wy,w
   real,parameter :: factor=.596831, hxmax=6.0, hymax=4.0, hzmax=150.
-
+  integer xscav_count
 
   ! For forward simulations, make a loop over the number of species;
   ! for backward simulations, make an additional loop over the
   ! releasepoints
   !***************************************************************************
-
+  xscav_count=0
   do i=1,numpart
     if (itra1(i).ne.itime) goto 20
 
@@ -75,7 +75,8 @@ subroutine conccalc(itime,weight)
     end do
 33   continue
 
-
+  if (xscav_frac1(i,1).lt.0) xscav_count=xscav_count+1
+           
   ! For special runs, interpolate the air density to the particle position
   !************************************************************************
   !***********************************************************************
@@ -437,6 +438,7 @@ subroutine conccalc(itime,weight)
     endif
 20  continue
   end do
+  write(*,*) 'xscav count:',xscav_count
 
   !***********************************************************************
   ! 2. Evaluate concentrations at receptor points, using the kernel method
