@@ -122,20 +122,23 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
       jy=int(ytra1(jpart))
     endif
 
-
 ! Interpolate large scale precipitation, convective precipitation and
 ! total cloud cover
 ! Note that interpolated time refers to itime-0.5*ltsample [PS]
 !********************************************************************
-    interp_time=nint(itime-0.5*ltsample)
+    interp_time=nint(itime-0.5*ltsample) 
+
+    n=memind(2)
+    if (abs(memtime(1)-interp_time).lt.abs(memtime(2)-interp_time)) &
+         n=memind(1)
 
     if (ngrid.eq.0) then
       call interpol_rain(lsprec,convprec,tcc,nxmax,nymax, &
-           1,nx,ny,memind,real(xtra1(jpart)),real(ytra1(jpart)),1, &
+           1,nx,ny,n,real(xtra1(jpart)),real(ytra1(jpart)),1, &
            memtime(1),memtime(2),interp_time,lsp,convp,cc)
     else
       call interpol_rain_nests(lsprecn,convprecn,tccn, &
-           nxmaxn,nymaxn,1,maxnests,ngrid,nxn,nyn,memind,xtn,ytn,1, &
+           nxmaxn,nymaxn,1,maxnests,ngrid,nxn,nyn,n,xtn,ytn,1, &
            memtime(1),memtime(2),interp_time,lsp,convp,cc)
     endif
 
@@ -152,9 +155,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
     end do
 !26  continue
 
-    n=memind(2)
-    if (abs(memtime(1)-interp_time).lt.abs(memtime(2)-interp_time)) &
-         n=memind(1)
 
     if (ngrid.eq.0) then
       clouds_v=clouds(ix,jy,hz,n)
@@ -226,7 +226,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
       else
         act_temp=tt(ix,jy,hz,n)
       endif
-
 
 !***********************
 ! BELOW CLOUD SCAVENGING
@@ -337,6 +336,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
           endif
         endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud
+
 
 20  continue
 

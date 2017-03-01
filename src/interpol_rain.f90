@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
-       ny,memind,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3)
+       ny,iwftouse,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3)
   !                          i   i   i    i    i     i   i
   !i    i    i  i    i     i      i      i     o     o     o
   !****************************************************************************
@@ -76,6 +76,7 @@ subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
   real :: yy3(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: ddx,ddy,rddx,rddy,dt1,dt2,dt,y1(2),y2(2),y3(2)
   real :: xt,yt,yint1,yint2,yint3,p1,p2,p3,p4
+  integer :: iwftouse
 
 
 
@@ -112,36 +113,38 @@ subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
   ! Loop over 2 time steps
   !***********************
 
-  do m=1,2
-    indexh=memind(m)
+!  do m=1,2
+    indexh=iwftouse
 
-
-    y1(m)=p1*yy1(ix ,jy ,level,indexh) &
+    y1(1)=p1*yy1(ix ,jy ,level,indexh) &
          + p2*yy1(ixp,jy ,level,indexh) &
          + p3*yy1(ix ,jyp,level,indexh) &
          + p4*yy1(ixp,jyp,level,indexh)
-    y2(m)=p1*yy2(ix ,jy ,level,indexh) &
+    y2(1)=p1*yy2(ix ,jy ,level,indexh) &
          + p2*yy2(ixp,jy ,level,indexh) &
          + p3*yy2(ix ,jyp,level,indexh) &
          + p4*yy2(ixp,jyp,level,indexh)
-    y3(m)=p1*yy3(ix ,jy ,level,indexh) &
+    y3(1)=p1*yy3(ix ,jy ,level,indexh) &
          + p2*yy3(ixp,jy ,level,indexh) &
          + p3*yy3(ix ,jyp,level,indexh) &
          + p4*yy3(ixp,jyp,level,indexh)
-  end do
+!  end do
 
 
   !************************************
-  ! 2.) Temporal interpolation (linear)
+  ! 2.) Temporal interpolation (linear) - skip to be consistent with clouds
   !************************************
 
-  dt1=real(itime-itime1)
-  dt2=real(itime2-itime)
-  dt=dt1+dt2
+!  dt1=real(itime-itime1)
+!  dt2=real(itime2-itime)
+!  dt=dt1+dt2
 
-  yint1=(y1(1)*dt2+y1(2)*dt1)/dt
-  yint2=(y2(1)*dt2+y2(2)*dt1)/dt
-  yint3=(y3(1)*dt2+y3(2)*dt1)/dt
+!  yint1=(y1(1)*dt2+y1(2)*dt1)/dt
+!  yint2=(y2(1)*dt2+y2(2)*dt1)/dt
+!  yint3=(y3(1)*dt2+y3(2)*dt1)/dt
 
+   yint1=y1(1)
+   yint2=y2(1)
+   yint3=y3(1)
 
 end subroutine interpol_rain
