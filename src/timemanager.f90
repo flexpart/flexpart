@@ -147,6 +147,8 @@ subroutine timemanager
 !CGZ-lifetime: set lifetime to 0
   
   if (.not.usekernel) write(*,*) 'Not using the kernel'
+  if (turboff) write(*,*) 'Turbulence switched off'
+
   write(*,46) float(itime)/3600,itime,numpart
 
   if (verbosity.gt.0) then

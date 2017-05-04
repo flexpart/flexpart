@@ -143,6 +143,7 @@ OBJECTS_GFS = \
 OBJECTS = \
 advance.o		initialize.o		\
 writeheader.o		writeheader_txt.o  	\
+writeprecip.o \
 writeheader_surf.o     	assignland.o\
 part0.o 		gethourlyOH.o\
 caldate.o               partdep.o \
@@ -431,6 +432,7 @@ wetdepo.o: com_mod.o par_mod.o point_mod.o
 wetdepokernel.o: com_mod.o par_mod.o unc_mod.o
 wetdepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 writeheader.o: com_mod.o outg_mod.o par_mod.o point_mod.o
+writeprecip.o: com_mod.o par_mod.o point_mod.o
 writeheader_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_nest_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o

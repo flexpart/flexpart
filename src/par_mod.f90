@@ -251,7 +251,7 @@ module par_mod
   integer,parameter :: unitspecies=1, unitoutrecept=91, unitoutreceptppt=92
   integer,parameter :: unitlsm=1, unitsurfdata=1, unitland=1, unitwesely=1
   integer,parameter :: unitOH=1
-  integer,parameter :: unitdates=94, unitheader=90,unitheader_txt=100, unitshortpart=95
+  integer,parameter :: unitdates=94, unitheader=90,unitheader_txt=100, unitshortpart=95, unitprecip=101
   integer,parameter :: unitboundcond=89
   integer,parameter :: unittmp=101
 
