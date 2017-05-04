@@ -753,6 +753,7 @@ module com_mod
   
   logical :: usekernel=.false.    ! true if the output kernel shall be switched on
   logical :: interpolhmix=.false. ! true if the hmix shall be interpolated
+  logical :: turboff=.false.       ! true if the turbulence shall be switched off
   
   
 contains
