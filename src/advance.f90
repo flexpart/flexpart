@@ -473,6 +473,14 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
           delz=wp*dtf
         endif
 
+        if (turboff) then
+!sec switch off turbulence
+          up=0.0
+          vp=0.0
+          wp=0.0
+          delz=0.
+        endif
+
   !****************************************************
   ! Compute turbulent vertical displacement of particle
   !****************************************************
@@ -674,6 +682,12 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     nrand=nrand+1
   endif
 
+  if (turboff) then
+!sec switch off turbulence
+    ux=0.0
+    vy=0.0
+    wp=0.0
+  endif
 
   ! If particle represents only a single species, add gravitational settling
   ! velocity. The settling velocity is zero for gases
