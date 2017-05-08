@@ -297,6 +297,8 @@ subroutine readcommand
   !Af IND_RECEPTOR switches between different units for concentrations at the receptor
   !Af          1 = mass units
   !Af          2 = mass mixing ratio units
+  !            3 = wet deposition in outputfield
+  !            4 = dry deposition in outputfield
 
   if ( ldirect .eq. 1 ) then  ! FWD-Run
   !Af set release-switch
@@ -319,11 +321,28 @@ subroutine readcommand
         ind_samp = 0
      endif
   !Af set release-switch
-     if (ind_receptor .eq. 1) then !mass
+     WETBKDEP=.false.
+     DRYBKDEP=.false.
+     select case (ind_receptor)
+     case (1)  !  1 .. concentration at receptor
         ind_rel = 1
-     else ! mass mix
+     case (2)  !  2 .. mixing ratio at receptor
         ind_rel = 0
-     endif
+     case (3)  ! 3 .. wet deposition in outputfield 
+        ind_rel = 3
+         write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
+         write(*,*) ' #### Releaseheight is forced to 0 - 20km      #### '
+         write(*,*) ' #### Release is performed above ground lev    #### '
+         WETBKDEP=.true.
+         allocate(xscav_frac1(maxpart,maxspec))
+     case (4)  ! 4 .. dry deposition in outputfield
+         ind_rel = 4
+         write(*,*) ' #### FLEXPART DRY DEPOSITION BACKWARD MODE    #### '
+         write(*,*) ' #### Releaseheight is forced to 0 - 2*href    #### '
+         write(*,*) ' #### Release is performed above ground lev    #### '
+         DRYBKDEP=.true.
+         allocate(xscav_frac1(maxpart,maxspec))
+     end select
   endif
 
   !*************************************************************
@@ -385,9 +404,9 @@ subroutine readcommand
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
-  if ((iout.lt.1).or.(iout.gt.5)) then
+  if ((iout.lt.1).or.(iout.gt.6)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4, OR 5 FOR       #### '
+    write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4 OR 5 FOR        #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
     write(*,*) ' #### FOR NETCDF OUTPUT                       #### '
     stop

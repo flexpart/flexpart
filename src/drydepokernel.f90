@@ -101,36 +101,40 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
 
    if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
 
-   if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
+    if (.not.usekernel) then
+       drygridunc(ix,jy,ks,kp,nunc,nage)= &
+           drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
+    else
+      if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
         (jy.le.numygrid-1)) then
-     w=wx*wy
-     drygridunc(ix,jy,ks,kp,nunc,nage)= &
-          drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)*w
-     continue
-   endif
+        w=wx*wy
+        drygridunc(ix,jy,ks,kp,nunc,nage)= &
+           drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)*w
+     endif
 
-  if ((ixp.ge.0).and.(jyp.ge.0).and.(ixp.le.numxgrid-1).and. &
+    if ((ixp.ge.0).and.(jyp.ge.0).and.(ixp.le.numxgrid-1).and. &
        (jyp.le.numygrid-1)) then
     w=(1.-wx)*(1.-wy)
       drygridunc(ixp,jyp,ks,kp,nunc,nage)= &
            drygridunc(ixp,jyp,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  if ((ixp.ge.0).and.(jy.ge.0).and.(ixp.le.numxgrid-1).and. &
+    if ((ixp.ge.0).and.(jy.ge.0).and.(ixp.le.numxgrid-1).and. &
        (jy.le.numygrid-1)) then
-    w=(1.-wx)*wy
+      w=(1.-wx)*wy
       drygridunc(ixp,jy,ks,kp,nunc,nage)= &
            drygridunc(ixp,jy,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  if ((ix.ge.0).and.(jyp.ge.0).and.(ix.le.numxgrid-1).and. &
+    if ((ix.ge.0).and.(jyp.ge.0).and.(ix.le.numxgrid-1).and. &
        (jyp.le.numygrid-1)) then
-    w=wx*(1.-wy)
+      w=wx*(1.-wy)
       drygridunc(ix,jyp,ks,kp,nunc,nage)= &
            drygridunc(ix,jyp,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  endif
+    endif ! kernel
+    endif ! deposit>0
 
   end do
 end if

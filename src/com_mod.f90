@@ -576,8 +576,10 @@ module com_mod
   integer :: numxgridn,numygridn
   real :: dxoutn,dyoutn,outlon0n,outlat0n,xoutshiftn,youtshiftn
   !real outheight(maxzgrid),outheighthalf(maxzgrid)
+
   logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,WETDEPSPEC(maxspec),&
        & OHREA,ASSSPEC
+  logical :: DRYBKDEP,WETBKDEP
 
   ! numxgrid,numygrid       number of grid points in x,y-direction
   ! numxgridn,numygridn     number of grid points in x,y-direction for nested output grid
@@ -597,6 +599,7 @@ module com_mod
   ! WETDEPSPEC              .true., if wet deposition is switched on for that species
   ! OHREA                   .true., if OH reaction is switched on
   ! ASSSPEC                 .true., if there are two species asscoiated
+  ! DRYBKDEP,WETBKDEP        .true., for bkwd runs, where mass deposited and source regions is calculated - either for dry or for wet deposition
   !                    (i.e. transfer of mass between these two occurs
 
 
@@ -667,6 +670,7 @@ module com_mod
   real(kind=dp), allocatable, dimension(:) :: xtra1, ytra1
   real, allocatable, dimension(:) :: ztra1 
   real, allocatable, dimension(:,:) :: xmass1
+  real, allocatable, dimension(:,:) :: xscav_frac1
 
   ! eso: Moved from timemanager
   real, allocatable, dimension(:) :: uap,ucp,uzp,us,vs,ws
@@ -687,7 +691,8 @@ module com_mod
   ! numparticlecount        counts the total number of particles that have been released
   ! xtra1,ytra1,ztra1       spatial positions of the particles
   ! xmass1 [kg]             particle masses
-  
+  ! xscav_frac1             fraction of particle masse which has been scavenged at receptor
+ 
 
 
   !*******************************************************
@@ -749,6 +754,11 @@ module com_mod
   !*****************************************************************
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process
+  
+  logical :: usekernel=.false.    ! true if the output kernel shall be switched on
+  logical :: interpolhmix=.false. ! true if the hmix shall be interpolated
+  logical :: turboff=.false.       ! true if the turbulence shall be switched off
+  
   
 contains
   subroutine com_mod_allocate_part(nmpart)

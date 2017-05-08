@@ -104,16 +104,18 @@ subroutine timemanager
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage
+  integer :: ix,jy,ldeltat,itage,nage,idummy
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
-  real :: outnum,weight,prob(maxspec),decfact
+  real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact,wetscav(maxspec)
   ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
   ! real :: us(maxpart),vs(maxpart),ws(maxpart)
   ! integer(kind=2) :: cbt(maxpart)
   real(sp) :: gridtotalunc
   real(dep_prec) :: drydeposit(maxspec),wetgridtotalunc,drygridtotalunc
   real :: xold,yold,zold,xmassfract
+  real :: grfraction(3)
   real, parameter :: e_inv = 1.0/exp(1.0)
+
   !double precision xm(maxspec,maxpointspec_act),
   !    +                 xm_depw(maxspec,maxpointspec_act),
   !    +                 xm_depd(maxspec,maxpointspec_act)
@@ -144,6 +146,9 @@ subroutine timemanager
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
   
+  if (.not.usekernel) write(*,*) 'Not using the kernel'
+  if (turboff) write(*,*) 'Turbulence switched off'
+
   write(*,46) float(itime)/3600,itime,numpart
 
   if (verbosity.gt.0) then
@@ -540,12 +545,55 @@ subroutine timemanager
         yold=ytra1(j)
         zold=ztra1(j)
 
+   
+  ! RECEPTOR: dry/wet depovel
+  !****************************
+  ! Before the particle is moved 
+  ! the calculation of the scavenged mass shall only be done once after release
+  ! xscav_frac1 was initialised with a negative value
+
+      if  (DRYBKDEP) then
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_vdep_prob(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+            if (DRYDEPSPEC(ks)) then        ! dry deposition
+               xscav_frac1(j,ks)=prob_rec(ks)
+             else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+             endif
+         endif
+        enddo
+       endif
+
+       if (WETBKDEP) then 
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
+            if (wetscav(ks).gt.0) then
+                xscav_frac1(j,ks)=wetscav(ks)* &
+                       (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
+            else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+            endif
+         endif
+        enddo
+       endif
+
   ! Integrate Lagevin equation for lsynctime seconds
   !*************************************************
 
+        if (verbosity.gt.0) then
+           if (j.eq.1) then
+             write (*,*) 'timemanager> call advance'
+           endif     
+        endif
+     
         call advance(itime,npoint(j),idt(j),uap(j),ucp(j),uzp(j), &
              us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
              cbt(j))
+!        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
 
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************

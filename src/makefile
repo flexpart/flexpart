@@ -67,7 +67,7 @@ O_LEV_DBG = g # [0,g]
 ## LIBRARIES
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff # -fopenmp
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER) # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
 DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
@@ -143,6 +143,7 @@ OBJECTS_GFS = \
 OBJECTS = \
 advance.o		initialize.o		\
 writeheader.o		writeheader_txt.o  	\
+writeprecip.o \
 writeheader_surf.o     	assignland.o\
 part0.o 		gethourlyOH.o\
 caldate.o               partdep.o \
@@ -151,7 +152,8 @@ raerod.o 		readcommand.o 	\
 drydepokernel.o         readreceptors.o \
 erf.o                   readavailable.o \
 ew.o			readreleases.o  \
-readdepo.o \
+readdepo.o              get_vdep_prob.o   \
+get_wetscav.o	\
 psim.o			outgrid_init.o 	\
 outgrid_init_nest.o   	\
 photo_O1D.o 		readlanduse.o \
@@ -270,6 +272,8 @@ cleanall:
 .SUFFIXES = $(SUFFIXES) .f90
 
 ## DEPENDENCIES
+get_vdep_prob.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
+	point_mod.o random_mod.o
 advance.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
 	point_mod.o random_mod.o
 assignland.o: com_mod.o par_mod.o
@@ -423,10 +427,12 @@ unc_mod.o: par_mod.o
 verttransform.o: cmapf_mod.o com_mod.o par_mod.o 
 verttransform_gfs.o: cmapf_mod.o com_mod.o par_mod.o
 verttransform_nests.o: com_mod.o par_mod.o
+get_wetscav.o: com_mod.o par_mod.o point_mod.o
 wetdepo.o: com_mod.o par_mod.o point_mod.o
 wetdepokernel.o: com_mod.o par_mod.o unc_mod.o
 wetdepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 writeheader.o: com_mod.o outg_mod.o par_mod.o point_mod.o
+writeprecip.o: com_mod.o par_mod.o point_mod.o
 writeheader_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_nest_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o

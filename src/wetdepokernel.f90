@@ -94,33 +94,38 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
 
   do ks=1,nspec
 
-  if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
+  if (.not.usekernel) then
+      wetgridunc(ix,jy,ks,kp,nunc,nage)= &
+           wetgridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
+  else
+    if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
        (jy.le.numygrid-1)) then
-    w=wx*wy
+      w=wx*wy
       wetgridunc(ix,jy,ks,kp,nunc,nage)= &
            wetgridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  if ((ixp.ge.0).and.(jyp.ge.0).and.(ixp.le.numxgrid-1).and. &
+    if ((ixp.ge.0).and.(jyp.ge.0).and.(ixp.le.numxgrid-1).and. &
        (jyp.le.numygrid-1)) then
-    w=(1.-wx)*(1.-wy)
+      w=(1.-wx)*(1.-wy)
       wetgridunc(ixp,jyp,ks,kp,nunc,nage)= &
            wetgridunc(ixp,jyp,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  if ((ixp.ge.0).and.(jy.ge.0).and.(ixp.le.numxgrid-1).and. &
+    if ((ixp.ge.0).and.(jy.ge.0).and.(ixp.le.numxgrid-1).and. &
        (jy.le.numygrid-1)) then
-    w=(1.-wx)*wy
+      w=(1.-wx)*wy
       wetgridunc(ixp,jy,ks,kp,nunc,nage)= &
            wetgridunc(ixp,jy,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
 
-  if ((ix.ge.0).and.(jyp.ge.0).and.(ix.le.numxgrid-1).and. &
+    if ((ix.ge.0).and.(jyp.ge.0).and.(ix.le.numxgrid-1).and. &
        (jyp.le.numygrid-1)) then
-    w=wx*(1.-wy)
+      w=wx*(1.-wy)
       wetgridunc(ix,jyp,ks,kp,nunc,nage)= &
            wetgridunc(ix,jyp,ks,kp,nunc,nage)+deposit(ks)*w
-  endif
+    endif
+  endif 
   end do
   end if
 

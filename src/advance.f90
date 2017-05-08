@@ -116,6 +116,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   real :: dcwsave
   real :: usigold,vsigold,wsigold,r,rs
   real :: uold,vold,wold,vdepo(maxspec)
+  real :: h1(2)
   !real uprof(nzmax),vprof(nzmax),wprof(nzmax)
   !real usigprof(nzmax),vsigprof(nzmax),wsigprof(nzmax)
   !real rhoprof(nzmax),rhogradprof(nzmax)
@@ -222,18 +223,44 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   jyp=jy+1
 
 
+ ! Determine the lower left corner and its distance to the current position
+  !*************************************************************************
+
+  ddx=xt-real(ix)
+  ddy=yt-real(jy)
+  rddx=1.-ddx
+  rddy=1.-ddy
+  p1=rddx*rddy
+  p2=ddx*rddy
+  p3=rddx*ddy
+  p4=ddx*ddy
+
+ ! Calculate variables for time interpolation
+  !*******************************************
+
+  dt1=real(itime-memtime(1))
+  dt2=real(memtime(2)-itime)
+  dtt=1./(dt1+dt2)
+
   ! Compute maximum mixing height around particle position
   !*******************************************************
 
   h=0.
   if (ngrid.le.0) then
     do k=1,2
-      mind=memind(k) ! eso: compatibility with 3-field version
-      do j=jy,jyp
-        do i=ix,ixp
-          if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
-        end do
-      end do
+       mind=memind(k) ! eso: compatibility with 3-field version
+       if (interpolhmix) then
+             h1(k)=p1*hmix(ix ,jy ,1,mind) &
+                 + p2*hmix(ixp,jy ,1,mind) &
+                 + p3*hmix(ix ,jyp,1,mind) &
+                 + p4*hmix(ixp,jyp,1,mind)
+        else
+          do j=jy,jyp
+            do i=ix,ixp
+               if (hmix(i,j,1,mind).gt.h) h=hmix(i,j,1,mind)
+            end do
+          end do
+        endif
     end do
     tropop=tropopause(nix,njy,1,1)
   else
@@ -248,6 +275,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     tropop=tropopausen(nix,njy,1,1,ngrid)
   endif
 
+  if (interpolhmix) h=(h1(1)*dt2+h1(2)*dt1)*dtt 
   zeta=zt/h
 
 
@@ -443,6 +471,14 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
           wp=(rw*wp+rannumb(nrand+i)*sqrt(1.-rw**2)*sigw &
                +tlw*(1.-rw)*(dsigw2dz+rhoaux*sigw**2))*real(icbt)
           delz=wp*dtf
+        endif
+
+        if (turboff) then
+!sec switch off turbulence
+          up=0.0
+          vp=0.0
+          wp=0.0
+          delz=0.
         endif
 
   !****************************************************
@@ -646,6 +682,12 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
     nrand=nrand+1
   endif
 
+  if (turboff) then
+!sec switch off turbulence
+    ux=0.0
+    vy=0.0
+    wp=0.0
+  endif
 
   ! If particle represents only a single species, add gravitational settling
   ! velocity. The settling velocity is zero for gases

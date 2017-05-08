@@ -137,6 +137,10 @@ subroutine getfields(itime,nstop)
     end do
 40  indmin=indj
 
+   if (WETBKDEP) then
+        call writeprecip(itime,memind(1))
+   endif
+
   else
 
 ! No wind fields, which can be used, are currently in memory
@@ -167,6 +171,10 @@ subroutine getfields(itime,nstop)
       endif
     end do
 60  indmin=indj
+
+   if (WETBKDEP) then
+        call writeprecip(itime,memind(1))
+   endif
 
   endif
 

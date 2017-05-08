@@ -175,11 +175,18 @@ subroutine releaseparticles(itime)
   ! correction factor, by which the number of particles released this time has been
   ! scaled. Adjust the mass per particle by the species-dependent time correction factor
   ! divided by the species-average one
+  ! for the scavenging calculation the mass needs to be multiplied with rho of the particle layer and
+  ! divided by the sum of rho of all particles.
   !*****************************************************************************
             do k=1,nspec
                xmass1(ipart,k)=xmass(i,k)/real(npart(i)) &
                     *timecorrect(k)/average_timecorrect
-  !            write (*,*) 'xmass1: ',xmass1(ipart,k),ipart,k
+              if (DRYBKDEP.or.WETBKDEP) then ! if there is no scavenging in wetdepo it will be set to 0
+!              if ( henry(k).gt.0 .or. &
+!                   crain_aero(k).gt.0. .or. csnow_aero(k).gt.0. .or. &
+!                   ccn_aero(k).gt.0. .or. in_aero(k).gt.0. )  then
+                xscav_frac1(ipart,k)=-1.
+               endif
   ! Assign certain properties to particle
   !**************************************
             end do
@@ -201,7 +208,6 @@ subroutine releaseparticles(itime)
   !*************************************
 
             ztra1(ipart)=zpoint1(i)+ran1(idummy)*zaux
-
   ! Interpolation of topography and density
   !****************************************
 
@@ -329,7 +335,7 @@ subroutine releaseparticles(itime)
 
   !Af ind_rel is defined in readcommand.f
 
-            if (ind_rel .eq. 1) then
+            if ((ind_rel .eq. 1).or.(ind_rel .eq. 3).or.(ind_rel .eq. 4)) then
 
   ! Interpolate the air density
   !****************************
@@ -374,16 +380,15 @@ subroutine releaseparticles(itime)
               end do
             endif
 
-
             numpart=max(numpart,ipart)
             goto 34      ! Storage space has been found, stop searching
           endif
-        end do
+        end do  ! i=1:numpoint
         if (ipart.gt.maxpart) goto 996
 
 34      minpart=ipart+1
-      end do
-      endif
+      end do ! ipart=minpart,maxpart
+      endif ! j=1,numrel
   end do
 
 

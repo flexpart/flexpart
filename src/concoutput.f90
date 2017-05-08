@@ -245,23 +245,32 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   do ks=1,nspec
 
     write(anspec,'(i3.3)') ks
-    if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
-      if (ldirect.eq.1) then
-        open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//adate// &
-             atime//'_'//anspec,form='unformatted')
-      else
-        open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//adate// &
-             atime//'_'//anspec,form='unformatted')
-      endif
-      write(unitoutgrid) itime
-    endif
 
-    if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
-      open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//adate// &
+    if (DRYBKDEP.or.WETBKDEP) then !scavdep output
+      if (DRYBKDEP) & 
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_drydep_'//adate// &
            atime//'_'//anspec,form='unformatted')
-
-      write(unitoutgridppt) itime
-    endif
+      if (WETBKDEP) & 
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_wetdep_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+      write(unitoutgrid) itime
+    else
+      if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+        if (ldirect.eq.1) then
+          open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//adate// &
+             atime//'_'//anspec,form='unformatted')
+        else
+          open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//adate// &
+             atime//'_'//anspec,form='unformatted')
+        endif
+        write(unitoutgrid) itime
+      endif
+      if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
+        open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+        write(unitoutgridppt) itime
+      endif
+    endif ! if deposition output
 
     do kp=1,maxpointspec_act
       do nage=1,nageclass
@@ -341,7 +350,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
 ! Concentration output
 !*********************
-        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5).or.(iout.eq.6)) then
 
 ! Wet deposition
           sp_count_i=0

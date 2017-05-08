@@ -520,6 +520,20 @@ subroutine readreleases
     stop
   endif
 
+  ! If FLEXPART is run for backward deposition force zpoint
+  !*********************************************************************
+  if (WETBKDEP) then
+      zpoint1(numpoint)=0.
+      zpoint2(numpoint)=20000.
+      kindz(numpoint)=1
+  endif
+  if (DRYBKDEP) then
+      zpoint1(numpoint)=0.
+      zpoint2(numpoint)=2.*href
+      kindz(numpoint)=1
+  endif
+
+
   ! Check whether x coordinates of release point are within model domain
   !*********************************************************************
 

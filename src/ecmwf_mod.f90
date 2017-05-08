@@ -42,8 +42,10 @@ module wind_mod
   !*********************************************
 
 !  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
-  integer,parameter :: nxshift=359
+   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+!  integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 0.5 
+   integer,parameter :: nxshift=359
+!  integer,parameter :: nxshift=718
 !  integer,parameter :: nxshift=0
 
   !*********************************************
