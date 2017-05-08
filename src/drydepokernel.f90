@@ -101,10 +101,6 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
 
    if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
 
-    if (.not.usekernel) then
-       drygridunc(ix,jy,ks,kp,nunc,nage)= &
-           drygridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
-    else
       if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
         (jy.le.numygrid-1)) then
         w=wx*wy
@@ -133,9 +129,7 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
            drygridunc(ix,jyp,ks,kp,nunc,nage)+deposit(ks)*w
     endif
 
-    endif ! kernel
     endif ! deposit>0
-
   end do
 end if
 

@@ -182,7 +182,7 @@ subroutine conccalc(itime,weight)
 
       if (lnokernel.or.(itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
            (xl.gt.real(numxgrid-1)-0.5).or. &
-           (yl.gt.real(numygrid-1)-0.5))) then             ! no kernel, direct attribution to grid cell
+           (yl.gt.real(numygrid-1)-0.5)) then             ! no kernel, direct attribution to grid cell
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
              (jy.le.numygrid-1)) then
           if (DRYBKDEP.or.WETBKDEP) then
@@ -319,7 +319,7 @@ subroutine conccalc(itime,weight)
 
         if ((itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
              (xl.gt.real(numxgridn-1)-0.5).or. &
-             (yl.gt.real(numygridn-1)-0.5).or.(.not.usekernel)) then             ! no kernel, direct attribution to grid cell
+             (yl.gt.real(numygridn-1)-0.5).or.(lnokernel)) then             ! no kernel, direct attribution to grid cell
           if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgridn-1).and. &
                (jy.le.numygridn-1)) then
             if (DRYBKDEP.or.WETBKDEP) then

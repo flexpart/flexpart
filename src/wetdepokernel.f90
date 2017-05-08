@@ -94,10 +94,6 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
 
   do ks=1,nspec
 
-  if (.not.usekernel) then
-      wetgridunc(ix,jy,ks,kp,nunc,nage)= &
-           wetgridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
-  else
     if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
        (jy.le.numygrid-1)) then
       w=wx*wy
@@ -125,7 +121,7 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
       wetgridunc(ix,jyp,ks,kp,nunc,nage)= &
            wetgridunc(ix,jyp,ks,kp,nunc,nage)+deposit(ks)*w
     endif
-  endif 
+
   end do
   end if
 

@@ -755,7 +755,6 @@ module com_mod
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process
   
-  logical :: usekernel=.false.    ! true if the output kernel shall be switched on
   logical :: interpolhmix=.false. ! true if the hmix shall be interpolated
   logical :: turboff=.false.       ! true if the turbulence shall be switched off
   
