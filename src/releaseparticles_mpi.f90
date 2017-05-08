@@ -415,7 +415,6 @@ subroutine releaseparticles(itime)
             goto 34      ! Storage space has been found, stop searching
           endif
         end do
-! ESO TODO: Here we could use dynamic allocation and increase array sizes
         if (ipart.gt.maxpart_mpi) goto 996
 
 34      minpart=ipart+1

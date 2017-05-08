@@ -104,9 +104,6 @@ subroutine concoutput_nest(itime,outnum)
 
 ! Measure execution time
   if (mp_measure_time) call mpif_mtime('iotime',0)
-  !   call cpu_time(mp_root_time_beg)
-  !   mp_root_wtime_beg = mpi_wtime()
-  ! end if
 
   if (verbosity.eq.1) then
      print*,'inside concoutput_surf '

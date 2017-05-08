@@ -577,7 +577,7 @@ subroutine timemanager
         !   end if
         end if
 
-        ! Write particles for all processes
+        ! Write number of particles for all processes
         if (mp_dev_mode) write(*,*) "PID, itime, numpart", mp_pid,itime,numpart
 
 
@@ -869,7 +869,8 @@ subroutine timemanager
     deallocate(drygridunc,wetgridunc)
   endif
   deallocate(gridunc)
-  deallocate(xpoint1,xpoint2,ypoint1,ypoint2,zpoint1,zpoint2,xmass, checklifetime)
+  deallocate(xpoint1,xpoint2,ypoint1,ypoint2,zpoint1,zpoint2,xmass)
+  if (allocated(checklifetime)) deallocate(checklifetime)
   deallocate(ireleasestart,ireleaseend,npart,kindz)
   deallocate(xmasssave)
   if (nested_output.eq.1) then

@@ -25,7 +25,7 @@ module unc_mod
 
   implicit none
 
-  real,allocatable ,dimension (:,:,:,:,:,:,:) :: gridunc
+  real,allocatable, dimension (:,:,:,:,:,:,:) :: gridunc
   real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygridunc
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn

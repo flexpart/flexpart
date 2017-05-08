@@ -49,7 +49,8 @@ subroutine drydepokernel_nest(nunc,deposit,x,y,nage,kp)
 
   implicit none
 
-  real :: x,y,deposit(maxspec),ddx,ddy,xl,yl,wx,wy,w
+  real(dep_prec), dimension(maxspec) :: deposit
+  real :: x,y,ddx,ddy,xl,yl,wx,wy,w
   integer :: ix,jy,ixp,jyp,ks,kp,nunc,nage
 
 

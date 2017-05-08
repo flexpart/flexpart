@@ -131,15 +131,16 @@ module com_mod
   ! gdomainfill             .T., if domain-filling is global, .F. if not
 
 !ZHG SEP 2015 wheather or not to read clouds from GRIB
-  logical :: readclouds
+  logical :: readclouds=.false.
 !ESO DEC 2015 whether or not both clwc and ciwc are present (if so they are summed)
-  logical :: sumclouds
+  logical :: sumclouds=.false.
 
   logical,dimension(maxnests) :: readclouds_nest, sumclouds_nest
   
 
 !NIK 16.02.2015
-  integer(selected_int_kind(16)) :: tot_blc_count=0, tot_inc_count=0
+  integer(selected_int_kind(16)), dimension(maxspec) :: tot_blc_count=0, &
+       &tot_inc_count=0
 
 
   !*********************************************************************
@@ -575,7 +576,8 @@ module com_mod
   integer :: numxgridn,numygridn
   real :: dxoutn,dyoutn,outlon0n,outlat0n,xoutshiftn,youtshiftn
   !real outheight(maxzgrid),outheighthalf(maxzgrid)
-  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,OHREA,ASSSPEC
+  logical :: DEP,DRYDEP,DRYDEPSPEC(maxspec),WETDEP,WETDEPSPEC(maxspec),&
+       & OHREA,ASSSPEC
 
   ! numxgrid,numygrid       number of grid points in x,y-direction
   ! numxgridn,numygridn     number of grid points in x,y-direction for nested output grid
@@ -592,6 +594,7 @@ module com_mod
   ! DRYDEP                  .true., if dry deposition is switched on
   ! DRYDEPSPEC              .true., if dry deposition is switched on for that species
   ! WETDEP                  .true., if wet deposition is switched on
+  ! WETDEPSPEC              .true., if wet deposition is switched on for that species
   ! OHREA                   .true., if OH reaction is switched on
   ! ASSSPEC                 .true., if there are two species asscoiated
   !                    (i.e. transfer of mass between these two occurs
@@ -742,7 +745,7 @@ module com_mod
   logical, parameter :: nmlout=.true.
 
   ! These variables are used to avoid having separate versions of
-  ! files in cases where differences with MPI version is minor (eso)
+  ! files in cases where differences with MPI version are minor (eso)
   !*****************************************************************
   integer :: mpi_mode=0 ! .gt. 0 if running MPI version
   logical :: lroot=.true. ! true if serial version, or if MPI .and. root process

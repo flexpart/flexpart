@@ -58,6 +58,12 @@ module par_mod
 
   integer,parameter :: dep_prec=sp
 
+  !****************************************************************
+  ! Set to T to disable use of kernel for concentrations/deposition
+  !****************************************************************
+
+  logical, parameter :: lnokernel=.false.
+
   !***********************************************************
   ! Number of directories/files used for FLEXPART input/output
   !***********************************************************

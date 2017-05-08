@@ -54,15 +54,17 @@ program flexpart
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
 
 
-! Initialize mpi
-!*********************
+  ! Initialize mpi
+  !*********************
   call mpif_init
 
   if (mp_measure_time) call mpif_mtime('flexpart',0)
 
-! Initialize arrays in com_mod 
-!*****************************
-  call com_mod_allocate_part(maxpart_mpi)
+  ! Initialize arrays in com_mod 
+  !*****************************
+
+  if(.not.(lmpreader.and.lmp_use_reader)) call com_mod_allocate_part(maxpart_mpi)
+
 
   ! Generate a large number of random numbers
   !******************************************
@@ -78,7 +80,7 @@ program flexpart
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
 !  flexversion='Ver. 10 Beta MPI (2015-05-01)'
-  flexversion='Ver. '//trim(flexversion_major)//' Beta MPI (2015-05-01)'
+  flexversion='Ver. '//trim(flexversion_major)//'.1beta MPI (2016-11-02)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -305,9 +307,11 @@ program flexpart
     print*,'Initialize all particles to non-existent'
   endif
 
-  do j=1, size(itra1) ! maxpart_mpi
-    itra1(j)=-999999999
-  end do
+  if (.not.(lmpreader.and.lmp_use_reader)) then
+    do j=1, size(itra1) ! maxpart_mpi
+      itra1(j)=-999999999
+    end do
+  end if
 
   ! For continuation of previous run, read in particle positions
   !*************************************************************
@@ -317,7 +321,7 @@ program flexpart
       print*,'call readpartpositions'
     endif
     ! readwind process skips this step
-    if (lmp_use_reader.and..not.lmpreader) call readpartpositions
+    if (.not.(lmpreader.and.lmp_use_reader)) call readpartpositions
   else
     if (verbosity.gt.0 .and. lroot) then
       print*,'numpart=0, numparticlecount=0'
@@ -424,6 +428,16 @@ program flexpart
     end do
   end do
 
+  ! Inform whether output kernel is used or not
+  !*********************************************
+
+  if (lroot) then
+    if (lnokernel) then
+      write(*,*) "Concentrations are calculated without using kernel"
+    else
+      write(*,*) "Concentrations are calculated using kernel"
+    end if
+  end if
 
 ! Calculate particle trajectories
 !********************************
@@ -447,24 +461,29 @@ program flexpart
 
 ! NIK 16.02.2005 
   if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
   else
     if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, 0, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_blc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, 0, 1, MPI_INTEGER8, MPI_SUM, id_root, &
+      call MPI_Reduce(tot_inc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
   end if
 
   if (lroot) then
-    write(*,*) '**********************************************'
-    write(*,*) 'Total number of occurences of below-cloud scavenging', tot_blc_count
-    write(*,*) 'Total number of occurences of in-cloud    scavenging', tot_inc_count
-    write(*,*) '**********************************************'
+    do i=1,nspec
+      write(*,*) '**********************************************'
+      write(*,*) 'Scavenging statistics for species ', species(i), ':'
+      write(*,*) 'Total number of occurences of below-cloud scavenging', &
+           & tot_blc_count(i)
+      write(*,*) 'Total number of occurences of in-cloud    scavenging', &
+           & tot_inc_count(i)
+      write(*,*) '**********************************************'
+    end do
 
     write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&
          &XPART MODEL RUN!'

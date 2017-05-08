@@ -169,10 +169,12 @@ subroutine readcommand
   901   format (a)
     if (index(line,'LDIRECT') .eq. 0) then
       old = .false.
-      write(*,*) 'COMMAND in old short format, please update to namelist format'
+      if (lroot) write(*,*) 'COMMAND in old short format, &
+           &please update to namelist format'
     else
       old = .true.
-      write(*,*) 'COMMAND in old long format, please update to namelist format'
+      if (lroot) write(*,*) 'COMMAND in old long format, &
+           &please update to namelist format'
     endif
     rewind(unitcommand)
 

@@ -39,6 +39,10 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
   ! deposit          amount (kg) to be deposited                               *
   !                                                                            *
   !*****************************************************************************
+  ! Changes:
+  ! eso 10/2016: Added option to disregard kernel 
+  ! 
+  !*****************************************************************************
 
   use unc_mod
   use par_mod
@@ -72,7 +76,19 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
     wy=0.5+ddy
   endif
 
+  ! If no kernel is used, direct attribution to grid cell
+  !******************************************************
 
+  if (lnokernel) then
+    do ks=1,nspec
+      if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
+           (jy.le.numygrid-1)) then
+        wetgridunc(ix,jy,ks,kp,nunc,nage)= &
+             wetgridunc(ix,jy,ks,kp,nunc,nage)+deposit(ks)
+      end if
+    end do
+  else ! use kernel 
+    
   ! Determine mass fractions for four grid points
   !**********************************************
 
@@ -106,5 +122,6 @@ subroutine wetdepokernel(nunc,deposit,x,y,nage,kp)
            wetgridunc(ix,jyp,ks,kp,nunc,nage)+deposit(ks)*w
   endif
   end do
+  end if
 
 end subroutine wetdepokernel

@@ -28,7 +28,9 @@ module mean_mod
   interface mean
     module procedure mean_sp
     module procedure mean_dp
-    module procedure mean_mixed_prec
+    module procedure mean_mixed_dss
+    module procedure mean_mixed_dsd
+
   end interface mean
 
 contains
@@ -63,9 +65,9 @@ contains
     ! real(sp) :: x_sp(number),xm,xs,xl,xq,xaux
     ! real(sp),parameter :: eps=1.0e-30
 
+    integer,intent(in) :: number
     real(sp), intent(in) :: x_sp(number)
     real(sp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(sp) :: xl,xq,xaux
     real(sp),parameter :: eps=1.0e-30
     integer :: i
@@ -115,9 +117,9 @@ contains
 
     implicit none
 
+    integer,intent(in) :: number
     real(dp), intent(in) :: x_dp(number)
     real(dp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(dp) :: xl,xq,xaux
     real(dp),parameter :: eps=1.0e-30
     integer :: i
@@ -141,7 +143,7 @@ contains
 
   end subroutine mean_dp
 
-  subroutine mean_mixed_prec(x_dp,xm,xs,number)
+  subroutine mean_mixed_dss(x_dp,xm,xs,number)
 
 !*****************************************************************************
 !                                                                            *
@@ -149,7 +151,7 @@ contains
 !                                                                            *
 !      AUTHOR: Andreas Stohl, 25 January 1994                                *
 !                                                                            *
-!      Mixed precision version ESO 2016 (dp input, sp output)                *
+!      Mixed precision version ESO 2016 (dp in, sp out, sp out)              *
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -167,9 +169,9 @@ contains
 
     implicit none
 
+    integer,intent(in) :: number
     real(dp), intent(in) :: x_dp(number)
     real(sp), intent(out) ::xm,xs
-    integer,intent(in) :: number
     real(sp) :: xl,xq,xaux
     real(sp),parameter :: eps=1.0e-30
     integer :: i
@@ -191,5 +193,59 @@ contains
       xs=sqrt(xaux/real(number-1,kind=sp))
     endif
 
-  end subroutine mean_mixed_prec
+  end subroutine mean_mixed_dss
+
+  subroutine mean_mixed_dsd(x_dp,xm,xs_dp,number)
+
+!*****************************************************************************
+!                                                                            *
+!  This subroutine calculates mean and standard deviation of a given element.*
+!                                                                            *
+!      AUTHOR: Andreas Stohl, 25 January 1994                                *
+!                                                                            *
+!      Mixed precision version ESO 2016 (dp in, sp out, dp out)              *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+! x_dp(number)        field of input data                                    *
+! xm                  mean                                                   *
+! xs_dp               standard deviation                                     *
+! number              number of elements of field x_dp                       *
+!                                                                            *
+! Constants:                                                                 *
+! eps                 tiny number                                            *
+!                                                                            *
+!*****************************************************************************
+
+    use par_mod, only: sp,dp
+
+    implicit none
+
+    integer,intent(in) :: number
+    real(dp), intent(in) :: x_dp(number)
+    real(sp), intent(out) ::xm
+    real(dp), intent(out) ::xs_dp
+    real(dp) :: xl,xq,xaux
+    real(dp),parameter :: eps=1.0e-30_dp
+    integer :: i
+
+    xl=0._dp
+    xq=0._dp
+    do i=1,number
+      xl=xl+x_dp(i)
+      xq=xq+x_dp(i)*x_dp(i)
+    end do
+
+    xm=xl/real(number,kind=sp)
+
+    xaux=xq-xl*xl/real(number,kind=dp)
+
+    if (xaux.lt.eps) then
+      xs_dp=0._dp
+    else
+      xs_dp=sqrt(xaux/real(number-1,kind=dp))
+    endif
+
+  end subroutine mean_mixed_dsd
+
 end module mean_mod
