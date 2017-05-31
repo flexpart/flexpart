@@ -55,6 +55,8 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
 ! -note that divide-by-zero occurs when nxmaxn,nymaxn etc. are larger than 
 !  the actual field dimensions
 !*****************************************************************************
+! Date: 2017-05-30 modification of a bug in ew. Don Morton (CTBTO project)   *
+!*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
 ! nxn,nyn,nuvz,nwz                field dimensions in x,y and z direction    *
@@ -106,7 +108,7 @@ subroutine verttransform_nests(n,uuhn,vvhn,wwhn,pvhn)
 
     do jy=0,nyn(l)-1
       do ix=0,nxn(l)-1
-        tvold(ix,jy)=tt2n(ix,jy,1,n,l)*(1.+0.378*ew*(td2n(ix,jy,1,n,l))/ &
+        tvold(ix,jy)=tt2n(ix,jy,1,n,l)*(1.+0.378*ew(td2n(ix,jy,1,n,l))/ &
              psn(ix,jy,1,n,l))
       end do
     end do
