@@ -117,6 +117,12 @@ subroutine conccalc(itime,weight)
       p3=rddx*ddy
       p4=ddx*ddy
 
+! eso: Temporary fix for particle exactly at north pole
+      if (jyp >= nymax) then
+        ! write(*,*) 'WARNING: conccalc.f90 jyp >= nymax'
+        jyp=jyp-1
+      end if
+
       do il=2,nz
         if (height(il).gt.ztra1(i)) then
           indz=il-1

@@ -242,6 +242,12 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   dt2=real(memtime(2)-itime)
   dtt=1./(dt1+dt2)
 
+! eso: Temporary fix for particle exactly at north pole
+  if (jyp >= nymax) then
+    ! write(*,*) 'WARNING: advance.f90 jyp >= nymax. xt,yt:',xt,yt
+    jyp=jyp-1
+  end if
+
   ! Compute maximum mixing height around particle position
   !*******************************************************
 
