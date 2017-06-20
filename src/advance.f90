@@ -534,16 +534,20 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !*************************************************************************
 
       if (mdomainfill.eq.0) then
-! ESO 05.2015  Changed this to fix MQUASILAG option, where nrelpoint is
-!              particle number and thus xmass array goes out of bounds
-!        do nsp=1,nspec
-!           if (xmass(nrelpoint,nsp).gt.eps2) goto 887
-!         end do
-! 887     nsp=min(nsp,nspec)
-        if (nspec.eq.1.and.density(1).gt.0.) then
-          call get_settling(itime,real(xt),real(yt),zt,nspec,settling)  !bugfix
+        if (lsettling) then
+          do nsp=1,nspec
+            if (xmass(nrelpoint,nsp).gt.eps2) exit
+          end do
+          if (nsp.gt.nspec) then
+  ! This should never happen          
+            write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+            stop
+          end if
+          if (density(nsp).gt.0.) then
+            call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
+            w=w+settling
+          end if
         end if
-        w=w+settling
       endif
 
   ! Horizontal displacements during time step dt are small real values compared
@@ -699,22 +703,23 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   ! velocity. The settling velocity is zero for gases
   !*************************************************************************
 
-
-
-    if (mdomainfill.eq.0) then
-! ESO 05.2015  Changed this to fix MQUASILAG option, where nrelpoint is
-!              particle number and thus xmass array goes out of bounds
-
-!      do nsp=1,nspec
-!         if (xmass(nrelpoint,nsp).gt.eps2) goto 888
-!       end do
-! 888   nsp=min(nsp,nspec)
-!        if (density(nsp).gt.0.) then
-      if (nspec.eq.1.and.density(1).gt.0.) then
-        call get_settling(itime,real(xt),real(yt),zt,nspec,settling)  !bugfix
+  if (mdomainfill.eq.0) then
+    if (lsettling) then
+      do nsp=1,nspec
+        if (xmass(nrelpoint,nsp).gt.eps2) exit
+      end do
+      if (nsp.gt.nspec) then
+  ! This should never happen          
+        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+        stop
       end if
-      w=w+settling
+      if (density(nsp).gt.0.) then
+        call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
+        w=w+settling
+      end if
     endif
+  end if
+
 
   ! Calculate position at time step itime+lsynctime
   !************************************************
@@ -909,18 +914,21 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   endif
 
   if (mdomainfill.eq.0) then
-! ESO 05.2015  Changed this to fix MQUASILAG option, where nrelpoint is
-!              particle number and thus xmass array goes out of bounds
-!    do nsp=1,nspec
-!       if (xmass(nrelpoint,nsp).gt.eps2) goto 889
-!     end do
-! 889   nsp=min(nsp,nspec)
-!      if (density(nsp).gt.0.) then
-    if (nspec.eq.1.and.density(1).gt.0.) then
-      call get_settling(itime+ldt,real(xt),real(yt),zt,nspec,settling)  !bugfix
-    end if
-    w=w+settling
-  endif
+    if (lsettling) then
+      do nsp=1,nspec
+        if (xmass(nrelpoint,nsp).gt.eps2) exit
+      end do
+      if (nsp.gt.nspec) then
+  ! This should never happen          
+        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+        stop
+      end if
+      if (density(nsp).gt.0.) then
+        call get_settling(itime+ldt,real(xt),real(yt),zt,nsp,settling) !bugfix
+        w=w+settling
+      end if
+    endif
+  end if
 
 
   ! Determine the difference vector between new and old wind

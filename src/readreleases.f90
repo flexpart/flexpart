@@ -73,10 +73,11 @@ subroutine readreleases
 
   implicit none
 
-  integer :: numpartmax,i,j,id1,it1,id2,it2,idum,stat
+  integer :: numpartmax,i,j,id1,it1,id2,it2,idum,stat,irel,ispc,nsettle
   integer,parameter :: num_min_discrete=100
   real :: vsh(ni),fracth(ni),schmih(ni),releaserate,xdum,cun
   real(kind=dp) :: jul1,jul2,julm,juldate
+  real,parameter :: eps2=1.e-9
   character(len=50) :: line
   logical :: old
 
@@ -92,19 +93,19 @@ subroutine readreleases
 
   ! declare namelists
   namelist /releases_ctrl/ &
-    nspec, &
-    specnum_rel
+       nspec, &
+       specnum_rel
 
   namelist /release/ &
-    idate1, itime1, &
-    idate2, itime2, &
-    lon1, lon2, &
-    lat1, lat2, &
-    z1, z2, &
-    zkind, &
-    mass, &
-    parts, &
-    comment
+       idate1, itime1, &
+       idate2, itime2, &
+       lon1, lon2, &
+       lat1, lat2, &
+       z1, z2, &
+       zkind, &
+       mass, &
+       parts, &
+       comment
 
   numpoint=0
 
@@ -131,16 +132,16 @@ subroutine readreleases
 
   if ((readerror.ne.0).or.(nspec.lt.0)) then
 
-    ! no namelist format, close file and allow reopening in old format
+  ! no namelist format, close file and allow reopening in old format
     close(unitreleases)
     open(unitreleases,file=path(1)(1:length(1))//'RELEASES',status='old',err=999)
 
     readerror=1 ! indicates old format
 
-    ! Check the format of the RELEASES file (either in free format,
-    ! or using a formatted mask)
-    ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
-    !**************************************************************************
+  ! Check the format of the RELEASES file (either in free format,
+  ! or using a formatted mask)
+  ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
+  !**************************************************************************
 
     call skplin(12,unitreleases)
     read (unitreleases,901) line
@@ -153,8 +154,8 @@ subroutine readreleases
     rewind(unitreleases)
 
 
-    ! Skip first 11 lines (file header)
-    !**********************************
+  ! Skip first 11 lines (file header)
+  !**********************************
 
     call skplin(11,unitreleases)
 
@@ -192,7 +193,7 @@ subroutine readreleases
       read(unitreleases,*,err=998) xdum
       if (old) call skplin(2,unitreleases)
     end do
-    !save compoint only for the first 1000 release points
+  !save compoint only for the first 1000 release points
     read(unitreleases,'(a40)',err=998) compoint(1)(1:40)
     if (old) call skplin(1,unitreleases)
 
@@ -227,8 +228,8 @@ subroutine readreleases
   if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel2'
   specnum_rel2=specnum_rel(1:nspec)
   deallocate(specnum_rel) 
-! eso: BUG, crashes here for nspec=12 and maxspec=6,
-! TODO: catch error and exit
+  ! eso: BUG, crashes here for nspec=12 and maxspec=6,
+  ! TODO: catch error and exit
   allocate(specnum_rel(nspec),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate specnum_rel'
   specnum_rel=specnum_rel2
@@ -279,13 +280,13 @@ subroutine readreleases
   end do
 
   if (readerror.ne.0) then
-    ! Skip first 11 lines (file header)
-    !**********************************
+  ! Skip first 11 lines (file header)
+  !**********************************
 
     call skplin(11,unitreleases)
 
-    ! Assign species-specific parameters needed for physical processes
-    !*************************************************************************
+  ! Assign species-specific parameters needed for physical processes
+  !*************************************************************************
 
     read(unitreleases,*,err=998) nspec
     if (nspec.gt.maxspec) goto 994
@@ -306,19 +307,19 @@ subroutine readreleases
       call readspecies(specnum_rel(i),i)
     endif
 
-    ! For backward runs, only 1 species is allowed
-    !*********************************************
+  ! For backward runs, only 1 species is allowed
+  !*********************************************
 
-    !if ((ldirect.lt.0).and.(nspec.gt.1)) then
-    !write(*,*) '#####################################################'
-    !write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
-    !write(*,*) '#### FOR BACKWARD RUNS, ONLY 1 SPECIES IS ALLOWED####'
-    !write(*,*) '#####################################################'
-    !  stop
-    !endif
+  !if ((ldirect.lt.0).and.(nspec.gt.1)) then
+  !write(*,*) '#####################################################'
+  !write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
+  !write(*,*) '#### FOR BACKWARD RUNS, ONLY 1 SPECIES IS ALLOWED####'
+  !write(*,*) '#####################################################'
+  !  stop
+  !endif
 
-    ! Molecular weight
-    !*****************
+  ! Molecular weight
+  !*****************
 
     if (((iout.eq.2).or.(iout.eq.3)).and.(weightmolar(i).lt.0.)) then
       write(*,*) 'For mixing ratio output, valid molar weight'
@@ -328,19 +329,19 @@ subroutine readreleases
       stop
     endif
 
-    ! Radioactive decay
-    !******************
+  ! Radioactive decay
+  !******************
 
     decay(i)=0.693147/decay(i) !conversion half life to decay constant
 
 
-    ! Dry deposition of gases
-    !************************
+  ! Dry deposition of gases
+  !************************
 
     if (reldiff(i).gt.0.) rm(i)=1./(henry(i)/3000.+100.*f0(i))    ! mesophyll resistance
 
-    ! Dry deposition of particles
-    !****************************
+  ! Dry deposition of particles
+  !****************************
 
     vsetaver(i)=0.
     cunningham(i)=0.
@@ -357,8 +358,8 @@ subroutine readreleases
       if (lroot) write(*,*) 'Average settling velocity: ',i,vsetaver(i)
     endif
 
-    ! Dry deposition for constant deposition velocity
-    !************************************************
+  ! Dry deposition for constant deposition velocity
+  !************************************************
 
     dryvel(i)=dryvel(i)*0.01         ! conversion to m/s
 
@@ -372,20 +373,20 @@ subroutine readreleases
       WETDEPSPEC(i)=.true.
       if (lroot) then
         write (*,*) '  Below-cloud scavenging: ON'
-!  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
+  !  write (*,*) 'Below-cloud scavenging coefficients: ',weta(i),i
       end if
     else
       if (lroot) write (*,*) '  Below-cloud scavenging: OFF'
     endif
-    
-! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
+
+  ! NIK 31.01.2013 + 10.12.2013 + 15.02.2015
     if (dquer(i).gt.0..and.(ccn_aero(i).gt.0. .or. in_aero(i).gt.0.))  then
       WETDEP=.true.
       WETDEPSPEC(i)=.true.
       if (lroot) then
         write (*,*) '  In-cloud scavenging: ON'
-!        write (*,*) 'In-cloud scavenging coefficients: ',&
-!           &ccn_aero(i),in_aero(i),i !,wetc_in(i), wetd_in(i),i
+  !        write (*,*) 'In-cloud scavenging coefficients: ',&
+  !           &ccn_aero(i),in_aero(i),i !,wetc_in(i), wetd_in(i),i
       end if
     else
       if (lroot) write (*,*) '  In-cloud scavenging: OFF' 
@@ -411,7 +412,7 @@ subroutine readreleases
   numpoint=0
   numpartmax=0
   releaserate=0.
-101   numpoint=numpoint+1
+101 numpoint=numpoint+1
 
   if (readerror.lt.1) then ! reading namelist format
 
@@ -438,7 +439,7 @@ subroutine readreleases
     npart(numpoint)=parts
     compoint(min(1001,numpoint))=comment
 
-    ! namelist output
+  ! namelist output
     if (nmlout.and.lroot) then
       write(unitreleasesout,nml=release)
     endif
@@ -471,7 +472,7 @@ subroutine readreleases
       if (old) call skplin(2,unitreleases)
       mass(i)=xmass(numpoint,i)
     end do
-    !save compoint only for the first 1000 release points
+  !save compoint only for the first 1000 release points
     if (numpoint.le.1000) then
       read(unitreleases,'(a40)',err=998) compoint(numpoint)(1:40)
       comment=compoint(numpoint)(1:40)
@@ -481,7 +482,7 @@ subroutine readreleases
     endif
     if (old) call skplin(1,unitreleases)
 
-    ! namelist output
+  ! namelist output
     if (nmlout.and.lroot) then
       idate1=id1
       itime1=it1
@@ -523,28 +524,28 @@ subroutine readreleases
   ! If FLEXPART is run for backward deposition force zpoint
   !*********************************************************************
   if (WETBKDEP) then
-      zpoint1(numpoint)=0.
-      zpoint2(numpoint)=20000.
-      kindz(numpoint)=1
+    zpoint1(numpoint)=0.
+    zpoint2(numpoint)=20000.
+    kindz(numpoint)=1
   endif
   if (DRYBKDEP) then
-      zpoint1(numpoint)=0.
-      zpoint2(numpoint)=2.*href
-      kindz(numpoint)=1
+    zpoint1(numpoint)=0.
+    zpoint2(numpoint)=2.*href
+    kindz(numpoint)=1
   endif
 
 
   ! Check whether x coordinates of release point are within model domain
   !*********************************************************************
 
-   if (xpoint1(numpoint).lt.xlon0) &
-        xpoint1(numpoint)=xpoint1(numpoint)+360.
-   if (xpoint1(numpoint).gt.xlon0+(nxmin1)*dx) &
-        xpoint1(numpoint)=xpoint1(numpoint)-360.
-   if (xpoint2(numpoint).lt.xlon0) &
-        xpoint2(numpoint)=xpoint2(numpoint)+360.
-   if (xpoint2(numpoint).gt.xlon0+(nxmin1)*dx) &
-        xpoint2(numpoint)=xpoint2(numpoint)-360.
+  if (xpoint1(numpoint).lt.xlon0) &
+       xpoint1(numpoint)=xpoint1(numpoint)+360.
+  if (xpoint1(numpoint).gt.xlon0+(nxmin1)*dx) &
+       xpoint1(numpoint)=xpoint1(numpoint)-360.
+  if (xpoint2(numpoint).lt.xlon0) &
+       xpoint2(numpoint)=xpoint2(numpoint)+360.
+  if (xpoint2(numpoint).gt.xlon0+(nxmin1)*dx) &
+       xpoint2(numpoint)=xpoint2(numpoint)-360.
 
   ! Determine relative beginning and ending times of particle release
   !******************************************************************
@@ -606,7 +607,7 @@ subroutine readreleases
   numpartmax=numpartmax+npart(numpoint)
   goto 101
 
-250   close(unitreleases)
+250 close(unitreleases)
 
   if (nmlout.and.lroot) then
     close(unitreleasesout)
@@ -622,6 +623,29 @@ subroutine readreleases
     maxpointspec_act=1
   endif
 
+  ! Disable settling if more than 1 species at any release point
+  ! or if MQUASILAG and more than one species
+  !*************************************************************
+
+  if (mquasilag.ne.0) then
+    if (nspec.gt.1) lsettling=.false.
+  else
+    do irel=1,numpoint
+      nsettle=0
+      do ispc=1,nspec
+        if (xmass(irel,ispc).gt.eps2) nsettle=nsettle+1
+      end do
+      if (nsettle.gt.1) lsettling=.false.
+    end do
+  end if
+
+  if (lroot) then
+    if (.not.lsettling) then 
+      write(*,*) 'WARNING: more than 1 species per release point, settling &
+           &disabled'
+    end if
+  end if
+
   ! Check, whether the total number of particles may exceed totally allowed
   ! number of particles at some time during the simulation
   !************************************************************************
@@ -629,18 +653,18 @@ subroutine readreleases
   if (releaserate.gt. &
        0.99*real(maxpart)/real(lage(nageclass))) then
     if (numpartmax.gt.maxpart.and.lroot) then
-  write(*,*) '#####################################################'
-  write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
-  write(*,*) '####                                             ####'
-  write(*,*) '####WARNING - TOTAL NUMBER OF PARTICLES SPECIFIED####'
-  write(*,*) '#### IN FILE "RELEASES" MAY AT SOME POINT DURING ####'
-  write(*,*) '#### THE SIMULATION EXCEED THE MAXIMUM ALLOWED   ####'
-  write(*,*) '#### NUMBER (MAXPART).IF RELEASES DO NOT OVERLAP,####'
-  write(*,*) '#### FLEXPART CAN POSSIBLY COMPLETE SUCCESSFULLY.####'
-  write(*,*) '#### HOWEVER, FLEXPART MAY HAVE TO STOP          ####'
-  write(*,*) '#### AT SOME TIME DURING THE SIMULATION. PLEASE  ####'
-  write(*,*) '#### MAKE SURE THAT YOUR SETTINGS ARE CORRECT.   ####'
-  write(*,*) '#####################################################'
+      write(*,*) '#####################################################'
+      write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
+      write(*,*) '####                                             ####'
+      write(*,*) '####WARNING - TOTAL NUMBER OF PARTICLES SPECIFIED####'
+      write(*,*) '#### IN FILE "RELEASES" MAY AT SOME POINT DURING ####'
+      write(*,*) '#### THE SIMULATION EXCEED THE MAXIMUM ALLOWED   ####'
+      write(*,*) '#### NUMBER (MAXPART).IF RELEASES DO NOT OVERLAP,####'
+      write(*,*) '#### FLEXPART CAN POSSIBLY COMPLETE SUCCESSFULLY.####'
+      write(*,*) '#### HOWEVER, FLEXPART MAY HAVE TO STOP          ####'
+      write(*,*) '#### AT SOME TIME DURING THE SIMULATION. PLEASE  ####'
+      write(*,*) '#### MAKE SURE THAT YOUR SETTINGS ARE CORRECT.   ####'
+      write(*,*) '#####################################################'
       write(*,*) 'Maximum release rate may be: ',releaserate, &
            ' particles per second'
       write(*,*) 'Maximum allowed release rate is: ', &
@@ -652,13 +676,14 @@ subroutine readreleases
     endif
   endif
 
+
   if (lroot) then
     write(*,FMT='(A,ES14.7)') ' Total mass released:', sum(xmass(1:numpoint,1:nspec))
   end if
 
   return
 
-994   write(*,*) '#####################################################'
+994 write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
   write(*,*) '####                                             ####'
   write(*,*) '#### ERROR - MAXIMUM NUMBER OF EMITTED SPECIES IS####'
@@ -666,7 +691,7 @@ subroutine readreleases
   write(*,*) '#####################################################'
   stop
 
-998   write(*,*) '#####################################################'
+998 write(*,*) '#####################################################'
   write(*,*) '#### FLEXPART MODEL SUBROUTINE READRELEASES:     ####'
   write(*,*) '####                                             ####'
   write(*,*) '#### FATAL ERROR - FILE "RELEASES" IS            ####'
@@ -677,7 +702,7 @@ subroutine readreleases
   stop
 
 
-999   write(*,*) '#####################################################'
+999 write(*,*) '#####################################################'
   write(*,*) '   FLEXPART MODEL SUBROUTINE READRELEASES: '
   write(*,*)
   write(*,*) 'FATAL ERROR - FILE CONTAINING PARTICLE RELEASE POINTS'

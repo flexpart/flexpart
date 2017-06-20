@@ -135,6 +135,9 @@ module com_mod
 !ESO DEC 2015 whether or not both clwc and ciwc are present (if so they are summed)
   logical :: sumclouds=.false.
 
+!ESO: Disable settling if more than 1 species per release point
+  logical :: lsettling=.true.
+
   logical,dimension(maxnests) :: readclouds_nest, sumclouds_nest
   
 

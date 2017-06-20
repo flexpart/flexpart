@@ -79,7 +79,6 @@ program flexpart
 
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
-!  flexversion='Ver. 10 Beta MPI (2015-05-01)'
   flexversion='Ver. '//trim(flexversion_major)//'.1beta MPI (2016-11-02)'
   verbosity=0
 
