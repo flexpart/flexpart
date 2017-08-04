@@ -399,6 +399,15 @@ subroutine init_domainfill
     end do
   end do
 
+! Reduce numpart if invalid particles at end of arrays
+  do i=numpart, 1, -1
+      if (itra1(i).eq.-999999999) then
+        numpart=numpart-1
+      else
+        exit
+      end if
+    end do
+
 ! If particles shall be read in to continue an existing run,
 ! then the accumulated masses at the domain boundaries must be read in, too.
 ! This overrides any previous calculations.
@@ -411,8 +420,6 @@ subroutine init_domainfill
          zcolumn_we,zcolumn_sn,acc_mass_we,acc_mass_sn
     close(unitboundcond)
   endif
-
-
 
 
 end subroutine init_domainfill

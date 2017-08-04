@@ -369,8 +369,7 @@ subroutine init_domainfill
 ! Make sure that all particles are within domain
 !***********************************************
 
-!    do j=1,numpart
-    do j=1,npoint(1)
+    do j=1,numpart
       if ((xtra1_tmp(j).lt.0.).or.(xtra1_tmp(j).ge.real(nxmin1)).or. &
            (ytra1_tmp(j).lt.0.).or.(ytra1_tmp(j).ge.real(nymin1))) then
         itra1_tmp(j)=-999999999
@@ -474,7 +473,7 @@ subroutine init_domainfill
       close(unitboundcond)
     endif
 
-    numpart = npart(1)/mp_partgroup_np
+    numpart = numpart/mp_partgroup_np
     if (mod(numpart,mp_partgroup_np).ne.0) numpart=numpart+1
 
   else ! Allocate dummy arrays for receiving processes 
@@ -487,13 +486,13 @@ subroutine init_domainfill
 
 
 ! Distribute particles to other processes (numpart is 'per-process', not total)
-    call MPI_Bcast(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
+  call MPI_Bcast(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
 ! eso TODO: xmassperparticle: not necessary to send
-    call MPI_Bcast(xmassperparticle, 1, mp_sp, id_root, mp_comm_used, mp_ierr)
-    call mpif_send_part_properties(numpart)
+  call MPI_Bcast(xmassperparticle, 1, mp_sp, id_root, mp_comm_used, mp_ierr)
+  call mpif_send_part_properties(numpart)
 
 ! Deallocate the temporary arrays used for all particles
-    deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,&
+  deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,&
          & itrasplit_tmp,xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
 
 

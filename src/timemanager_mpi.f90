@@ -772,7 +772,7 @@ subroutine timemanager
                    
               endif
             else
-              xmassfract=1.
+              xmassfract=1.0
             endif
           end do
 
@@ -780,6 +780,9 @@ subroutine timemanager
           !            print*,'terminated particle ',j,' for small mass (', sum(real(npart(npoint(j)))* &
           !         xmass1(j,:)), ' of ', sum(xmass(npoint(j),:)),')'
             itra1(j)=-999999999
+            if (verbosity.gt.0) then
+              print*,'terminated particle ',j,' for small mass'
+            endif
           endif
 
 !        Sabine Eckhardt, June 2008

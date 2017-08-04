@@ -179,8 +179,8 @@ contains
     xl=0._sp
     xq=0._sp
     do i=1,number
-      xl=xl+x_dp(i)
-      xq=xq+x_dp(i)*x_dp(i)
+      xl=xl+real(x_dp(i),kind=sp)
+      xq=xq+real(x_dp(i),kind=sp)*real(x_dp(i),kind=sp)
     end do
 
     xm=xl/real(number,kind=sp)
@@ -236,7 +236,7 @@ contains
       xq=xq+x_dp(i)*x_dp(i)
     end do
 
-    xm=xl/real(number,kind=sp)
+    xm=real(xl,kind=sp)/real(number,kind=sp)
 
     xaux=xq-xl*xl/real(number,kind=dp)
 

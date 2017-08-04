@@ -331,6 +331,7 @@ contains
 ! Set maxpart per process
 ! eso 08/2016: Increase maxpart per process, in case of unbalanced distribution
     maxpart_mpi=int(mp_maxpart_factor*real(maxpart)/real(mp_partgroup_np))
+    if (mp_np == 1) maxpart_mpi = maxpart
 
 ! Do not allocate particle data arrays for readwind process
     if (lmpreader.and.lmp_use_reader) then
@@ -549,6 +550,7 @@ contains
 ! After the transfer of particles it it possible that the value of
 ! "numpart" is larger than the actual used, so we reduce it if there are
 ! invalid particles at the end of the arrays
+
 601 do i=num_part, 1, -1
       if (itra1(i).eq.-999999999) then
         numpart=numpart-1
@@ -558,7 +560,6 @@ contains
     end do
 
 
-!601 end subroutine mpif_send_part_properties
   end subroutine mpif_send_part_properties
 
 

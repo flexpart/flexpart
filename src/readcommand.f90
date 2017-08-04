@@ -145,6 +145,10 @@ subroutine readcommand
   cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
   ohfields_path="../../flexin/"
 
+  !Af set release-switch
+  WETBKDEP=.false.
+  DRYBKDEP=.false.
+
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
   !**************************************************************************
@@ -320,9 +324,6 @@ subroutine readcommand
      else ! mass mix
         ind_samp = 0
      endif
-  !Af set release-switch
-     WETBKDEP=.false.
-     DRYBKDEP=.false.
      select case (ind_receptor)
      case (1)  !  1 .. concentration at receptor
         ind_rel = 1

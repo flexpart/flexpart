@@ -62,6 +62,7 @@ subroutine readavailable
 
   integer :: i,idiff,ldat,ltim,wftime1(maxwf),numbwfn(maxnests),k
   integer :: wftime1n(maxnests,maxwf),wftimen(maxnests,maxwf)
+  logical :: lwarntd=.true.
   real(kind=dp) :: juldate,jul,beg,end
   character(len=255) :: fname,spec,wfname1(maxwf),wfspec1(maxwf)
   character(len=255) :: wfname1n(maxnests,maxwf)
@@ -240,10 +241,11 @@ subroutine readavailable
       write(*,*) 'WIND FIELDS IS TOO BIG FOR TRANSPORT CALCULATION.&
            &'
       write(*,*) 'THEREFORE, TRAJECTORIES HAVE TO BE SKIPPED.'
-    else if (idiff.gt.idiffnorm.and.lroot) then
+    else if (idiff.gt.idiffnorm.and.lroot.and.lwarntd) then
       write(*,*) 'FLEXPART WARNING: TIME DIFFERENCE BETWEEN TWO'
       write(*,*) 'WIND FIELDS IS BIG. THIS MAY CAUSE A DEGRADATION'
       write(*,*) 'OF SIMULATION QUALITY.'
+      lwarntd=.false. ! only issue this warning once
     endif
   end do
 
