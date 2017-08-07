@@ -45,6 +45,7 @@ subroutine coordtrafo
   implicit none
 
   integer :: i,j,k
+  real :: yrspc ! small real number relative to x
 
   if (numpoint.eq.0) goto 30
 
@@ -63,19 +64,21 @@ subroutine coordtrafo
 
   ! CHECK IF RELEASE POINTS ARE WITHIN DOMAIN
   !******************************************
-
+  
+  yrspc = spacing(real(nymin1,kind=sp))
+  
   do i=1,numpoint
     if (sglobal.and.(ypoint1(i).lt.1.e-6)) ypoint1(i)=1.e-6
-    if (nglobal.and.(ypoint2(i).gt.real(nymin1)-1.e-5)) &
-         ypoint2(i)=real(nymin1)-1.e-5
-  if ((ypoint1(i).lt.1.e-6).or.(ypoint1(i).ge.real(nymin1)-1.e-6) &
-       .or.(ypoint2(i).lt.1.e-6).or.(ypoint2(i).ge.real(nymin1)-1.e-6) &
+    if (nglobal.and.(ypoint2(i).gt.real(nymin1,kind=dp)-1.e-5)) &
+         ypoint2(i)=real(nymin1,kind=dp)-10*yrspc
+    if ((ypoint1(i).lt.1.e-6).or.(ypoint1(i).ge.real(nymin1,kind=dp)-1.e-6) &
+       .or.(ypoint2(i).lt.1.e-6).or.(ypoint2(i).ge.real(nymin1,kind=dp)-yrspc) &
        .or.((.not.xglobal).and.((xpoint1(i).lt.1.e-6).or. &
-       (xpoint1(i).ge.real(nxmin1)-1.e-6).or.(xpoint2(i).lt.1.e-6).or. &
-       (xpoint2(i).ge.real(nxmin1)-1.e-6)))) then
+       (xpoint1(i).ge.real(nxmin1,kind=dp)-1.e-6).or.(xpoint2(i).lt.1.e-6).or. &
+       (xpoint2(i).ge.real(nxmin1,kind=dp)-1.e-6)))) then
       write(*,*) ' NOTICE: RELEASE POINT OUT OF DOMAIN DETECTED.'
       write(*,*) ' IT IS REMOVED NOW ... '
-      if (i.ge.1000) then
+      if (i.le.1000) then
          write(*,*) ' COMMENT: ',compoint(i)
       else
          write(*,*) ' COMMENT: ',compoint(1001)
