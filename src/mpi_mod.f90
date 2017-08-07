@@ -1650,6 +1650,8 @@ contains
     else
       write(*,*) "#### mpi_mod::mpif_gf_send_vars_async> ERROR: &
            & invalid memstat"
+      mind=-1
+      stop
     end if
 
     if (mp_dev_mode) then
@@ -2025,6 +2027,8 @@ contains
     else
       write(*,*) "#### mpi_mod::mpif_gf_send_vars_nest_async> ERROR: &
            & invalid memstat"
+      mind=-1
+      stop
     end if
 
     if (mp_dev_mode) then

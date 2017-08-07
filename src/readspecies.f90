@@ -66,9 +66,9 @@ subroutine readspecies(id_spec,pos_spec)
 
   character(len=16) :: pspecies
   real :: pdecay, pweta_gas, pwetb_gas, preldiff, phenry, pf0, pdensity, pdquer
-  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
+  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pkao
   real :: pcrain_aero, pcsnow_aero, pccn_aero, pin_aero
-  integer :: readerror
+  integer :: readerror, pspec_ass
 
 ! declare namelist
   namelist /species_params/ &
