@@ -37,11 +37,6 @@
 
 module par_mod
 
-!************************************************************************
-! wind_mod: is gfs_mod.f90 for target gfs, ecmwf_mod.f90 for target ecmwf
-!************************************************************************
-  use wind_mod 
-
   implicit none
 
   !****************************************************************
@@ -145,7 +140,34 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
-  ! Moved to ecmwf_mod.f90 (for ECMWF) / gfs_mod.f90 (for GFS)
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+
+!  INTEGER,PARAMETER :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !NCEP data
+
+!  !integer,parameter :: nxshift=359  ! for ECMWF
+!  integer,parameter :: nxshift=0     ! for GFS
+!  integer,parameter :: nxmax=15,nymax=15,nuvzmax=140,nwzmax=140,nzmax=140
+  integer,parameter :: nxshift=359  ! for ECMWF
+!  integer,parameter :: nxshift=0     ! for GFS
+
+  !*********************************************
+  ! Maximum dimensions of the nested input grids
+  !*********************************************
+
+  integer,parameter :: maxnests=0,nxmaxn=451,nymaxn=226
+
+  ! nxmax,nymax        maximum dimension of wind fields in x and y
+  !                    direction, respectively
+  ! nuvzmax,nwzmax     maximum dimension of (u,v) and (w) wind fields in z
+  !                    direction (for fields on eta levels)
+  ! nzmax              maximum dimension of wind fields in z direction
+  !                    for the transformed Cartesian coordinates
+  ! nxshift            for global grids (in x), the grid can be shifted by
+  !                    nxshift grid points, in order to accomodate nested
+  !                    grids, and output grids overlapping the domain "boundary"
+  !                    nxshift must not be negative; "normal" setting would be 0
+
   
   integer,parameter :: nconvlevmax = nuvzmax-1
   integer,parameter :: na = nconvlevmax+1
