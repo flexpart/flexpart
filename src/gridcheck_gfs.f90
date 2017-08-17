@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine gridcheck
+subroutine gridcheck_gfs
 
   !**********************************************************************
   !                                                                     *
@@ -37,6 +37,10 @@ subroutine gridcheck
   !                                 ECMWF grib_api                      *
   !             CHANGE: 03/12/2008, Harald Sodemann, update to f90 with *
   !                                 ECMWF grib_api                      *
+  !                                                                     *
+  !   Unified ECMWF and GFS builds                                      *
+  !   Marian Harustak, 12.5.2017                                        *
+  !     - Renamed routine from gridcheck to gridcheck_gfs               *
   !                                                                     *
   !**********************************************************************
   !                                                                     *
@@ -536,4 +540,4 @@ subroutine gridcheck
     goto 5
   endif
 
-end subroutine gridcheck
+end subroutine gridcheck_gfs

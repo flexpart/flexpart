@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine timemanager
+subroutine timemanager(metdata_format)
 
 !*****************************************************************************
 !                                                                            *
@@ -49,6 +49,9 @@ subroutine timemanager
 !  Changes Espen Sollum 2014                                                 *
 !   MPI version                                                              *
 !   Variables uap,ucp,uzp,us,vs,ws,cbt now in module com_mod                 *
+!  Unified ECMWF and GFS builds                                              *
+!   Marian Harustak, 12.5.2017                                               *
+!   - Added passing of metdata_format as it was needed by called routines    *
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -204,7 +207,7 @@ subroutine timemanager
         write (*,*) 'timemanager> call convmix -- backward'
       endif
 ! readwind process skips this step
-      if (.not.(lmpreader.and.lmp_use_reader)) call convmix(itime)
+      if (.not.(lmpreader.and.lmp_use_reader)) call convmix(itime,metdata_format)
     endif
 
 ! Get necessary wind fields if not available
@@ -217,7 +220,7 @@ subroutine timemanager
 ! or MPI communication time only (for other processes)
     if (mp_measure_time) call mpif_mtime('getfields',0)
 
-    call getfields(itime,nstop1,memstat)
+    call getfields(itime,nstop1,memstat,metdata_format)
 
     if (mp_measure_time) call mpif_mtime('getfields',1)
 

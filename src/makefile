@@ -142,30 +142,30 @@ drydepokernel.o         readreceptors.o \
 erf.o                   readavailable.o \
 ew.o			readreleases.o  \
 readdepo.o              get_vdep_prob.o   \
-get_wetscav.o	\
+get_wetscav.o		readwind_gfs.o \
 psim.o			outgrid_init.o 	\
-outgrid_init_nest.o   	\
+outgrid_init_nest.o   	calcmatrix.o \
 photo_O1D.o 		readlanduse.o \
 interpol_wind.o         readoutgrid.o \
 interpol_all.o          readpaths.o \
-getrb.o                 \
-getrc.o                 \
+getrb.o                 obukhov.o \
+getrc.o                 convmix.o \
 getvdep.o               readspecies.o \
-interpol_misslev.o      \
-scalev.o \
-pbl_profile.o           readOHfield.o\
-juldate.o               \
+interpol_misslev.o      richardson.o \
+scalev.o                verttransform_ecmwf.o \
+pbl_profile.o           readOHfield.o \
+juldate.o               verttransform_gfs.o \
 interpol_vdep.o         interpol_rain.o \
 hanna.o                 wetdepokernel.o \
-                  wetdepo.o \
+calcpar.o               wetdepo.o \
 hanna_short.o           windalign.o \
-hanna1.o                	\
-                        gridcheck_nests.o \
+hanna1.o                gridcheck_ecmwf.o \
+gridcheck_gfs.o         gridcheck_nests.o \
 readwind_nests.o        calcpar_nests.o \
 verttransform_nests.o   interpol_all_nests.o \
 interpol_wind_nests.o   interpol_misslev_nests.o \
 interpol_vdep_nests.o   interpol_rain_nests.o \
-readageclasses.o         \
+readageclasses.o        detectformat.o  \
 calcfluxes.o            fluxoutput.o \
 qvsat.o                 skplin.o \
 convect43c.o            \
@@ -318,15 +318,13 @@ juldate.o: par_mod.o
 mean_mod.o: par_mod.o
 mpi_mod.o: com_mod.o par_mod.o unc_mod.o
 netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-obukhov.o: par_mod.o
-obukhov_gfs.o: par_mod.o
+obukhov.o: par_mod.o class_gribfile_mod.o
 ohreaction.o: com_mod.o oh_mod.o par_mod.o
 openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
 outg_mod.o: par_mod.o
 outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
-par_mod.o :
 part0.o: par_mod.o
 partdep.o: par_mod.o
 partoutput.o: com_mod.o par_mod.o

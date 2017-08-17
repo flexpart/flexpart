@@ -143,7 +143,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 3   continue
 
 
-    tvold(ixm,jym)=tt2(ixm,jym,1,n)*(1.+0.378*ew*(td2(ixm,jym,1,n))/ &
+    tvold(ixm,jym)=tt2(ixm,jym,1,n)*(1.+0.378*ew(td2(ixm,jym,1,n))/ &
          ps(ixm,jym,1,n))
     pold(ixm,jym)=ps(ixm,jym,1,n)
     height(1)=0.
@@ -193,7 +193,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   do jy=0,nymin1
     do ix=0,nxmin1
-      tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew*(td2(ix,jy,1,n))/ &
+      tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
            ps(ix,jy,1,n))
     enddo
   enddo

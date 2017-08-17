@@ -58,6 +58,13 @@ module mpi_mod
 !                                                                            *
 !                                                                            *
 !*****************************************************************************
+!                                                                            *
+! Modification by DJM, 2017-05-09 - added #ifdef USE_MPIINPLACE cpp          *
+! directive to mpif_tm_reduce_grid() to insure that MPI_IN_PLACE is          *
+! used in the MPI_Reduce() only if specifically compiled with that           *
+! directive.                                                                 *
+!                                                                            *
+!*****************************************************************************
 
   use mpi 
   use par_mod, only: dp,sp
@@ -2420,6 +2427,27 @@ contains
 ! if (mp_ierr /= 0) goto 600
 
 ! 2) Using in-place reduction
+
+!!!--------------------------------------------------------------------
+!!! DJM - 2017-05-09 change - MPI_IN_PLACE option for MPI_Reduce() causes
+!!! severe numerical problems in some cases.  I'm guessing there are memory
+!!! overrun issues in this complex code, but have so far failed to identify
+!!! a specific problem.  And/or, when one searches the Internet for this 
+!!! issue, there is "some" hint that the implementation may be buggy.  
+!!! 
+!!! At this point, with the following CPP USE_MPIINPLACE directive, the
+!!! default behaviour will be to not use the MPI_IN_PLACE option.
+!!! Users will have to compile with -DUSE_MPIINPLACE if they want that option.
+!!! Introduction of the CPP directives also requires that the code be compiled
+!!! with the "-x f95-cpp-input" option.
+!!!
+!!! Modification of this section requires the addition of array gridunc0, which
+!!! requires an allocation in outgrid_init.f90 and initial declaration in
+!!! unc_mod.f90.
+!!!--------------------------------------------------------------------
+
+#ifdef USE_MPIINPLACE
+
     if (lroot) then
       call MPI_Reduce(MPI_IN_PLACE, gridunc, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
@@ -2428,6 +2456,14 @@ contains
       call MPI_Reduce(gridunc, 0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
     end if
+
+#else
+
+      call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_sp, MPI_SUM, id_root, &
+           & mp_comm_used, mp_ierr)
+      if (lroot) gridunc = gridunc0
+
+#endif
 
     if ((WETDEP).and.(ldirect.gt.0)) then
       call MPI_Reduce(wetgridunc, wetgridunc0, grid_size2d, mp_cp, MPI_SUM, id_root, &

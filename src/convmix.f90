@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine convmix(itime)
+subroutine convmix(itime,metdata_format)
   !                     i
   !**************************************************************
   !handles all the calculations related to convective mixing
@@ -30,12 +30,23 @@ subroutine convmix(itime)
   !  convmix called every lsynctime seconds
   !CHANGES by A. Stohl:
   !  various run-time optimizations - February 2005
+  ! CHANGES by C. Forster, November 2005, NCEP GFS version
+  !      in the ECMWF version convection is calculated on the
+  !      original eta-levels
+  !      in the GFS version convection is calculated on the
+  !      FLEXPART levels
+  !
+  !   Unified ECMWF and GFS builds                                             
+  !   Marian Harustak, 12.5.2017                                              
+  !     - Merged convmix and convmix_gfs into one routine using if-then           
+  !       for meteo-type dependent code                                        
   !**************************************************************
 
   use flux_mod
   use par_mod
   use com_mod
   use conv_mod
+  use class_gribfile
 
   implicit none
 
@@ -43,6 +54,7 @@ subroutine convmix(itime)
   integer :: ipconv
   integer :: jy, kpart, ktop, ngrid,kz
   integer :: igrid(maxpart), ipoint(maxpart), igridn(maxpart,maxnests)
+  integer :: metdata_format
 
   ! itime [s]                 current time
   ! igrid(maxpart)            horizontal grid position of each particle
@@ -103,6 +115,7 @@ subroutine convmix(itime)
   !**********************************************************
 
     ngrid=0
+    if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
     do j=numbnests,1,-1
       if ( x.gt.xln(j)+eps .and. x.lt.xrn(j)-eps .and. &
            y.gt.yln(j)+eps .and. y.lt.yrn(j)-eps ) then
@@ -110,6 +123,15 @@ subroutine convmix(itime)
         goto 23
       endif
     end do
+    else
+      do j=numbnests,1,-1
+        if ( x.gt.xln(j) .and. x.lt.xrn(j) .and. &
+             y.gt.yln(j) .and. y.lt.yrn(j) ) then
+          ngrid=j
+          goto 23
+        endif
+      end do
+    endif
  23   continue
 
   ! Determine nested grid coordinates
@@ -166,15 +188,26 @@ subroutine convmix(itime)
       tt2conv=(tt2(ix,jy,1,mind1)*dt2+tt2(ix,jy,1,mind2)*dt1)*dtt
       td2conv=(td2(ix,jy,1,mind1)*dt2+td2(ix,jy,1,mind2)*dt1)*dtt
 !!$      do kz=1,nconvlev+1      !old
+      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
         do kz=1,nuvz-1           !bugfix
         tconv(kz)=(tth(ix,jy,kz+1,mind1)*dt2+ &
              tth(ix,jy,kz+1,mind2)*dt1)*dtt
         qconv(kz)=(qvh(ix,jy,kz+1,mind1)*dt2+ &
              qvh(ix,jy,kz+1,mind2)*dt1)*dtt
       end do
+      else
+        do kz=1,nuvz-1           !bugfix
+          pconv(kz)=(pplev(ix,jy,kz,mind1)*dt2+ &
+              pplev(ix,jy,kz,mind2)*dt1)*dtt
+          tconv(kz)=(tt(ix,jy,kz,mind1)*dt2+ &
+              tt(ix,jy,kz,mind2)*dt1)*dtt
+          qconv(kz)=(qv(ix,jy,kz,mind1)*dt2+ &
+              qv(ix,jy,kz,mind2)*dt1)*dtt
+        end do
+      end if
 
   ! Calculate translocation matrix
-      call calcmatrix(lconv,delt,cbaseflux(ix,jy))
+      call calcmatrix(lconv,delt,cbaseflux(ix,jy),metdata_format)
       igrold = igr
       ktop = 0
     endif
@@ -251,7 +284,7 @@ subroutine convmix(itime)
 
   ! calculate translocation matrix
   !*******************************
-        call calcmatrix(lconv,delt,cbasefluxn(ix,jy,inest))
+        call calcmatrix(lconv,delt,cbasefluxn(ix,jy,inest),metdata_format)
         igrold = igr
         ktop = 0
       endif

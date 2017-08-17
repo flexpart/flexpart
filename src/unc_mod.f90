@@ -18,6 +18,12 @@
 ! You should have received a copy of the GNU General Public License   *
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
+!                                                                     *
+! DJM - 2017-05-09 - added #ifdef USE_MPIINPLACE cpp directive to     *
+! enable declaration of a gridunc0 array if required by MPI code in   *
+! mpi_mod.f90                                                         *
+!                                                                     *
+!**********************************************************************
 
 module unc_mod
 
@@ -26,6 +32,12 @@ module unc_mod
   implicit none
 
   real,allocatable, dimension (:,:,:,:,:,:,:) :: gridunc
+#ifdef USE_MPIINPLACE
+#else
+  ! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid(),
+  ! then an aux array is needed for parallel grid reduction
+  real,allocatable, dimension (:,:,:,:,:,:,:) :: gridunc0
+#endif
   real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygridunc
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygriduncn

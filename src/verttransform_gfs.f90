@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine verttransform(n,uuh,vvh,wwh,pvh)
+subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   !                      i  i   i   i   i
   !*****************************************************************************
   !                                                                            *
@@ -46,6 +46,11 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   !*****************************************************************************
   !  Changes, Bernd C. Krueger, Feb. 2001:
   !   Variables tth and qvh (on eta coordinates) from common block
+  !
+  !   Unified ECMWF and GFS builds                                      
+  !   Marian Harustak, 12.5.2017                                        
+  !     - Renamed routine from verttransform to verttransform_gfs
+  !
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -530,4 +535,4 @@ subroutine verttransform(n,uuh,vvh,wwh,pvh)
   end do
 
 
-end subroutine verttransform
+end subroutine verttransform_gfs

@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine getfields(itime,nstop,memstat)
+subroutine getfields(itime,nstop,memstat,metdata_format)
 !                       i     o       o
 !*****************************************************************************
 !                                                                            *
@@ -57,6 +57,10 @@ subroutine getfields(itime,nstop,memstat)
 !    memstat=1,2,3:  position(s) in array to read next field
 !    memstat=0:      no new fields to be read
 !          
+!   Unified ECMWF and GFS builds                                             
+!   Marian Harustak, 12.5.2017                                               
+!     - Added passing of metdata_format as it was needed by called routines  
+!          
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -76,6 +80,7 @@ subroutine getfields(itime,nstop,memstat)
 !                                          [deltaeta/s]                      *
 ! tt(0:nxmax,0:nymax,nuvzmax,numwfmem)   temperature [K]                     *
 ! ps(0:nxmax,0:nymax,numwfmem)           surface pressure [Pa]               *
+! metdata_format     format of metdata (ecmwf/gfs)                           *
 !                                                                            *
 ! Constants:                                                                 *
 ! idiffmax             maximum allowable time difference between 2 wind      *
@@ -86,9 +91,11 @@ subroutine getfields(itime,nstop,memstat)
   use par_mod
   use com_mod
   use mpi_mod, only: lmpreader,lmp_use_reader,lmp_sync
+  use class_gribfile
 
   implicit none
 
+  integer :: metdata_format
   integer :: indj,itime,nstop,memaux,mindread
 ! mindread: index of where to read 3rd field
   integer, intent(out) :: memstat
@@ -203,11 +210,19 @@ subroutine getfields(itime,nstop,memstat)
     do indj=indmin,numbwf-1
       if (ldirect*wftime(indj+1).gt.ldirect*itime) then
         if (lmpreader.or..not. lmp_use_reader) then
-          call readwind(indj+1,mindread,uuh,vvh,wwh)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call readwind_ecmwf(indj+1,mindread,uuh,vvh,wwh)
+          else
+            call readwind_gfs(indj+1,mindread,uuh,vvh,wwh)
+          end if
           call readwind_nests(indj+1,mindread,uuhn,vvhn,wwhn)
-          call calcpar(mindread,uuh,vvh,pvh)
-          call calcpar_nests(mindread,uuhn,vvhn,pvhn)
-          call verttransform(mindread,uuh,vvh,wwh,pvh)
+          call calcpar(mindread,uuh,vvh,pvh,metdata_format)
+          call calcpar_nests(mindread,uuhn,vvhn,pvhn,metdata_format)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call verttransform_ecmwf(mindread,uuh,vvh,wwh,pvh)
+          else
+            call verttransform_gfs(mindread,uuh,vvh,wwh,pvh)
+          end if
           call verttransform_nests(mindread,uuhn,vvhn,wwhn,pvhn)
         end if
         memtime(2)=wftime(indj+1)
@@ -229,21 +244,37 @@ subroutine getfields(itime,nstop,memstat)
            (ldirect*wftime(indj+1).gt.ldirect*itime)) then
         memind(1)=1
         if (lmpreader.or..not.lmp_use_reader) then
-          call readwind(indj,memind(1),uuh,vvh,wwh)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call readwind_ecmwf(indj,memind(1),uuh,vvh,wwh)
+          else
+            call readwind_gfs(indj,memind(1),uuh,vvh,wwh)
+          end if
           call readwind_nests(indj,memind(1),uuhn,vvhn,wwhn)
-          call calcpar(memind(1),uuh,vvh,pvh)
-          call calcpar_nests(memind(1),uuhn,vvhn,pvhn)
-          call verttransform(memind(1),uuh,vvh,wwh,pvh)
+          call calcpar(memind(1),uuh,vvh,pvh,metdata_format)
+          call calcpar_nests(memind(1),uuhn,vvhn,pvhn,metdata_format)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call verttransform_ecmwf(memind(1),uuh,vvh,wwh,pvh)
+          else
+            call verttransform_gfs(memind(1),uuh,vvh,wwh,pvh)
+          end if
           call verttransform_nests(memind(1),uuhn,vvhn,wwhn,pvhn)
         end if
         memtime(1)=wftime(indj)
         memind(2)=2
         if (lmpreader.or..not.lmp_use_reader) then
-          call readwind(indj+1,memind(2),uuh,vvh,wwh)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call readwind_ecmwf(indj+1,memind(2),uuh,vvh,wwh)
+          else
+            call readwind_gfs(indj+1,memind(2),uuh,vvh,wwh)
+          end if
           call readwind_nests(indj+1,memind(2),uuhn,vvhn,wwhn)
-          call calcpar(memind(2),uuh,vvh,pvh)
-          call calcpar_nests(memind(2),uuhn,vvhn,pvhn)
-          call verttransform(memind(2),uuh,vvh,wwh,pvh)
+          call calcpar(memind(2),uuh,vvh,pvh,metdata_format)
+          call calcpar_nests(memind(2),uuhn,vvhn,pvhn,metdata_format)
+          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+            call verttransform_ecmwf(memind(2),uuh,vvh,wwh,pvh)
+          else
+            call verttransform_gfs(memind(2),uuh,vvh,wwh,pvh)
+          end if
           call verttransform_nests(memind(2),uuhn,vvhn,wwhn,pvhn)
         end if
         memtime(2)=wftime(indj+1)
