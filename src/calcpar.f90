@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine calcpar(n,uuh,vvh,pvh)
+subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   !                   i  i   i   o
   !*****************************************************************************
   !                                                                            *
@@ -36,13 +36,25 @@ subroutine calcpar(n,uuh,vvh,pvh)
   !     convection scheme:                                                     *
   !     new variables in call to richardson                                    *
   !                                                                            *
+  !   CHANGE 17/11/2005 Caroline Forster NCEP GFS version                      *
+  !                                                                            *
+  !   Changes, Bernd C. Krueger, Feb. 2001:                                    *
+  !    Variables tth and qvh (on eta coordinates) in common block              *
+  !                                                                            *
+  !   Unified ECMWF and GFS builds                                             *
+  !   Marian Harustak, 12.5.2017                                               *
+  !     - Merged calcpar and calcpar_gfs into one routine using if-then        *
+  !       for meteo-type dependent code                                        *
   !*****************************************************************************
-  !  Changes, Bernd C. Krueger, Feb. 2001:
-  !   Variables tth and qvh (on eta coordinates) in common block
+
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
   ! n                  temporal index for meteorological fields (1 to 3)       *
+  ! uuh                                                                        *
+  ! vvh                                                                        *
+  ! pvh                                                                        *
+  ! metdata_format     format of metdata (ecmwf/gfs)                           * 
   !                                                                            *
   ! Constants:                                                                 *
   !                                                                            *
@@ -55,13 +67,15 @@ subroutine calcpar(n,uuh,vvh,pvh)
 
   use par_mod
   use com_mod
+  use class_gribfile
 
   implicit none
 
-  integer :: n,ix,jy,i,kz,lz,kzmin
+  integer :: metdata_format
+  integer :: n,ix,jy,i,kz,lz,kzmin,llev,loop_start
   real :: ttlev(nuvzmax),qvlev(nuvzmax),obukhov,scalev,ol,hmixplus
   real :: ulev(nuvzmax),vlev(nuvzmax),ew,rh,vd(maxspec),subsceff,ylat
-  real :: altmin,tvold,pold,zold,pint,tv,zlev(nuvzmax)
+  real :: altmin,tvold,pold,zold,pint,tv,zlev(nuvzmax),hmixdummy
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: pvh(0:nxmax-1,0:nymax-1,nuvzmax)
@@ -110,8 +124,25 @@ subroutine calcpar(n,uuh,vvh,pvh)
   ! 2) Calculation of inverse Obukhov length scale
   !***********************************************
 
+      if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+        ! NCEP version: find first level above ground
+        llev = 0
+        do i=1,nuvz
+          if (ps(ix,jy,1,n).lt.akz(i)) llev=i
+        end do
+        llev = llev+1
+        if (llev.gt.nuvz) llev = nuvz-1
+        ! NCEP version
+
+        ! calculate inverse Obukhov length scale with tth(llev)
       ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-           tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm)
+            tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akz(llev),metdata_format)
+      else
+        llev=0
+        ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
+            tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akz(llev),metdata_format)
+      end if
+
       if (ol.ne.0.) then
         oli(ix,jy,1,n)=1./ol
       else
@@ -129,9 +160,16 @@ subroutine calcpar(n,uuh,vvh,pvh)
         qvlev(i)=qvh(ix,jy,i,n)
       end do
 
+      if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+        ! NCEP version hmix has been read in in readwind.f, is therefore not calculated here
       call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
            ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
-           td2(ix,jy,1,n),hmix(ix,jy,1,n),wstar(ix,jy,1,n),hmixplus)
+             td2(ix,jy,1,n),hmixdummy,wstar(ix,jy,1,n),hmixplus,metdata_format)
+      else
+        call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
+             ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
+             td2(ix,jy,1,n),hmix(ix,jy,1,n),wstar(ix,jy,1,n),hmixplus,metdata_format)
+      end if
 
       if(lsubgrid.eq.1) then
         subsceff=min(excessoro(ix,jy),hmixplus)
@@ -172,14 +210,19 @@ subroutine calcpar(n,uuh,vvh,pvh)
   ! Calculate height of thermal tropopause (Hoinka, 1997)
   !******************************************************
 
-  ! 1) Calculate altitudes of ECMWF model levels
-  !*********************************************
+  ! 1) Calculate altitudes of model levels
+  !***************************************
 
       tvold=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
            ps(ix,jy,1,n))
       pold=ps(ix,jy,1,n)
       zold=0.
-      do kz=2,nuvz
+      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+        loop_start=2
+      else
+        loop_start=llev
+      end if
+      do kz=loop_start,nuvz
         pint=akz(kz)+bkz(kz)*ps(ix,jy,1,n)  ! pressure on model layers
         tv=tth(ix,jy,kz,n)*(1.+0.608*qvh(ix,jy,kz,n))
 
@@ -198,7 +241,13 @@ subroutine calcpar(n,uuh,vvh,pvh)
   !    to be identified as the tropopause
   !************************************************************************
 
-      do kz=1,nuvz
+      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+        loop_start=1
+      else
+        loop_start=llev
+      end if
+
+      do kz=loop_start,nuvz
         if (zlev(kz).ge.altmin) then
           kzmin=kz
           goto 45

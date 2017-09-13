@@ -32,6 +32,14 @@ program flexpart
   !     18 May 1996                                                            *
   !                                                                            *
   !*****************************************************************************
+  ! Changes:                                                                   *
+  !   Unified ECMWF and GFS builds                                             *
+  !   Marian Harustak, 12.5.2017                                               *
+  !     - Added detection of metdata format using gributils routines           *
+  !     - Distinguished calls to ecmwf/gfs gridcheck versions based on         *
+  !       detected metdata format                                              *
+  !     - Passed metdata format down to timemanager                            *
+  !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
   !                                                                            *
@@ -45,12 +53,16 @@ program flexpart
   use conv_mod
   use netcdf_output_mod, only: writeheader_netcdf
   use random_mod, only: gasdev1
+  use class_gribfile
 
   implicit none
 
   integer :: i,j,ix,jy,inest
   integer :: idummy = -320
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
+  integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
+  integer :: detectformat
+
 
 
   ! Initialize arrays in com_mod
@@ -69,7 +81,7 @@ program flexpart
 
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
-  flexversion='Version '//trim(flexversion_major)//'.1beta (2016-11-02)'
+  flexversion='Version '//trim(flexversion_major)//'.2beta (2017-08-01)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -171,6 +183,22 @@ program flexpart
   endif  
   call readavailable
 
+  ! Detect metdata format
+  !**********************
+
+  metdata_format = detectformat()
+
+  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+    print *,'ECMWF metdata detected'
+  elseif (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+    print *,'NCEP metdata detected'
+  else
+    print *,'Unknown metdata format'
+    return
+  endif
+
+
+
   ! If nested wind fields are used, allocate arrays
   !************************************************
 
@@ -187,7 +215,11 @@ program flexpart
      write(*,*) 'call gridcheck'
   endif
 
-  call gridcheck
+  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+    call gridcheck_ecmwf
+  else
+    call gridcheck_gfs
+  end if
 
   if (verbosity.gt.1) then   
     CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
@@ -410,7 +442,7 @@ program flexpart
      print*,'call timemanager'
   endif
 
-  call timemanager
+  call timemanager(metdata_format)
 
 ! NIK 16.02.2005 
   do i=1,nspec

@@ -8,7 +8,9 @@
 # defaults
 #FP_exec=/home/ignacio/repos/flexpart/src/FP_ecmwf_gfortran
 #FP_exec=/xnilu_wrk/flexbuild/tests/NILU/FP_ecmwf_gfortran
-FP_exec=$WORKSPACE/src/FP_ecmwf_gfortran
+#FP_exec=$WORKSPACE/src/FP_ecmwf_gfortran
+# CTBTO unified executable
+FP_exec=$WORKSPACE/src/FLEXPART
 #path_flextest=/home/ignacio/repos/flextest/
 #path_flextest=/xnilu_wrk/flexbuild/flextest/
 path_flextest=$WORKSPACE/flextest/

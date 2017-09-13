@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine readwind(indj,n,uuh,vvh,wwh)
+subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
 
   !***********************************************************************
   !*                                                                     *
@@ -37,6 +37,10 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   !*                     data with the ECMWF grib_api library            *
   !*             CHANGE: 03/12/2008, Harald Sodemann, update to f90 with *
   !*                                 ECMWF grib_api                      *
+  !                                                                      *
+  !   Unified ECMWF and GFS builds                                       *
+  !   Marian Harustak, 12.5.2017                                         *
+  !     - Renamed routine from readwind to readwind_gfs                  *
   !*                                                                     *
   !***********************************************************************
   !*                                                                     *
@@ -715,4 +719,4 @@ subroutine readwind(indj,n,uuh,vvh,wwh)
   write(*,*) ' #### CANNOT BE OPENED !!!                    #### '
   stop 'Execution terminated'
 
-end subroutine readwind
+end subroutine readwind_gfs

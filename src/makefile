@@ -11,31 +11,40 @@ SHELL = /bin/bash
 #    To use gfortran version 4.9, add "gcc=4.9" to the make command, e.g.
 #       'make -j ecmwf gcc=4.9',
 #    also set environment variable LD_LIBRARY_PATH to point to compiler libraries
+#
+#    Makefile was modified to produce unified executable for both ECMWF and GFS meteo data formats
+#    gributils were included to detect format of meteo data
+#
+#    Cpp directives USE_MPIINPLACE were added to three source files. The effect of these directives 
+#    are to enable the MPI_IN_PLACE option only if compiled with a -DUSE_MPIINPLACE directive. 
+#    Otherwise, a safer option (which requires the allocation of another array) is used by default. 
+#    In makefile added the -x f95-cpp-input flag for compiling of cpp directives.
 # 
 #  USAGE
-#    Compile serial FLEXPART (ECMWF)
-#      make [-j] ecmwf
+#    Compile serial FLEXPART 
+#      make [-j] serial
 #
-#    Compile parallel FLEXPART (ECMWF)
-#      make [-j] ecmwf-mpi
+#    Compile parallel FLEXPART 
+#      make [-j] mpi
 #     
-#    Compile for debugging parallel FLEXPART (ECMWF)
-#      make [-j] ecmwf-mpi-dbg
-#
-#    Compile serial FLEXPART (GFS)
-#      make [-j] gfs
-#
-#    Compile parallel FLEXPART (GFS)
-#      make [-j] gfs-mpi
+#    Compile for debugging parallel FLEXPART
+#      make [-j] mpi-dbg
 #
 ################################################################################
 
 ## PROGRAMS
-FLEXPART-ECMWF-MPI 	= FP_ecmwf_MPI
-FLEXPART-ECMWF-MPI-DBG 	= DBG_FP_ecmwf_MPI
-FLEXPART-ECMWF 		= FP_ecmwf_gfortran
-FLEXPART-GFS 		= FP_gfs_gfortran
-FLEXPART-GFS-MPI 	= FP_gfs_MPI
+# Unified executable names
+# The same executable is used for both ECMWF and GFS metdata
+
+# Parallel processing executable
+FLEXPART-MPI = FLEXPART_MPI
+
+# Parallel processing executable with debugging info
+FLEXPART-MPI-DBG = DBG_FLEXPART_MPI
+
+# Serial processing executable
+FLEXPART-SERIAL = FLEXPART
+
 
 ifeq ($(gcc), 4.9)
 # Compiled libraries under users ~flexpart, gfortran v4.9
@@ -60,6 +69,10 @@ else
 endif
 
 
+# path to gributils used to detect meteodata format
+VPATH = gributils/
+
+
 ## OPTIMIZATION LEVEL
 O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
@@ -67,11 +80,11 @@ O_LEV_DBG = g # [0,g]
 ## LIBRARIES
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff # -fopenmp
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 
 MODOBJS = \
@@ -81,7 +94,8 @@ interpol_mod.o          cmapf_mod.o \
 unc_mod.o               oh_mod.o \
 xmass_mod.o             flux_mod.o \
 point_mod.o             outg_mod.o \
-mean_mod.o	 	random_mod.o
+mean_mod.o	 	random_mod.o \
+class_gribfile_mod.o
 
 MPI_MODOBJS = \
 mpi_mod.o
@@ -98,7 +112,8 @@ OBJECTS_SERIAL = \
 	boundcond_domainfill.o	\
 	redist.o		\
 	concoutput_surf.o	concoutput_surf_nest.o	\
-	getfields.o
+	getfields.o \
+        readwind_ecmwf.o
 
 ## For MPI version 
 OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
@@ -111,34 +126,8 @@ OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
 	boundcond_domainfill_mpi.o	\
 	redist_mpi.o		\
 	concoutput_surf_mpi.o	concoutput_surf_nest_mpi.o	\
-	getfields_mpi.o
-
-### WINDFIELDS
-## For ECMWF (serial) version:
-OBJECTS_ECMWF = \
-	calcpar.o          readwind.o \
-	richardson.o       verttransform.o \
-	obukhov.o          gridcheck.o  \
-	convmix.o          calcmatrix.o \
-	ecmwf_mod.o
-
-
-## For ECMWF MPI version:
-OBJECTS_ECMWF_MPI = \
-	gridcheck.o	   readwind_mpi.o \
-	calcpar.o          \
-	richardson.o       verttransform.o \
-	obukhov.o          \
-	convmix.o	   calcmatrix.o \
-	ecmwf_mod.o
-
-## For GFS (serial) version:
-OBJECTS_GFS = \
-	calcpar_gfs.o          readwind_gfs.o \
-	richardson_gfs.o       verttransform_gfs.o \
-	obukhov_gfs.o          gridcheck_gfs.o  \
-	convmix_gfs.o          calcmatrix_gfs.o \
-	gfs_mod.o
+	getfields_mpi.o \
+        readwind_ecmwf_mpi.o 
 
 OBJECTS = \
 advance.o		initialize.o		\
@@ -153,30 +142,30 @@ drydepokernel.o         readreceptors.o \
 erf.o                   readavailable.o \
 ew.o			readreleases.o  \
 readdepo.o              get_vdep_prob.o   \
-get_wetscav.o	\
+get_wetscav.o		readwind_gfs.o \
 psim.o			outgrid_init.o 	\
-outgrid_init_nest.o   	\
+outgrid_init_nest.o   	calcmatrix.o \
 photo_O1D.o 		readlanduse.o \
 interpol_wind.o         readoutgrid.o \
 interpol_all.o          readpaths.o \
-getrb.o                 \
-getrc.o                 \
+getrb.o                 obukhov.o \
+getrc.o                 convmix.o \
 getvdep.o               readspecies.o \
-interpol_misslev.o      \
-scalev.o \
-pbl_profile.o           readOHfield.o\
-juldate.o               \
+interpol_misslev.o      richardson.o \
+scalev.o                verttransform_ecmwf.o \
+pbl_profile.o           readOHfield.o \
+juldate.o               verttransform_gfs.o \
 interpol_vdep.o         interpol_rain.o \
 hanna.o                 wetdepokernel.o \
-                  wetdepo.o \
+calcpar.o               wetdepo.o \
 hanna_short.o           windalign.o \
-hanna1.o                	\
-                        gridcheck_nests.o \
+hanna1.o                gridcheck_ecmwf.o \
+gridcheck_gfs.o         gridcheck_nests.o \
 readwind_nests.o        calcpar_nests.o \
 verttransform_nests.o   interpol_all_nests.o \
 interpol_wind_nests.o   interpol_misslev_nests.o \
 interpol_vdep_nests.o   interpol_rain_nests.o \
-readageclasses.o         \
+readageclasses.o        detectformat.o  \
 calcfluxes.o            fluxoutput.o \
 qvsat.o                 skplin.o \
 convect43c.o            \
@@ -200,64 +189,30 @@ cbl.o			netcdf_output_mod.o
 
 %.o: %.mod
 
-ecmwf: $(FLEXPART-ECMWF)
-ecmwf: FC := $(F90)
+# serial executable
+serial: $(FLEXPART-SERIAL)
+serial: FC := $(F90)
 
-ecmwf-mpi: $(FLEXPART-ECMWF-MPI)
-ecmwf-mpi: FC := $(MPIF90)
+# parallel processing executable
+mpi: $(FLEXPART-MPI)
+mpi: FC := $(MPIF90)
 
-ecmwf-mpi-dbg: $(FLEXPART-ECMWF-MPI-DBG)
-ecmwf-mpi-dbg: FFLAGS := $(DBGFLAGS) 
-ecmwf-mpi-dbg: LDFLAGS:= $(LDDEBUG) 
-ecmwf-mpi-dbg: FC := $(MPIF90)
+# parallel processing with debugging info
+mpi-dbg: $(FLEXPART-MPI-DBG)
+mpi-dbg: FFLAGS := $(DBGFLAGS)
+mpi-dbg: LDFLAGS:= $(LDDEBUG)
+mpi-dbg: FC := $(MPIF90)
 
-gfs: $(FLEXPART-GFS)
-gfs: FC := $(F90)
+$(FLEXPART-SERIAL): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL)
+	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(LDFLAGS)
 
-gfs-mpi: $(FLEXPART-GFS-MPI)
-gfs-mpi: FC := $(MPIF90)
-
-#all: $(FLEXPART-ECMWF)
-#all: $(FLEXPART-ECMWF-MPI)
-
-## This allows for switching between ECMWF/GFS without editing source code.
-wind_mod = ecmwf_mod.o # default wind
-# ifeq ($(MAKECMDGOALS),ecmwf)
-# wind_mod = ecmwf_mod.o
-# endif
-# ifeq ($(MAKECMDGOALS),ecmwf-mpi)
-# wind_mod = ecmwf_mod.o
-# endif
-# ifeq ($(MAKECMDGOALS),ecmwf-mpi-dbg)
-# wind_mod = ecmwf_mod.o
-# endif
-
-ifeq ($(MAKECMDGOALS),gfs)
-wind_mod = gfs_mod.o
-endif
-ifeq ($(MAKECMDGOALS),gfs-mpi)
-wind_mod = gfs_mod.o
-endif
-
-$(FLEXPART-ECMWF): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF)
-	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_ECMWF) $(LDFLAGS)
-
-$(FLEXPART-ECMWF-MPI): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) $(OBJECTS_ECMWF_MPI)
+$(FLEXPART-MPI): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI)
 	+$(FC) -o $@ $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
-	$(OBJECTS_ECMWF_MPI) $(LDFLAGS)
-#	+$(FC) -o $@ *.o $(LDFLAGS)
+	$(LDFLAGS)
 
-$(FLEXPART-ECMWF-MPI-DBG): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
-	$(OBJECTS_ECMWF_MPI)
+$(FLEXPART-MPI-DBG): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI)
 	+$(FC) -o $@ $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
-	$(OBJECTS_ECMWF_MPI) $(LDFLAGS)
-
-$(FLEXPART-GFS): $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_GFS)
-	+$(FC) -o $@ $(MODOBJS) $(OBJECTS) $(OBJECTS_SERIAL) $(OBJECTS_GFS) $(LDFLAGS)
-
-$(FLEXPART-GFS-MPI): $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) $(OBJECTS_GFS)
-	+$(FC) -o $@ $(MODOBJS) $(MPI_MODOBJS) $(OBJECTS) $(OBJECTS_MPI) \
-	$(OBJECTS_GFS) $(LDFLAGS)
+	$(LDFLAGS)
 
 %.o: %.f90
 	+$(FC) -c $(FFLAGS) $<
@@ -266,8 +221,8 @@ clean:
 	\rm -f *.o *.mod
 
 cleanall:
-	\rm -f *.o *.mod $(FLEXPART-ECMWF-MPI) $(FLEXPART-ECMWF-MPI-DBG) $(FLEXPART-ECMWF) \
-	$(FLEXPART-GFS-MPI) $(FLEXPART-GFS)
+	\rm -f *.o *.mod $(FLEXPART-MPI) $(FLEXPART-MPI-DBG) $(FLEXPART-SERIAL)
+
 
 .SUFFIXES = $(SUFFIXES) .f90
 
@@ -281,10 +236,8 @@ boundcond_domainfill.o: com_mod.o par_mod.o point_mod.o random_mod.o
 boundcond_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 calcfluxes.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
-calcmatrix.o: com_mod.o conv_mod.o par_mod.o
-calcmatrix_gfs.o: com_mod.o conv_mod.o par_mod.o
-calcpar.o: com_mod.o par_mod.o
-calcpar_gfs.o: com_mod.o par_mod.o
+calcmatrix.o: com_mod.o conv_mod.o par_mod.o class_gribfile_mod.o
+calcpar.o: com_mod.o par_mod.o class_gribfile_mod.o
 calcpar_nests.o: com_mod.o par_mod.o
 calcpv.o: com_mod.o par_mod.o
 calcpv_nests.o: com_mod.o par_mod.o
@@ -310,27 +263,27 @@ concoutput_surf_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o \
 	point_mod.o unc_mod.o mean_mod.o
 conv_mod.o: par_mod.o
 convect43c.o: conv_mod.o par_mod.o
-convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o
-convmix_gfs.o: com_mod.o conv_mod.o par_mod.o
+convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o class_gribfile_mod.o
 coordtrafo.o: com_mod.o par_mod.o point_mod.o
+detectformat.o: com_mod.o par_mod.o class_gribfile_mod.o
 distance.o: par_mod.o
 distance2.o: par_mod.o
 drydepokernel.o: com_mod.o par_mod.o unc_mod.o
 drydepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 erf.o: par_mod.o
-FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o
+FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o class_gribfile_mod.o
 FLEXPART_MPI.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o point_mod.o \
-	random_mod.o netcdf_output_mod.o
+	random_mod.o netcdf_output_mod.o class_gribfile_mod.o
 fluxoutput.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
 get_settling.o: com_mod.o par_mod.o
-getfields.o: com_mod.o par_mod.o
-getfields_mpi.o: com_mod.o par_mod.o mpi_mod.o
+getfields.o: com_mod.o par_mod.o class_gribfile_mod.o
+getfields_mpi.o: com_mod.o par_mod.o mpi_mod.o class_gribfile_mod.o
 gethourlyOH.o: com_mod.o oh_mod.o par_mod.o
 getrb.o: par_mod.o
 getrc.o: com_mod.o par_mod.o
 getvdep.o: com_mod.o par_mod.o
 getvdep_nests.o: com_mod.o par_mod.o
-gridcheck.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
+gridcheck_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
 gridcheck_emos.o: com_mod.o conv_mod.o par_mod.o
 gridcheck_fnl.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
 gridcheck_gfs.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
@@ -365,15 +318,13 @@ juldate.o: par_mod.o
 mean_mod.o: par_mod.o
 mpi_mod.o: com_mod.o par_mod.o unc_mod.o
 netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-obukhov.o: par_mod.o
-obukhov_gfs.o: par_mod.o
+obukhov.o: par_mod.o class_gribfile_mod.o
 ohreaction.o: com_mod.o oh_mod.o par_mod.o
 openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
 outg_mod.o: par_mod.o
 outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
-par_mod.o : $(wind_mod)
 part0.o: par_mod.o
 partdep.o: par_mod.o
 partoutput.o: com_mod.o par_mod.o
@@ -401,11 +352,11 @@ readpaths.o: com_mod.o par_mod.o
 readreceptors.o: com_mod.o par_mod.o
 readreleases.o: com_mod.o par_mod.o point_mod.o xmass_mod.o
 readspecies.o: com_mod.o par_mod.o
-readwind.o: com_mod.o par_mod.o
+readwind_ecmwf.o: com_mod.o par_mod.o
 readwind_emos.o: com_mod.o par_mod.o
 readwind_gfs.o: com_mod.o par_mod.o
 readwind_gfs_emos.o: com_mod.o par_mod.o
-readwind_mpi.o: com_mod.o mpi_mod.o par_mod.o
+readwind_ecmwf_mpi.o: com_mod.o mpi_mod.o par_mod.o
 readwind_nests.o: com_mod.o par_mod.o
 readwind_nests_emos.o: com_mod.o par_mod.o
 redist.o: com_mod.o conv_mod.o par_mod.o random_mod.o
@@ -414,8 +365,7 @@ releaseparticles.o: com_mod.o par_mod.o point_mod.o random_mod.o \
 	xmass_mod.o
 releaseparticles_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o xmass_mod.o
-richardson.o: par_mod.o
-richardson_gfs.o: par_mod.o
+richardson.o: par_mod.o class_gribfile_mod.o
 scalev.o: par_mod.o
 shift_field.o: par_mod.o
 shift_field_0.o: par_mod.o
@@ -424,7 +374,7 @@ timemanager.o: com_mod.o flux_mod.o netcdf_output_mod.o oh_mod.o outg_mod.o \
 timemanager_mpi.o: com_mod.o flux_mod.o mpi_mod.o oh_mod.o outg_mod.o \
 	par_mod.o point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o	
 unc_mod.o: par_mod.o
-verttransform.o: cmapf_mod.o com_mod.o par_mod.o 
+verttransform_ecmwf.o: cmapf_mod.o com_mod.o par_mod.o 
 verttransform_gfs.o: cmapf_mod.o com_mod.o par_mod.o
 verttransform_nests.o: com_mod.o par_mod.o
 get_wetscav.o: com_mod.o par_mod.o point_mod.o

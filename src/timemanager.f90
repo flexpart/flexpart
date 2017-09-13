@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine timemanager
+subroutine timemanager(metdata_format)
 
   !*****************************************************************************
   !                                                                            *
@@ -49,6 +49,9 @@ subroutine timemanager
   !  Changes Espen Sollum 2014                                                 *
   !   For compatibility with MPI version,                                      *
   !   variables uap,ucp,uzp,us,vs,ws,cbt now in module com_mod                 *
+  !  Unified ECMWF and GFS builds                                              *
+  !   Marian Harustak, 12.5.2017                                               *
+  !   - Added passing of metdata_format as it was needed by called routines    *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -82,6 +85,7 @@ subroutine timemanager
   !                    polation                                                *
   ! xtra1(maxpart), ytra1(maxpart), ztra1(maxpart) =                           *
   !                    spatial positions of trajectories                       *
+  ! metdata_format     format of metdata (ecmwf/gfs)                           *
   !                                                                            *
   ! Constants:                                                                 *
   ! maxpart            maximum number of trajectories                          *
@@ -101,6 +105,7 @@ subroutine timemanager
 
   implicit none
 
+  integer :: metdata_format
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
@@ -193,7 +198,7 @@ subroutine timemanager
         if (verbosity.gt.0) then
            write (*,*) 'timemanager> call convmix -- backward'
         endif         
-      call convmix(itime)
+      call convmix(itime,metdata_format)
         if (verbosity.gt.1) then
           !CALL SYSTEM_CLOCK(count_clock, count_rate, count_max)
           CALL SYSTEM_CLOCK(count_clock)
@@ -206,7 +211,7 @@ subroutine timemanager
     if (verbosity.gt.0) then
            write (*,*) 'timemanager> call getfields'
     endif 
-    call getfields(itime,nstop1)
+    call getfields(itime,nstop1,metdata_format)
         if (verbosity.gt.1) then
           CALL SYSTEM_CLOCK(count_clock)
           WRITE(*,*) 'timemanager> SYSTEM CLOCK',(count_clock - count_clock0)/real(count_rate)
@@ -265,7 +270,7 @@ subroutine timemanager
      if (verbosity.gt.0) then
        write (*,*) 'timemanager> call convmix -- forward'
      endif    
-     call convmix(itime)
+     call convmix(itime,metdata_format)
    endif
 
   ! If middle of averaging period of output fields is reached, accumulated

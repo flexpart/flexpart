@@ -34,6 +34,14 @@ subroutine writeheader
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
+  !  Modified to remove TRIM around the output of flexversion so that          *
+  !  it will be a constant length (defined in com_mod.f90) in output header    *
+  !                                                                            *
+  !     Don Morton, Boreal Scientific Computing                                *
+  !     07 May 2017                                                            *
+  !                                                                            *
+  !*****************************************************************************
+  !                                                                            *
   ! Variables:                                                                 *
   !                                                                            *
   ! xlon                   longitude                                           *
@@ -66,9 +74,9 @@ subroutine writeheader
   !*****************************
 
   if (ldirect.eq.1) then
-    write(unitheader) ibdate,ibtime, trim(flexversion)
+    write(unitheader) ibdate,ibtime, flexversion
   else
-    write(unitheader) iedate,ietime, trim(flexversion)
+    write(unitheader) iedate,ietime, flexversion
   endif
 
   ! Write info on output interval, averaging time, sampling time

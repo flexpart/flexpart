@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine gridcheck
+subroutine gridcheck_gfs
 
   !**********************************************************************
   !                                                                     *
@@ -37,6 +37,10 @@ subroutine gridcheck
   !                                 ECMWF grib_api                      *
   !             CHANGE: 03/12/2008, Harald Sodemann, update to f90 with *
   !                                 ECMWF grib_api                      *
+  !                                                                     *
+  !   Unified ECMWF and GFS builds                                      *
+  !   Marian Harustak, 12.5.2017                                        *
+  !     - Renamed routine from gridcheck to gridcheck_gfs               *
   !                                                                     *
   !**********************************************************************
   !                                                                     *
@@ -226,6 +230,9 @@ subroutine gridcheck
   call grib_get_real8(igrib,'latitudeOfFirstGridPointInDegrees', &
        yaux2in,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
+
+  ! Fix for flexpart.eu ticket #48
+  if (xaux2in.lt.0) xaux2in = 359.0
 
   xaux1=xaux1in
   xaux2=xaux2in
@@ -536,4 +543,4 @@ subroutine gridcheck
     goto 5
   endif
 
-end subroutine gridcheck
+end subroutine gridcheck_gfs

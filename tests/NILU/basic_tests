@@ -1,6 +1,6 @@
 #WORKSPACE=/xnilu_wrk/flexbuild
 #WORKSPACE=/home/ignacio/repos/
-FP_exec=$WORKSPACE/src/FP_ecmwf_gfortran
+FP_exec=$WORKSPACE/src/FLEXPART
 path_flextest=$WORKSPACE/flextest/
 declare -a test_names=('1' 'HelloWorld' 'Fwd1' 'Fwd2' 'Bwd1' 'Volc' '2')
 

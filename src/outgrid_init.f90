@@ -18,6 +18,13 @@
 ! You should have received a copy of the GNU General Public License   *
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
+!                                                                     *
+! DJM - 2017-05-09 - added #ifdef USE_MPIINPLACE cpp directive to     *
+! enable allocation of a gridunc0 array if required by MPI code in    *
+! mpi_mod.f90                                                         *
+!                                                                     *
+!**********************************************************************
+
 
 subroutine outgrid_init
   !
@@ -214,9 +221,15 @@ subroutine outgrid_init
 
 ! Extra field for totals at MPI root process
   if (lroot.and.mpi_mode.gt.0) then
-    ! allocate(gridunc0(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
-    !      maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    ! if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
+
+#ifdef USE_MPIINPLACE
+#else
+    ! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid(),
+    ! then an aux array is needed for parallel grid reduction
+    allocate(gridunc0(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
+#endif
     if (ldirect.gt.0) then
       allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
            maxpointspec_act,nclassunc,maxageclass),stat=stat)

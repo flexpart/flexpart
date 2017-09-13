@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine getfields(itime,nstop)
+subroutine getfields(itime,nstop,metdata_format)
 !                       i     o
 !*****************************************************************************
 !                                                                            *
@@ -37,9 +37,13 @@ subroutine getfields(itime,nstop)
 !     29 April 1994                                                          *
 !                                                                            *
 !*****************************************************************************
-!  Changes, Bernd C. Krueger, Feb. 2001:
-!   Variables tth,qvh,tthn,qvhn (on eta coordinates) in common block.
-!   Function of nstop extended.
+!  Changes, Bernd C. Krueger, Feb. 2001:                                     *
+!   Variables tth,qvh,tthn,qvhn (on eta coordinates) in common block.        *
+!   Function of nstop extended.                                              *
+!                                                                            *
+!   Unified ECMWF and GFS builds                                             *
+!   Marian Harustak, 12.5.2017                                               *
+!     - Added passing of metdata_format as it was needed by called routines  *
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -57,6 +61,7 @@ subroutine getfields(itime,nstop)
 ! ww(0:nxmax,0:nymax,nwzmax,2)    wind components in z-direction [deltaeta/s]*
 ! tt(0:nxmax,0:nymax,nuvzmax,2)   temperature [K]                            *
 ! ps(0:nxmax,0:nymax,2)           surface pressure [Pa]                      *
+! metdata_format     format of metdata (ecmwf/gfs)                           *
 !                                                                            *
 ! Constants:                                                                 *
 ! idiffmax             maximum allowable time difference between 2 wind      *
@@ -66,10 +71,12 @@ subroutine getfields(itime,nstop)
 
   use par_mod
   use com_mod
+  use class_gribfile
 
   implicit none
 
   integer :: indj,itime,nstop,memaux
+  integer :: metdata_format
 
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
@@ -124,11 +131,19 @@ subroutine getfields(itime,nstop)
 
     do indj=indmin,numbwf-1
       if (ldirect*wftime(indj+1).gt.ldirect*itime) then
-        call readwind(indj+1,memind(2),uuh,vvh,wwh)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call readwind_ecmwf(indj+1,memind(2),uuh,vvh,wwh)
+        else
+          call readwind_gfs(indj+1,memind(2),uuh,vvh,wwh)
+        end if
         call readwind_nests(indj+1,memind(2),uuhn,vvhn,wwhn)
-        call calcpar(memind(2),uuh,vvh,pvh)
-        call calcpar_nests(memind(2),uuhn,vvhn,pvhn)
-        call verttransform(memind(2),uuh,vvh,wwh,pvh)
+        call calcpar(memind(2),uuh,vvh,pvh,metdata_format)
+        call calcpar_nests(memind(2),uuhn,vvhn,pvhn,metdata_format)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call verttransform_ecmwf(memind(2),uuh,vvh,wwh,pvh)
+        else
+          call verttransform_gfs(memind(2),uuh,vvh,wwh,pvh)
+        end if
         call verttransform_nests(memind(2),uuhn,vvhn,wwhn,pvhn)
         memtime(2)=wftime(indj+1)
         nstop = 1
@@ -151,19 +166,35 @@ subroutine getfields(itime,nstop)
       if ((ldirect*wftime(indj).le.ldirect*itime).and. &
            (ldirect*wftime(indj+1).gt.ldirect*itime)) then
         memind(1)=1
-        call readwind(indj,memind(1),uuh,vvh,wwh)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call readwind_ecmwf(indj,memind(1),uuh,vvh,wwh)
+        else
+          call readwind_gfs(indj,memind(1),uuh,vvh,wwh)
+        end if
         call readwind_nests(indj,memind(1),uuhn,vvhn,wwhn)
-        call calcpar(memind(1),uuh,vvh,pvh)
-        call calcpar_nests(memind(1),uuhn,vvhn,pvhn)
-        call verttransform(memind(1),uuh,vvh,wwh,pvh)
+        call calcpar(memind(1),uuh,vvh,pvh,metdata_format)
+        call calcpar_nests(memind(1),uuhn,vvhn,pvhn,metdata_format)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call verttransform_ecmwf(memind(1),uuh,vvh,wwh,pvh)
+        else
+          call verttransform_gfs(memind(1),uuh,vvh,wwh,pvh)
+        end if
         call verttransform_nests(memind(1),uuhn,vvhn,wwhn,pvhn)
         memtime(1)=wftime(indj)
         memind(2)=2
-        call readwind(indj+1,memind(2),uuh,vvh,wwh)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call readwind_ecmwf(indj+1,memind(2),uuh,vvh,wwh)
+        else
+          call readwind_gfs(indj+1,memind(2),uuh,vvh,wwh)
+        end if
         call readwind_nests(indj+1,memind(2),uuhn,vvhn,wwhn)
-        call calcpar(memind(2),uuh,vvh,pvh)
-        call calcpar_nests(memind(2),uuhn,vvhn,pvhn)
-        call verttransform(memind(2),uuh,vvh,wwh,pvh)
+        call calcpar(memind(2),uuh,vvh,pvh,metdata_format)
+        call calcpar_nests(memind(2),uuhn,vvhn,pvhn,metdata_format)
+        if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call verttransform_ecmwf(memind(2),uuh,vvh,wwh,pvh)
+        else
+          call verttransform_gfs(memind(2),uuh,vvh,wwh,pvh)
+        end if
         call verttransform_nests(memind(2),uuhn,vvhn,wwhn,pvhn)
         memtime(2)=wftime(indj+1)
         nstop = 1

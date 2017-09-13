@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
-       akz,bkz,hf,tt2,td2,h,wst,hmixplus)
+       akz,bkz,hf,tt2,td2,h,wst,hmixplus,metdata_format)
   !                        i    i    i     i    i    i    i
   ! i   i  i   i   i  o  o     o
   !****************************************************************************
@@ -40,11 +40,20 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   !     of alternative boundary-layer height formulations. Boundary-Layer     *
   !     Meteor. 81, 245-269.                                                  *
   !                                                                           *
+  !****************************************************************************
+  !                                                                           *
   !     Update: 1999-02-01 by G. Wotawa                                       *
   !                                                                           *
   !     Two meter level (temperature, humidity) is taken as reference level   *
   !     instead of first model level.                                         *
   !     New input variables tt2, td2 introduced.                              *
+  !                                                                           *
+  !     CHANGE: 17/11/2005 Caroline Forster NCEP GFS version                  * 
+  !                                                                           *
+  !     Unified ECMWF and GFS builds                                          *
+  !     Marian Harustak, 12.5.2017                                            *
+  !       - Merged richardson and richardson_gfs into one routine using       *
+  !         if-then for meteo-type dependent code                             *
   !                                                                           *
   !****************************************************************************
   !                                                                           *
@@ -54,6 +63,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   ! psurf                      surface pressure at point (xt,yt) [Pa]         *
   ! tv                         virtual temperature                            *
   ! wst                        convective velocity scale                      *
+  ! metdata_format             format of metdata (ecmwf/gfs)                  *
   !                                                                           *
   ! Constants:                                                                *
   ! ric                        critical Richardson number                     *
@@ -61,10 +71,12 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   !****************************************************************************
 
   use par_mod
+  use class_gribfile
 
   implicit none
 
-  integer :: i,k,nuvz,iter
+  integer :: metdata_format
+  integer :: i,k,nuvz,iter,llev,loop_start
   real :: tv,tvold,zref,z,zold,pint,pold,theta,thetaref,ri
   real :: akz(nuvz),bkz(nuvz),ulev(nuvz),vlev(nuvz),hf,wst,tt2,td2,ew
   real :: psurf,ust,ttlev(nuvz),qvlev(nuvz),h,excess
@@ -75,6 +87,22 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
 
   excess=0.0
   iter=0
+
+  if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+    ! NCEP version: find first model level above ground
+    !**************************************************
+
+     llev = 0
+     do i=1,nuvz
+       if (psurf.lt.akz(i)) llev=i
+     end do
+     llev = llev+1
+    ! sec llev should not be 1!
+     if (llev.eq.1) llev = 2
+     if (llev.gt.nuvz) llev = nuvz-1
+    ! NCEP version
+  end if
+
 
   ! Compute virtual temperature and virtual potential temperature at
   ! reference level (2 m)
@@ -94,8 +122,12 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
 
   ! Integrate z up to one level above zt
   !*************************************
-
-  do k=2,nuvz
+  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+    loop_start=2
+  else
+    loop_start=llev
+  end if
+  do k=loop_start,nuvz
     pint=akz(k)+bkz(k)*psurf  ! pressure on model layers
     tv=ttlev(k)*(1.+0.608*qvlev(k))
 
