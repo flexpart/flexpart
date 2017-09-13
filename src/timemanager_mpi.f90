@@ -85,6 +85,7 @@ subroutine timemanager(metdata_format)
 !                    polation                                                *
 ! xtra1(maxpart), ytra1(maxpart), ztra1(maxpart) =                           *
 !                    spatial positions of trajectories                       *
+! metdata_format     format of metdata (ecmwf/gfs)                           *
 !                                                                            *
 ! Constants:                                                                 *
 ! maxpart            maximum number of trajectories                          *
@@ -105,6 +106,7 @@ subroutine timemanager(metdata_format)
 
   implicit none
 
+  integer :: metdata_format
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0
 ! integer :: ksp
@@ -348,7 +350,7 @@ subroutine timemanager(metdata_format)
       if (verbosity.gt.0) then
         write (*,*) 'timemanager> call convmix -- forward'
       endif
-      call convmix(itime)
+      call convmix(itime,metdata_format)
     endif
 
 ! If middle of averaging period of output fields is reached, accumulated

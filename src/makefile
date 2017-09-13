@@ -80,11 +80,11 @@ O_LEV_DBG = g # [0,g]
 ## LIBRARIES
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff # -fopenmp
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 
 MODOBJS = \

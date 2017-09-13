@@ -99,8 +99,8 @@ subroutine calcmatrix(lconv,delt,cbmf,metdata_format)
   ! initialize mass fractions
     do kk=1,nconvlev
       fmassfrac(k,kk)=0.
-    enddo
-  enddo
+    end do
+  end do
 
 
   !note that Emanuel says it is important

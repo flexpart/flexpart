@@ -231,6 +231,9 @@ subroutine gridcheck_gfs
        yaux2in,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
+  ! Fix for flexpart.eu ticket #48
+  if (xaux2in.lt.0) xaux2in = 359.0
+
   xaux1=xaux1in
   xaux2=xaux2in
   yaux1=yaux1in

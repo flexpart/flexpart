@@ -141,15 +141,12 @@ module par_mod
   !*********************************************
   
 !  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
-!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
 
-  integer,parameter :: nxmax=181,nymax=91,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+!  integer,parameter :: nxmax=181,nymax=91,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
 
 !  INTEGER,PARAMETER :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !NCEP data
 
-!  !integer,parameter :: nxshift=359  ! for ECMWF
-!  integer,parameter :: nxshift=0     ! for GFS
-!  integer,parameter :: nxmax=15,nymax=15,nuvzmax=140,nwzmax=140,nzmax=140
 !  integer,parameter :: nxshift=359  ! for ECMWF
   integer,parameter :: nxshift=0     ! for GFS
 
@@ -157,7 +154,7 @@ module par_mod
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  integer,parameter :: maxnests=0,nxmaxn=451,nymaxn=226
+  integer,parameter :: maxnests=1,nxmaxn=451,nymaxn=226
 
   ! nxmax,nymax        maximum dimension of wind fields in x and y
   !                    direction, respectively
@@ -292,8 +289,5 @@ module par_mod
 
   integer,parameter ::  icmv=-9999
 
-! Parameters for testing
-!*******************************************
-!  integer :: verbosity=0
 
 end module par_mod
