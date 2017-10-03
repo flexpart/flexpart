@@ -204,11 +204,26 @@ subroutine conccalc(itime,weight)
            (yl.gt.real(numygrid-1)-0.5)) then             ! no kernel, direct attribution to grid cell
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
              (jy.le.numygrid-1)) then
-          do ks=1,nspec
-            gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
-                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                 xmass1(i,ks)/rhoi*weight
-          end do
+          if (DRYBKDEP.or.WETBKDEP) then
+            do ks=1,nspec
+              gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
+            end do
+          else
+            if (lparticlecountoutput) then
+              do ks=1,nspec
+                gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+1
+              end do
+            else
+              do ks=1,nspec
+                gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight
+              end do
+            end if
+          endif
         endif
 
       else                                 ! attribution via uniform kernel
@@ -238,20 +253,36 @@ subroutine conccalc(itime,weight)
         if ((ix.ge.0).and.(ix.le.numxgrid-1)) then
           if ((jy.ge.0).and.(jy.le.numygrid-1)) then
             w=wx*wy
-            do ks=1,nspec
-              gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (DRYBKDEP.or.WETBKDEP) then
+               do ks=1,nspec
+                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*w*weight*max(xscav_frac1(i,ks),0.0)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
 
           if ((jyp.ge.0).and.(jyp.le.numygrid-1)) then
             w=wx*(1.-wy)
-            do ks=1,nspec
-              gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (DRYBKDEP.or.WETBKDEP) then
+              do ks=1,nspec
+                 gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+               end do
+             else
+              do ks=1,nspec
+                 gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+             endif
           endif
         endif
 
@@ -259,20 +290,36 @@ subroutine conccalc(itime,weight)
         if ((ixp.ge.0).and.(ixp.le.numxgrid-1)) then
           if ((jyp.ge.0).and.(jyp.le.numygrid-1)) then
             w=(1.-wx)*(1.-wy)
-            do ks=1,nspec
-              gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (DRYBKDEP.or.WETBKDEP) then
+               do ks=1,nspec
+                 gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*w*weight*max(xscav_frac1(i,ks),0.0)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
 
           if ((jy.ge.0).and.(jy.le.numygrid-1)) then
             w=(1.-wx)*wy
-            do ks=1,nspec
-              gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (DRYBKDEP.or.WETBKDEP) then
+               do ks=1,nspec
+                 gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+               end do
+            else
+               do ks=1,nspec
+                 gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    gridunc(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                    xmass1(i,ks)/rhoi*weight*w
-            end do
+               end do
+            endif
           endif
         endif
       endif
@@ -303,11 +350,26 @@ subroutine conccalc(itime,weight)
              (yl.gt.real(numygridn-1)-0.5)) then             ! no kernel, direct attribution to grid cell
           if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgridn-1).and. &
                (jy.le.numygridn-1)) then
-            do ks=1,nspec
-              griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+            if (DRYBKDEP.or.WETBKDEP) then
+               do ks=1,nspec
+                 griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                    griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*weight
-            end do
+                   xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
+               end do
+            else
+              if (lparticlecountoutput) then
+                do ks=1,nspec
+                  griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                       griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+1
+                end do
+              else
+                do ks=1,nspec
+                  griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                       griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                       xmass1(i,ks)/rhoi*weight
+                end do
+              endif
+            endif
           endif
 
         else                                 ! attribution via uniform kernel
@@ -337,20 +399,36 @@ subroutine conccalc(itime,weight)
           if ((ix.ge.0).and.(ix.le.numxgridn-1)) then
             if ((jy.ge.0).and.(jy.le.numygridn-1)) then
               w=wx*wy
-              do ks=1,nspec
-                griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (DRYBKDEP.or.WETBKDEP) then
+                 do ks=1,nspec
+                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+                 end do
+              else
+                do ks=1,nspec
+                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
 
             if ((jyp.ge.0).and.(jyp.le.numygridn-1)) then
               w=wx*(1.-wy)
-              do ks=1,nspec
-                griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (DRYBKDEP.or.WETBKDEP) then
+                 do ks=1,nspec
+                   griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+                 end do
+              else
+                 do ks=1,nspec
+                   griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ix,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
           endif
 
@@ -358,20 +436,36 @@ subroutine conccalc(itime,weight)
           if ((ixp.ge.0).and.(ixp.le.numxgridn-1)) then
             if ((jyp.ge.0).and.(jyp.le.numygridn-1)) then
               w=(1.-wx)*(1.-wy)
-              do ks=1,nspec
-                griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (DRYBKDEP.or.WETBKDEP) then
+                 do ks=1,nspec
+                   griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+                 end do
+              else
+                 do ks=1,nspec
+                   griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jyp,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
 
             if ((jy.ge.0).and.(jy.le.numygridn-1)) then
               w=(1.-wx)*wy
-              do ks=1,nspec
-                griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+              if (DRYBKDEP.or.WETBKDEP) then
+                 do ks=1,nspec
+                   griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight*w*max(xscav_frac1(i,ks),0.0)
+                 end do
+              else
+                 do ks=1,nspec
+                    griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)= &
                      griduncn(ixp,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
                      xmass1(i,ks)/rhoi*weight*w
-              end do
+                 end do
+              endif
             endif
           endif
         endif

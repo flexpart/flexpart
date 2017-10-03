@@ -59,8 +59,13 @@ module par_mod
 
   logical, parameter :: lnokernel=.false.
 
+  !*********************************************************************
+  ! Set to T to change output units to number of particles per grid cell
+  !*********************************************************************
+  logical, parameter :: lparticlecountoutput=.false.
+
   !***********************************************************
-  ! Number of directories/files used for FLEXPART input/output
+  ! number of directories/files used for FLEXPART input/output
   !***********************************************************
 
   integer,parameter :: numpath=4
@@ -140,21 +145,21 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
-!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF new 
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+  ! ECMWF
+! integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=359 ! 1.0 degree 92 level
+   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
+! integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359  ! 0.5 degree 138 level
+!  integer,parameter :: nxmax=181,nymax=91,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=0  ! CERA 2.0 degree 92 level
 
-!  integer,parameter :: nxmax=181,nymax=91,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF new 
+! GFS
+!   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0
 
-!  INTEGER,PARAMETER :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !NCEP data
-
-!  integer,parameter :: nxshift=359  ! for ECMWF
-  integer,parameter :: nxshift=0     ! for GFS
 
   !*********************************************
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  integer,parameter :: maxnests=1,nxmaxn=451,nymaxn=226
+  integer,parameter :: maxnests=0,nxmaxn=451,nymaxn=226
 
   ! nxmax,nymax        maximum dimension of wind fields in x and y
   !                    direction, respectively
@@ -212,7 +217,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=10000000
+  integer,parameter :: maxpart=3000000
   integer,parameter :: maxspec=4
 
   real,parameter :: minmass=0.0001

@@ -192,17 +192,24 @@ subroutine conccalc(itime,weight)
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
              (jy.le.numygrid-1)) then
           if (DRYBKDEP.or.WETBKDEP) then
-             do ks=1,nspec
-               gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
-                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                 xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
-             end do
+            do ks=1,nspec
+              gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                   gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                   xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
+            end do
           else
-             do ks=1,nspec
-               gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
-                 gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                 xmass1(i,ks)/rhoi*weight
-             end do
+            if (lparticlecountoutput) then
+              do ks=1,nspec
+                gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+1
+              end do
+            else
+              do ks=1,nspec
+                gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                     gridunc(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                     xmass1(i,ks)/rhoi*weight
+              end do
+            end if
           endif
         endif
 
@@ -335,14 +342,21 @@ subroutine conccalc(itime,weight)
                    xmass1(i,ks)/rhoi*weight*max(xscav_frac1(i,ks),0.0)
                end do
             else
-               do ks=1,nspec
-                 griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
-                   griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
-                   xmass1(i,ks)/rhoi*weight
-               end do
+              if (lparticlecountoutput) then
+                do ks=1,nspec
+                  griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                       griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+1
+                end do
+              else
+                do ks=1,nspec
+                  griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)= &
+                       griduncn(ix,jy,kz,ks,nrelpointer,nclass(i),nage)+ &
+                       xmass1(i,ks)/rhoi*weight
+                end do
+              endif
             endif
           endif
-
+          
         else                                 ! attribution via uniform kernel
 
           ddx=xl-real(ix)                   ! distance to left cell border

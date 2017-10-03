@@ -445,10 +445,18 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
                     sp_fact=sp_fact*(-1.)
                   endif
                   sp_count_r=sp_count_r+1
-                  sparse_dump_r(sp_count_r)= &
-                       sp_fact* &
-                       grid(ix,jy,kz)* &
-                       factor3d(ix,jy,kz)/tot_mu(ks,kp)
+                  if (lparticlecountoutput) then
+                    sparse_dump_r(sp_count_r)= &
+                         sp_fact* &
+                         grid(ix,jy,kz)
+                  else
+                    sparse_dump_r(sp_count_r)= &
+                         sp_fact* &
+                         grid(ix,jy,kz)* &
+                         factor3d(ix,jy,kz)/tot_mu(ks,kp)
+                  end if
+
+
 !                 if ((factor(ix,jy,kz)/tot_mu(ks,kp)).eq.0)
 !    +              write (*,*) factor(ix,jy,kz),tot_mu(ks,kp),ks,kp
 !                sparse_dump_u(sp_count_r)=
