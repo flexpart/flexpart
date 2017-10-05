@@ -175,18 +175,6 @@ program flexpart
     endif
   endif
 
-  ! Exit if trying to run backwards
-  if (ldirect.le.0) then
-    write(*,FMT='(80("#"))')
-    write(*,*) '#### FLEXPART_MPI> ERROR: ', &
-         & 'MPI version not (yet) working with backward runs. '
-    write(*,*) '#### Use the serial version instead.'
-    write(*,FMT='(80("#"))')
-    ! call mpif_finalize
-    ! stop
-  end if
-
-
 
 ! Read the age classes to be used
 !********************************
