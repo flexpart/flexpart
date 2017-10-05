@@ -57,7 +57,7 @@ module par_mod
   ! Set to T to disable use of kernel for concentrations/deposition
   !****************************************************************
 
-  logical, parameter :: lnokernel=.false.
+  logical, parameter :: lnokernel=.true.
 
   !*********************************************************************
   ! Set to T to change output units to number of particles per grid cell
@@ -217,8 +217,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=3000000
-  integer,parameter :: maxspec=4
+  integer,parameter :: maxpart=300000000
+  integer,parameter :: maxspec=1
 
   real,parameter :: minmass=0.0001
 

@@ -52,7 +52,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! Unified ECMWF and GFS builds
 ! Marian Harustak, 12.5.2017 
 !     - Renamed from verttransform to verttransform_ecmwf
-!
+!*****************************************************************************
+! Date: 2017-05-30 modification of a bug in ew. Don Morton (CTBTO project)   *
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -95,6 +96,9 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   real,parameter :: precmin = 0.002 ! minimum prec in mm/h for cloud diagnostics
 
   logical :: init = .true.
+  logical :: init_w = .false.
+  logical :: init_r = .true.
+
 
   !ZHG SEP 2014 tests  
   ! integer :: cloud_ver,cloud_min, cloud_max 
@@ -107,8 +111,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
   ! CHARACTER(LEN=3)  :: aspec
   ! integer :: virr=0
-  real :: tot_cloud_h
-  real :: dbg_height(nzmax) 
+  !real :: tot_cloud_h
+  !real :: dbg_height(nzmax) 
 !ZHG
 
 !*************************************************************************
@@ -126,6 +130,19 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !  call mpif_mtime('verttransform',0)
 
   if (init) then
+
+
+    if (init_r) then
+
+        open(333,file='heights.txt', &
+          form='formatted')
+        do kz=1,nuvz
+            read(333,*) height(kz)
+        end do
+        close(333)
+        write(*,*) 'height read'
+    else
+
 
 ! Search for a point with high surface pressure (i.e. not above significant topography)
 ! Then, use this point to construct a reference z profile, to be used at all times
@@ -165,6 +182,16 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
       pold(ixm,jym)=pint(ixm,jym)
     end do
 
+    if (init_w) then
+        open(333,file='heights.txt', &
+          form='formatted')
+        do kz=1,nuvz
+              write(333,*) height(kz)
+        end do
+        close(333)
+    endif
+
+    endif ! init
 
 ! Determine highest levels that can be within PBL
 !************************************************
@@ -182,7 +209,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
     init=.false.
 
-    dbg_height = height
+!    dbg_height = height
 
   endif
 
@@ -602,13 +629,13 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
         lsp=lsprec(ix,jy,1,n)
         convp=convprec(ix,jy,1,n)
         prec=lsp+convp
-        tot_cloud_h=0
+!        tot_cloud_h=0
 ! Find clouds in the vertical
         do kz=1, nz-1 !go from top to bottom
           if (clwc(ix,jy,kz,n).gt.0) then      
 ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
             clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
-            tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
+!            tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
             
 !            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
             ctwc(ix,jy,n) = ctwc(ix,jy,n)+clw(ix,jy,kz,n)

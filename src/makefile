@@ -63,9 +63,9 @@ else
 	F90       = /usr/bin/gfortran
 	MPIF90    = /usr/bin/mpif90.openmpi
 
-	INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
 	INCPATH2 = /usr/include
-	LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
 endif
 
 
