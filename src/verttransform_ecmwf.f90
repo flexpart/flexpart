@@ -97,7 +97,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   logical :: init = .true.
   logical :: init_w = .false.
-  logical :: init_r = .true.
+  logical :: init_r = .false.
 
 
   !ZHG SEP 2014 tests  
