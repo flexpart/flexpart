@@ -151,7 +151,7 @@ subroutine timemanager(metdata_format)
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
   
-  if (lnokernel) write(*,*) 'Not using the kernel'
+  if (.not.lusekerneloutput) write(*,*) 'Not using the kernel'
   if (turboff) write(*,*) 'Turbulence switched off'
 
   write(*,46) float(itime)/3600,itime,numpart

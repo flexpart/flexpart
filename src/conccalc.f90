@@ -186,7 +186,8 @@ subroutine conccalc(itime,weight)
   ! If a particle is close to the domain boundary, do not use the kernel either.
   !*****************************************************************************
 
-      if (lnokernel.or.(itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
+      if ((.not.lusekerneloutput).or.(itage.lt.10800).or. &
+           (xl.lt.0.5).or.(yl.lt.0.5).or. &
            (xl.gt.real(numxgrid-1)-0.5).or. &
            (yl.gt.real(numygrid-1)-0.5)) then             ! no kernel, direct attribution to grid cell
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
@@ -332,7 +333,8 @@ subroutine conccalc(itime,weight)
 
         if ((itage.lt.10800).or.(xl.lt.0.5).or.(yl.lt.0.5).or. &
              (xl.gt.real(numxgridn-1)-0.5).or. &
-             (yl.gt.real(numygridn-1)-0.5).or.(lnokernel)) then             ! no kernel, direct attribution to grid cell
+             (yl.gt.real(numygridn-1)-0.5).or.((.not.lusekerneloutput))) then
+! no kernel, direct attribution to grid cell
           if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgridn-1).and. &
                (jy.le.numygridn-1)) then
             if (DRYBKDEP.or.WETBKDEP) then

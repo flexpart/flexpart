@@ -47,9 +47,8 @@ FLEXPART-SERIAL = FLEXPART
 
 
 ifeq ($(gcc), 4.9)
-# Compiled libraries under users ~flexpart, gfortran v4.9
+# Compiled libraries under user ~flexpart, gfortran v4.9
 	ROOT_DIR = /homevip/flexpart/
-#	ROOT_DIR = /homevip/espen/
 
 	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
 	MPIF90    = ${ROOT_DIR}/bin/mpifort
@@ -57,6 +56,17 @@ ifeq ($(gcc), 4.9)
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
+
+else ifeq ($(gcc), 5.4)
+# Compiled libraries under user ~flexpart, gfortran v5.4
+	ROOT_DIR = /homevip/flexpart/
+
+	F90	  = /usr/bin/gfortran
+	MPIF90    = /usr/bin/mpifort
+
+	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
+	INCPATH2  = /usr/include
+	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
 
 else
 # Default: System libraries at NILU, gfortran v4.6

@@ -452,7 +452,7 @@ program flexpart
   !*********************************************
 
   if (lroot) then
-    if (lnokernel) then
+    if (.not.lusekerneloutput) then
       write(*,*) "Concentrations are calculated without using kernel"
     else
       write(*,*) "Concentrations are calculated using kernel"

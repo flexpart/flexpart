@@ -54,10 +54,10 @@ module par_mod
   integer,parameter :: dep_prec=sp
 
   !****************************************************************
-  ! Set to T to disable use of kernel for concentrations/deposition
+  ! Set to F to disable use of kernel for concentrations/deposition
   !****************************************************************
 
-  logical, parameter :: lnokernel=.true.
+  logical, parameter :: lusekerneloutput=.true.
 
   !*********************************************************************
   ! Set to T to change output units to number of particles per grid cell

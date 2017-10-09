@@ -82,7 +82,7 @@ subroutine drydepokernel(nunc,deposit,x,y,nage,kp)
   ! If no kernel is used, direct attribution to grid cell
   !******************************************************
 
-  if (lnokernel) then
+  if (.not.lusekerneloutput) then
     do ks=1,nspec
       if ((abs(deposit(ks)).gt.0).and.DRYDEPSPEC(ks)) then
         if ((ix.ge.0).and.(jy.ge.0).and.(ix.le.numxgrid-1).and. &
