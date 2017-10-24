@@ -1,25 +1,11 @@
-****************************************************************************
-*                                                                          *
-*     Input file for the Lagrangian particle dispersion model FLEXPART     *
-*               Definition file of chemical species/radionuclides          *
-*                                                                          *
-****************************************************************************
-I-131              Tracer name
-691200.0           Species half life
- 1.0E-04           Below cloud scavenging - A
-0.80               Below cloud scavenging - B
-2.0E-7             In-cloud scavenging - Ai (cl=Ai*prec**Bi)
-0.36               In-cloud scavenging - Bi (cl=Ai*prec**Bi)
-0.9                In-cloud scavenging - Ci (S_i=Ci/cl)
-1.                 In-cloud scavenging - Di (wetscav=S_i*prec/3.6E6/clouds_h/Di)
--9.9               Dry deposition (gases) - D
-                   Dry deposition (gases) - Henrys const.
-                   Dry deposition (gases) - f0 (reactivity)
- 2.5E03            Dry deposition (particles) - rho
-6.0E-7             Dry deposition (particles) - dquer
-3.0E-1             Dry deposition (particles) - dsig
--9.99              Alternative: dry deposition velocity
- -9.99             molweight
--9.9E-09           OH Reaction rate at 25 deg, [cm^3/sec]
--9                 number of associated specias (neg. none)
--99.99             KOA - organic matter air partitioning
+&SPECIES_PARAMS
+ PSPECIES="I-131           ",
+ PDECAY=  691200.000    ,
+ PCRAIN_AERO=  1.0    ,
+ PCSNOW_AERO=  1.0    ,
+ PCCN_AERO= 0.9    ,
+ PIN_AERO= 0.1    ,
+ PDENSITY=  2500.00000    ,
+ PDQUER=  6.0E-07,
+ PDSIGMA= 0.3    ,
+ /
