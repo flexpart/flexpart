@@ -207,7 +207,7 @@ program flexpart
     print *,'NCEP metdata detected'
   else
     print *,'Unknown metdata format'
-    return
+    stop
   endif
 
 
