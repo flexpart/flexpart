@@ -42,6 +42,11 @@ subroutine gridcheck_gfs
   !   Marian Harustak, 12.5.2017                                        *
   !     - Renamed routine from gridcheck to gridcheck_gfs               *
   !                                                                     *
+  !   Implementation of the Vtables approach                            *
+  !   D. Morton, D. Arnold 17.11.2017                                   *
+  !     - Inclusion of specific code and usage of class_vtable          *
+  !                                                                     *
+  !                                                                     *
   !**********************************************************************
   !                                                                     *
   ! DESCRIPTION:                                                        *
@@ -78,6 +83,7 @@ subroutine gridcheck_gfs
   use com_mod
   use conv_mod
   use cmapf_mod, only: stlmbr,stcm2p
+  use class_vtable
 
   implicit none
 
@@ -101,7 +107,10 @@ subroutine gridcheck_gfs
 
   ! VARIABLES AND ARRAYS NEEDED FOR GRIB DECODING
 
-  integer :: isec1(8),isec2(3)
+
+
+  !!!!  DJM - isec1 no longer user - integer :: isec1(8),isec2(3)
+  integer :: isec2(3)
   real(kind=4) :: zsec4(jpunp)
   character(len=1) :: opt
 
@@ -109,6 +118,23 @@ subroutine gridcheck_gfs
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'gridcheckwind_gfs'
   !
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable related variables
+  !
+  !  Path to Vtable - current implementation assumes it's in cwd, named
+  !  "Vtable"
+  CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
+  CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
+  TYPE(Vtable) :: my_vtable    ! unallocated
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  !!  DJM
+  INTEGER current_grib_level   ! this was isec1(8) in previous versions
+
+
+
+
   if (numbnests.ge.1) then
   write(*,*) ' ###########################################'
   write(*,*) ' FLEXPART ERROR SUBROUTINE GRIDCHECK:'
@@ -125,6 +151,37 @@ subroutine gridcheck_gfs
   else
     ifn=numbwf
   endif
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable code
+  PRINT *, 'Loading Vtable: ', VTABLE_PATH
+  call vtable_load_by_name(VTABLE_PATH, my_vtable)
+  !! Debugging tool
+!  PRINT *, 'Dump of Vtable...'
+!  call vtable_dump_records(my_vtable)
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! This is diagnostic/debugging code, and will normally be commented out.
+  ! It's purpose is to look at the provided grib file and produce an
+  ! inventory of the FP-related messages, relative to the Vtable that's
+  ! already been open.
+
+!  CALL vtable_gribfile_inventory(path(3)(1:length(3)) // trim(wfname(ifn)), &
+!&                                my_vtable)
+
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
+
   !
   ! OPENING OF DATA FILE (GRIB CODE)
   !
@@ -148,65 +205,60 @@ subroutine gridcheck_gfs
     goto 999   ! ERROR DETECTED
   endif
 
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! Get the fpname
+  fpname = vtable_get_fpname(igrib, my_vtable)
+  !print *, 'fpname: ', trim(fpname)
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
   !first see if we read GRIB1 or GRIB2
   call grib_get_int(igrib,'editionNumber',gribVer,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
+
+
   if (gribVer.eq.1) then ! GRIB Edition 1
 
-  !read the grib1 identifiers
-  call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'indicatorOfTypeOfLevel',isec1(7),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',isec1(8),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+      call grib_get_int(igrib,'level',current_grib_level,iret)
+      call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !get the size and data of the values array
-  call grib_get_real4_array(igrib,'values',zsec4,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+      !!! Added by DJM 2017-08-04 - if this is GRIB1 we assume that
+      !!! level units are hPa and need to be multiplied by 100 for Pa
+      !!! We only do this for the UU field, since that's the only 3D field
+      !!! used in this routine
+      current_grib_level = current_grib_level*100.0
 
   else ! GRIB Edition 2
 
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'discipline',discipl,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterCategory',parCat,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterNumber',parNum,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
-       valSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
+      call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
+           current_grib_level,iret)
+      call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !convert to grib1 identifiers
-  isec1(6)=-1
-  isec1(7)=-1
-  isec1(8)=-1
-  if ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.100)) then ! U
-    isec1(6)=33          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.3).and.(parNum.eq.5).and.(typSurf.eq.1)) then ! TOPO
-    isec1(6)=7           ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.1) &
-       .and.(discipl.eq.2)) then ! LSM
-    isec1(6)=81          ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  endif
-
-  if (isec1(6).ne.-1) then
-  !  get the size and data of the values array
-    call grib_get_real4_array(igrib,'values',zsec4,iret)
-    call grib_check(iret,gribFunction,gribErrorMsg)
-  endif
+     !!! Added by DJM 2017-08-04 - if this is GRIB2 we assume that
+      !!! level units are Pa and don't need to be modified
 
   endif ! gribVer
+
+
+  IF (TRIM(fpname) .NE. 'NOFP') THEN
+      !get the size and data of the values array
+      call grib_get_real4_array(igrib,'values',zsec4,iret)
+      call grib_check(iret,gribFunction,gribErrorMsg)
+  END IF
+
+
+
+
+
+
+
+
+
+
 
   if(ifield.eq.1) then
 
@@ -231,8 +283,13 @@ subroutine gridcheck_gfs
        yaux2in,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  ! Fix for flexpart.eu ticket #48
-  if (xaux2in.lt.0) xaux2in = 359.0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!  DJM ARTIFICIAL CHANGE FOR NCEP GRIB1 - change value from -1 to 359
+!!!!!!!!  See flexpart.eu CTBTO project Ticket #112
+!!!!!!!!  Also see flexpart.eu mainstream Ticket #48
+  if (xaux2in .lt. 0) xaux2in = 359.0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
   xaux1=xaux1in
   xaux2=xaux2in
@@ -316,9 +373,12 @@ subroutine gridcheck_gfs
   ! NCEP ISOBARIC LEVELS
   !*********************
 
-  if((isec1(6).eq.33).and.(isec1(7).eq.100)) then ! check for U wind
+  !!!! DJM - orig - if((isec1(6).eq.33).and.(isec1(7).eq.100)) then ! check for U wind
+  IF (TRIM(fpname) .EQ. 'UU') THEN ! check for U wind
+
     iumax=iumax+1
-    pres(iumax)=real(isec1(8))*100.0
+    !!!!  DJM - orig - pres(iumax)=real(isec1(8))*100.0
+    pres(iumax) = REAL(current_grib_level)
   endif
 
 
@@ -334,7 +394,8 @@ subroutine gridcheck_gfs
   ! NCEP TERRAIN
   !*************
 
-  if((isec1(6).eq.007).and.(isec1(7).eq.001)) then
+  !!!!!!  DJM - orig - if((isec1(6).eq.007).and.(isec1(7).eq.001)) then
+  IF (TRIM(fpname) .EQ. 'ORO') THEN
     do jy=0,ny-1
       do ix=0,nxfield-1
         help=zsec4(nxfield*(ny-jy-1)+ix+1)
@@ -352,7 +413,8 @@ subroutine gridcheck_gfs
   ! NCEP LAND SEA MASK
   !*******************
 
-  if((isec1(6).eq.081).and.(isec1(7).eq.001)) then
+  !!!!!! DJM - orig - if((isec1(6).eq.081).and.(isec1(7).eq.001)) then
+  IF (TRIM(fpname) .EQ. 'LSM') THEN
     do jy=0,ny-1
       do ix=0,nxfield-1
         help=zsec4(nxfield*(ny-jy-1)+ix+1)

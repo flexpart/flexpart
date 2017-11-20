@@ -37,11 +37,17 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !        Variables tthn and qvhn (on eta coordinates) in common block        *
   !  CHANGE: 11/01/2008, Harald Sodemann, GRIB1/2 input with ECMWF grib_api    *
   !  CHANGE: 03/12/2008, Harald Sodemann, update to f90 with ECMWF grib_api    *
+  !                                                                            *
+  !   Implementation of the Vtables approach                                   *
+  !   D. Morton, D. Arnold 17.11.2017                                          *
+  !     - Inclusion of specific code and usage of class_vtable                 *
+  !                                                                            *
   !*****************************************************************************
 
   use grib_api
   use par_mod
   use com_mod
+  use class_vtable
 
   implicit none
 
@@ -67,6 +73,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   ! dimension of zsec2 at least (10+nn), where nn is the number of vertical
   ! coordinate parameters
 
+
+  !!!!!!!!!!!   DJM - eventually we will remove isec1()
   integer :: isec1(56),isec2(22+nxmaxn+nymaxn)
   real(kind=4) :: zsec4(jpunp)
   real(kind=4) :: xaux,yaux
@@ -82,6 +90,23 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'readwind_nests'
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable related variables
+  !
+  !  Path to Vtable - current implementation assumes it's in cwd, named
+  !  "Vtable"
+  CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
+  CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
+  TYPE(Vtable) :: my_vtable    ! unallocated
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  !!  DJM
+  INTEGER current_grib_level   ! this was isec1(8) in previous versions
+
+
+
+
   do l=1,numbnests
     hflswitch=.false.
     strswitch=.false.
@@ -92,6 +117,35 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     ifile=0
     igrib=0
     iret=0
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable code
+  PRINT *, 'Loading Vtable: ', VTABLE_PATH
+  call vtable_load_by_name(VTABLE_PATH, my_vtable)
+  !! Debugging tool
+  PRINT *, 'Dump of Vtable...'
+  call vtable_dump_records(my_vtable)
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! This is diagnostic/debugging code, and will normally be commented out.
+  ! It's purpose is to look at the provided grib file and produce an
+  ! inventory of the FP-related messages, relative to the Vtable that's
+  ! already been open.
+
+  CALL vtable_gribfile_inventory( path(numpath+2*(l-1)+1)(1:length(numpath+2*(l-1)+1))// trim(wfnamen(l, indj)), &
+&                                my_vtable)
+
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
 
   !
   ! OPENING OF DATA FILE (GRIB CODE)
@@ -118,125 +172,44 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     goto 888   ! ERROR DETECTED
   endif
 
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! Get the fpname
+  fpname = vtable_get_fpname(igrib, my_vtable)
+  print *, 'fpname: ', trim(fpname)
+
+
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
   !first see if we read GRIB1 or GRIB2
   call grib_get_int(igrib,'editionNumber',gribVer,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  if (gribVer.eq.1) then ! GRIB Edition 1
 
-  !print*,'GRiB Edition 1'
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',isec1(8),iret)
+  !!  DJM - get the current_grib_level (in previous code it was isec1(8))
+  !!  It's the same in both GRIB1 and GRIB2
+  call grib_get_int(igrib,'level',current_grib_level,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !change code for etadot to code for omega
-  if (isec1(6).eq.77) then
-    isec1(6)=135
-  endif
 
-  conversion_factor=1.
-
-
-  else
-
-  !print*,'GRiB Edition 2'
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'discipline',discipl,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterCategory',parCat,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterNumber',parNum,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',valSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'paramId',parId,iret) !added by mc to make it consisitent with new readwind.f90
-  call grib_check(iret,gribFunction,gribErrorMsg) !added by mc to make it consisitent with new readwind.f90
-
-  !print*,discipl,parCat,parNum,typSurf,valSurf
-
-  !convert to grib1 identifiers
-  isec1(6)=-1
-  isec1(7)=-1
-  isec1(8)=-1
-  isec1(8)=valSurf     ! level
-   conversion_factor=1.
-  if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! T
-    isec1(6)=130         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.105)) then ! U
-    isec1(6)=131         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.105)) then ! V
-    isec1(6)=132         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
-    isec1(6)=133         ! indicatorOfParameter
-! ESO Cloud water is in a) fields CLWC and CIWC, *or* b) field QC 
-    elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
-      isec1(6)=246         ! indicatorOfParameter
-    elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
-      isec1(6)=247         ! indicatorOfParameter
-! ESO qc(=clwc+ciwc):
-    elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
-      isec1(6)=201031         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
-    isec1(6)=134         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot !
-    isec1(6)=135         ! indicatorOfParameter
-  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=135         ! indicatorOfParameter    !added by mc to make it consisitent with new readwind.f90
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
-    isec1(6)=151         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
-    isec1(6)=165         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.103)) then ! 10V
-    isec1(6)=166         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.103)) then ! 2T
-    isec1(6)=167         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.6).and.(typSurf.eq.103)) then ! 2D
-    isec1(6)=168         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
-    isec1(6)=141         ! indicatorOfParameter
-    conversion_factor=1000. !added by mc to make it consisitent with new readwind.f90
-  elseif ((parCat.eq.6).and.(parNum.eq.1) .or. parId .eq. 164) then ! CC !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=164         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.9) .or. parId .eq. 142) then ! LSP !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=142         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
-    isec1(6)=143         ! indicatorOfParameter
-    conversion_factor=1000. !added by mc to make it consisitent with new readwind.f90
-  elseif ((parCat.eq.0).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SHF
-    isec1(6)=146         ! indicatorOfParameter
-  elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
-    isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.38) .or. parId .eq. 180) then ! EWSS !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.37) .or. parId .eq. 181) then ! NSSS !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=181         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
-    isec1(6)=129         ! indicatorOfParameter
-   elseif ((parCat.eq.3).and.(parNum.eq.7) .or. parId .eq. 160) then ! SDO !added by mc to make it consisitent with new readwind.f90
-    isec1(6)=160         ! indicatorOfParameter
-  elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
-       (typSurf.eq.1)) then ! LSM
-    isec1(6)=172         ! indicatorOfParameter
-  else
-    print*,'***WARNING: undefined GRiB2 message found!',discipl, &
-         parCat,parNum,typSurf
-  endif
-  if(parId .ne. isec1(6) .and. parId .ne. 77) then !added by mc to make it consisitent with new readwind.f90
-    write(*,*) 'parId',parId, 'isec1(6)',isec1(6)  !
-!    stop
-  endif
-
-  endif
 
   !HSO  get the size and data of the values array
-  if (isec1(6).ne.-1) then
+
+  !!!! -- original statement -- if (isec1(6).ne.-1) then
+  ! 'NOFP' is the fpname for a grib message not recognized by FLEXPART
+  IF (TRIM(fpname) .NE. 'NOFP') THEN
     call grib_get_real4_array(igrib,'values',zsec4,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
-  endif
+  ENDIF
+
+
+
 
   !HSO  get the required fields from section 2 in a gribex compatible manner
   if(ifield.eq.1) then
@@ -259,7 +232,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   endif ! ifield
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
- if (isec1(6) .eq. 167 .and. (gotGrid.eq.0)) then ! !added by mc to make it consisitent with new readwind.f90
+  if (TRIM(fpname) .EQ. 'T2'.and. (gotGrid.eq.0)) then
+  !!!!! DJM --- if (isec1(6) .eq. 167 .and. (gotGrid.eq.0)) then ! !added by mc to make it consisitent with new readwind.f90
     call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', &
          xauxin,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
@@ -278,9 +252,18 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
     gotGrid=1
   endif
 
+
+
+
+
+!!!!!!!!!!!   BEGIN --  THIS IS OLD STUFF I'LL GET RID OF EVENTUALLY
+#ifdef NO_LONGER_NEEDED
     do j=0,nyn(l)-1
       do i=0,nxn(l)-1
         k=isec1(8)
+
+
+
         if(isec1(6).eq.130) tthn(i,j,nlev_ec-k+2,n,l)= &!! TEMPERATURE
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.131) uuhn(i,j,nlev_ec-k+2,l)= &!! U VELOCITY
@@ -294,10 +277,12 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !          this is necessary because the gridded data may contain
   !          spurious negative values
         endif
-        if(isec1(6).eq.134) psn(i,j,1,n,l)= &!! SURF. PRESS.
-             zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.135) wwhn(i,j,nlev_ec-k+1,l)= &!! W VELOCITY
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+
+        if(isec1(6).eq.134) psn(i,j,1,n,l)= &!! SURF. PRESS.
+             zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+
         if(isec1(6).eq.141) sdn(i,j,1,n,l)= &!! SNOW DEPTH
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor !added by mc to make it consisitent with new readwind.f90!
         if(isec1(6).eq.151) msln(i,j,1,n,l)= &!! SEA LEVEL PRESS.
@@ -312,6 +297,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.168) td2n(i,j,1,n,l)= &!! 2 M DEW POINT
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+
         if(isec1(6).eq.142) then                         !! LARGE SCALE PREC.
           lsprecn(i,j,1,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
           if (lsprecn(i,j,1,n,l).lt.0.) lsprecn(i,j,1,n,l)=0.
@@ -320,6 +306,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
           convprecn(i,j,1,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor !added by mc to make it consisitent with new readwind.f90
           if (convprecn(i,j,1,n,l).lt.0.) convprecn(i,j,1,n,l)=0.
         endif
+
         if(isec1(6).eq.146) sshfn(i,j,1,n,l)= &!! SENS. HEAT FLUX
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if((isec1(6).eq.146).and. &
@@ -334,14 +321,15 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(((isec1(6).eq.180).or.(isec1(6).eq.181)).and. &
              (zsec4(nxn(l)*(nyn(l)-j-1)+i+1).ne.0.)) strswitch=.true.    ! stress available
+
+
         if(isec1(6).eq.129) oron(i,j,l)= &!! ECMWF OROGRAPHY
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/ga
         if(isec1(6).eq.160) excessoron(i,j,l)= &!! STANDARD DEVIATION OF OROGRAPHY
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
         if(isec1(6).eq.172) lsmn(i,j,l)= &!! ECMWF LAND SEA MASK
              zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
-        if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
-        if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+
 
 ! ESO TODO:
 ! -add check for if one of clwc/ciwc missing (error),
@@ -363,8 +351,303 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
         endif
 
 
+        if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
+        if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+
       end do
     end do
+
+
+#endif
+!!!!!!!!!!!   END --  THIS IS OLD STUFF I'LL GET RID OF EVENTUALLY
+
+
+
+
+  k = current_grib_level
+
+  IF(TRIM(fpname) .EQ. 'TT') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+          tthn(i,j,nlev_ec-k+2,n, l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'UU') THEN
+      iumax=max(iumax,nlev_ec-k+1)
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+          uuhn(i,j,nlev_ec-k+2, l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'VV') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+          vvhn(i,j,nlev_ec-k+2, l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'QV') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+          qvhn(i,j,nlev_ec-k+2, n, l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      ! this is necessary because the gridded data may contain
+      ! spurious negative values
+      DO j=0,nyn(l)
+        DO i=0,nxn(l)-1
+            if (qvhn(i,j,nlev_ec-k+2, n, l) .lt. 0.) qvhn(i,j,nlev_ec-k+2, n, l) = 0.
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'ETADOT') THEN
+      iwmax=max(iwmax,nlev_ec-k+1)
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+          wwhn(i,j,nlev_ec-k+1, l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'PS') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            psn(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'SD') THEN
+      !!!!!!!! DJM - WARNING - in the previous version of this code, snow depth
+      !!       had been assumed to be in m if it was GRIB1, and mm if it was GRIB2.
+      !!       Hence, if the values were from a GRIB2 message, they were divided by
+      !!       1000 to convert from mm to m.
+      !!       This was done by Leo, based on his experience with the GRIB files.  My
+      !!       experience has so far been that units in both GRIB1 and GRIB2 messages
+      !!       are in m, which means no conversion would be necessary.
+      !!
+      !!       I have therefore set the value of "conversion_factor" to 1.0 for reading
+      !!       in snow depth, but I don't feel 100% good about this just yet.  It may
+      !!       need to be scrutinized more closely in the future.
+
+      conversion_factor = 1.0
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            sdn(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'MSL') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+           msln(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'TCC') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            tccn(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'U10') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            u10n(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'V10') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            v10n(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'T2') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            tt2n(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'TD2') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            td2n(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'LSPREC') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            lsprecn(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            if (lsprecn(i,j,1,n,l).lt.0.) lsprecn(i,j,1,n,l)=0.
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'CONVPREC') THEN
+      !!!!!!!! DJM - In the previous version of this code, if convective precip was
+      !!       read from a GRIB1 message, it was assumed to have units of "m."  If it
+      !!       was read in from a GRIB2 message, it was assumed to have units of
+      !!       kg m-2, and then a "conversion_factor" of 1000 was assigned, and incoming
+      !!       values would be divided by that factor.  This had been implemented by Leo.
+      !!
+      !!       In GRIB1 messages, the shortname is "cp" and in GRIB2 it's "acpcp."  So,
+      !!       my implementation has an fpname of CONVPREC if it's GRIB1, and ACPCP if
+      !!       it's GRIB2.  And, ACPCP data is divided by 1000 as it's read in.
+      !!
+      !!
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            convprecn(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            if (convprecn(i,j,1,n,l).lt.0.) convprecn(i,j,1,n,l)=0.
+        END DO
+      END DO
+
+  ELSE IF (TRIM(fpname) .EQ. 'ACPCP') THEN
+      !!!!!!!! DJM - new code for GRIB2 convective precip.  Divide values by 1000
+      !!       to convert from kg m-2 to m
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            convprecn(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/1000.0
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            if (convprecn(i,j,1,n,l).lt.0.) convprecn(i,j,1,n,l)=0.
+        END DO
+      END DO
+
+
+
+  ELSE IF(TRIM(fpname) .EQ. 'SHF') THEN
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            sshfn(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            IF (zsec4(nxn(l)*(nyn(l)-j-1)+i+1).ne.0.) hflswitch = .TRUE.  ! Heat flux available
+        END DO
+      END DO
+
+
+  ELSE IF(TRIM(fpname) .EQ. 'SR') THEN                      !! SOLAR RADIATION
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            ssrn(i,j,1,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            IF (ssrn(i,j,1,n,l).lt.0.) ssrn(i,j,1,n,l)=0.
+        END DO
+      END DO
+
+
+
+!!!!  DJM - note that, unlike other variables, ewss and nsss are not stores in
+!!!!  "nest-specific" arrays.  Rather, they are stored in the same arrays as the
+!!!!  mother nest is stored.  This was in the original FPv10.1 code (and even FPv9.2,
+!!!!  and likely earlier).  So, I left it this way when implementing Vtables.
+  ELSE IF(TRIM(fpname) .EQ. 'EWSS') THEN   !! EW SURFACE STRESS
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            ewss(i,j) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            IF (zsec4(nxn(l)*(nyn(l)-j-1)+i+1).ne.0.) strswitch = .TRUE.  ! stress available
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'NSSS') THEN   !! NS SURFACE STRESS
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            nsss(i,j) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            IF (zsec4(nxn(l)*(nyn(l)-j-1)+i+1).ne.0.) strswitch = .TRUE.  ! stress available
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'ORO') THEN   !! ECMWF OROGRAPHY
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            !!!!!!! DJM - note - I don't know where "ga" comes from, but it was in the original code
+            oron(i,j,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/ga
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'EXCESSORO') THEN   !! STANDARD DEVIATION OF OROGRAPHY
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            excessoron(i,j,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'LSM') THEN   !! ECMWF LAND SEA MASK
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            lsmn(i,j,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+
+  !!!!!!!! DJM - I'm under the impression that the reading of CLWC, CIWC and QC is still under
+  !!       development.  But, I've gone ahead and replaced the grib code with an fpname.  There are
+  !!       additional notes in the comments section of options/Vtables/Vtable.ecmwf concerning the
+  !!       grib codes for these three messages
+
+  !ZHG READING CLOUD FIELDS ASWELL
+  ! ESO TODO: add check for if one of clwc/ciwc missing (error),
+  ! also if all 3 cw fields present, use qc and disregard the others
+  ELSE IF(TRIM(fpname) .EQ. 'CLWC') THEN  !! CLWC  Cloud liquid water content [kg/kg]
+      readclouds_nest(l)=.true.
+      sumclouds_nest(l)=.false.
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            clwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+  ELSE IF(TRIM(fpname) .EQ. 'CICE') then  !! CIWC  Cloud ice water content
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            ciwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+  !ZHG end
+!ESO read qc (=clwc+ciwc)
+  ELSE IF(TRIM(fpname) .EQ. 'QC') then  !! QC  Cloud liquid water content [kg/kg]
+      readclouds_nest(l)=.true.
+      sumclouds_nest(l)=.true.
+      DO j=0,nyn(l)-1
+        DO i=0,nxn(l)-1
+            clwchn(i,j,nlev_ec-k+2,n,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+        END DO
+      END DO
+
+
+  END IF
+
+
+
+
 
   call grib_release(igrib)
   goto 10                      !! READ NEXT LEVEL OR PARAMETER

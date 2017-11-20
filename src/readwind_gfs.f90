@@ -41,6 +41,11 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   !   Unified ECMWF and GFS builds                                       *
   !   Marian Harustak, 12.5.2017                                         *
   !     - Renamed routine from readwind to readwind_gfs                  *
+  !                                                                      *
+  !   Implementation of the Vtables approach                             *
+  !   D. Morton, D. Arnold 17.11.2017                                    *
+  !     - Inclusion of specific code and usage of class_vtable           *
+  !                                                                      *
   !*                                                                     *
   !***********************************************************************
   !*                                                                     *
@@ -67,6 +72,7 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   use grib_api
   use par_mod
   use com_mod
+  use class_vtable
 
   implicit none
 
@@ -94,7 +100,11 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   ! VARIABLES AND ARRAYS NEEDED FOR GRIB DECODING
   !HSO kept isec1, isec2 and zsec4 for consistency with gribex GRIB input
 
-  integer :: isec1(8),isec2(3)
+
+
+  !!!!!  DJM - ultimately I will remove isec1
+  !!!!!integer :: isec1(8),isec2(3)
+  integer :: isec2(3)
   real(kind=4) :: zsec4(jpunp)
   real(kind=4) :: xaux,yaux,xaux0,yaux0
   real(kind=8) :: xauxin,yauxin
@@ -109,11 +119,54 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   character(len=20) :: gribFunction = 'readwind_gfs'
 
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable related variables
+  !
+  !  Path to Vtable - current implementation assumes it's in cwd, named
+  !  "Vtable"
+  CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
+  CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
+  TYPE(Vtable) :: my_vtable    ! unallocated
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  !!  DJM
+  INTEGER current_grib_level   ! this was isec1(8) in previous versions
+
+
+
+
   hflswitch=.false.
   strswitch=.false.
   levdiff2=nlev_ec-nwz+1
   iumax=0
   iwmax=0
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable code
+  PRINT *, 'Loading Vtable: ', VTABLE_PATH
+  call vtable_load_by_name(VTABLE_PATH, my_vtable)
+  !! Debugging tool
+!  PRINT *, 'Dump of Vtable...'
+!  call vtable_dump_records(my_vtable)
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! This is diagnostic/debugging code, and will normally be commented out.
+  ! It's purpose is to look at the provided grib file and produce an
+  ! inventory of the FP-related messages, relative to the Vtable that's
+  ! already been open.
+
+!  CALL vtable_gribfile_inventory(path(3)(1:length(3)) // trim(wfname(indj)), &
+! &                                my_vtable)
+
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
 
   ! OPENING OF DATA FILE (GRIB CODE)
@@ -144,128 +197,58 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
     goto 888   ! ERROR DETECTED
   endif
 
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! Get the fpname
+  fpname = vtable_get_fpname(igrib, my_vtable)
+  !print *, 'fpname: ', trim(fpname)
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
   !first see if we read GRIB1 or GRIB2
   call grib_get_int(igrib,'editionNumber',gribVer,iret)
 !  call grib_check(iret,gribFunction,gribErrorMsg)
 
+
   if (gribVer.eq.1) then ! GRIB Edition 1
 
-  !read the grib1 identifiers
-  call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'indicatorOfTypeOfLevel',isec1(7),iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',isec1(8),iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
+      call grib_get_int(igrib,'level',current_grib_level,iret)
+      call grib_check(iret,gribFunction,gribErrorMsg)
+
+      !!! Added by DJM 2017-08-08 - if this is GRIB1 we assume that
+      !!! level units are hPa and need to be multiplied by 100 for Pa
+      !!! As currently implemented, ALL levels (even non isobaric) are transformed.
+      !!! I "think" that's OK, because I don't think levels are used for any of the
+      !!! 2D fields.  But, I need to double check.  I could always make this
+      !!! conditional on whether the level type is isobaric (type 105 I think)
+      current_grib_level = current_grib_level*100.0
 
   else ! GRIB Edition 2
 
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'discipline',discipl,iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterCategory',parCat,iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterNumber',parNum,iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
-       valSurf,iret)
-!  call grib_check(iret,gribFunction,gribErrorMsg)
+      call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
+           current_grib_level,iret)
+      call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !convert to grib1 identifiers
-  isec1(6)=-1
-  isec1(7)=-1
-  isec1(8)=-1
-  if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.100)) then ! T
-    isec1(6)=11          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.100)) then ! U
-    isec1(6)=33          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.100)) then ! V
-    isec1(6)=34          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.2).and.(parNum.eq.8).and.(typSurf.eq.100)) then ! W
-    isec1(6)=39          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.1).and.(parNum.eq.1).and.(typSurf.eq.100)) then ! RH
-    isec1(6)=52          ! indicatorOfParameter
-    isec1(7)=100         ! indicatorOfTypeOfLevel
-    isec1(8)=valSurf/100 ! level, convert to hPa
-  elseif ((parCat.eq.1).and.(parNum.eq.1).and.(typSurf.eq.103)) then ! RH2
-    isec1(6)=52          ! indicatorOfParameter
-    isec1(7)=105         ! indicatorOfTypeOfLevel
-    isec1(8)=2
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.103)) then ! T2
-    isec1(6)=11          ! indicatorOfParameter
-    isec1(7)=105         ! indicatorOfTypeOfLevel
-    isec1(8)=2
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! U10
-    isec1(6)=33          ! indicatorOfParameter
-    isec1(7)=105         ! indicatorOfTypeOfLevel
-    isec1(8)=10
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.103)) then ! V10
-    isec1(6)=34          ! indicatorOfParameter
-    isec1(7)=105         ! indicatorOfTypeOfLevel
-    isec1(8)=10
-  elseif ((parCat.eq.3).and.(parNum.eq.1).and.(typSurf.eq.101)) then ! SLP
-    isec1(6)=2           ! indicatorOfParameter
-    isec1(7)=102         ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then ! SP
-    isec1(6)=1           ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.1).and.(parNum.eq.13).and.(typSurf.eq.1)) then ! SNOW
-    isec1(6)=66          ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.104)) then ! T sigma 0
-    isec1(6)=11          ! indicatorOfParameter
-    isec1(7)=107         ! indicatorOfTypeOfLevel
-    isec1(8)=0.995       ! lowest sigma level
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.104)) then ! U sigma 0
-    isec1(6)=33          ! indicatorOfParameter
-    isec1(7)=107         ! indicatorOfTypeOfLevel
-    isec1(8)=0.995       ! lowest sigma level
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.104)) then ! V sigma 0
-    isec1(6)=34          ! indicatorOfParameter
-    isec1(7)=107         ! indicatorOfTypeOfLevel
-    isec1(8)=0.995       ! lowest sigma level
-  elseif ((parCat.eq.3).and.(parNum.eq.5).and.(typSurf.eq.1)) then ! TOPO
-    isec1(6)=7           ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.1) &
-       .and.(discipl.eq.2)) then ! LSM
-    isec1(6)=81          ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.3).and.(parNum.eq.196).and.(typSurf.eq.1)) then ! BLH
-    isec1(6)=221         ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.1).and.(parNum.eq.7).and.(typSurf.eq.1)) then ! LSP/TP
-    isec1(6)=62          ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  elseif ((parCat.eq.1).and.(parNum.eq.196).and.(typSurf.eq.1)) then ! CP
-    isec1(6)=63          ! indicatorOfParameter
-    isec1(7)=1           ! indicatorOfTypeOfLevel
-    isec1(8)=0
-  endif
+     !!! Added by DJM 2017-08-08 - if this is GRIB2 we assume that
+      !!! level units are Pa and don't need to be modified
 
   endif ! gribVer
 
-  if (isec1(6).ne.-1) then
+
+
+
+
+
+!!!!!!  DJM - orig -   if (isec1(6).ne.-1) then
+  IF (TRIM(fpname) .NE. 'NOFP') THEN
   !  get the size and data of the values array
     call grib_get_real4_array(igrib,'values',zsec4,iret)
-!    call grib_check(iret,gribFunction,gribErrorMsg)
+    call grib_check(iret,gribFunction,gribErrorMsg)
   endif
 
   if(ifield.eq.1) then
@@ -313,15 +296,347 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   endif
   i181=i180+1
 
-  if (isec1(6).ne.-1) then
+  !!!!!! DJM - orig - if (isec1(6).ne.-1) then
+  IF (TRIM(fpname) .NE. 'NOFP') THEN
 
+      IF (TRIM(fpname) .EQ. 'TT') THEN
+
+          DO ii=1,nuvz
+              if (current_grib_level .EQ. akz(ii)) numpt=ii
+          END DO
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      tth(i179+i,j,numpt,n)=help
+                  else
+                      tth(i-i181,j,numpt,n)=help
+                  endif
+              END DO
+          END DO
+
+
+      ELSEIF (TRIM(fpname) .EQ. 'UU') THEN
+
+          DO ii=1,nuvz
+              if (current_grib_level .EQ. akz(ii)) numpu=ii
+          END DO
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      uuh(i179+i,j,numpu)=help
+                  else
+                      uuh(i-i181,j,numpu)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'VV') THEN
+
+          DO ii=1,nuvz
+              if (current_grib_level .EQ. akz(ii)) numpv=ii
+          END DO
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      vvh(i179+i,j,numpv)=help
+                  else
+                      vvh(i-i181,j,numpv)=help
+                  endif
+              END DO
+          END DO
+
+
+      ELSEIF (TRIM(fpname) .EQ. 'RH') THEN
+
+          DO ii=1,nuvz
+              if (current_grib_level .EQ. akz(ii)) numprh=ii
+          END DO
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      qvh(i179+i,j,numprh,n)=help
+                  else
+                      qvh(i-i181,j,numprh,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'WW') THEN
+
+          DO ii=1,nuvz
+              if (current_grib_level .EQ. akz(ii)) numpw=ii
+          END DO
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      wwh(i179+i,j,numpw)=help
+                  else
+                      wwh(i-i181,j,numpw)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'PS') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      ps(i179+i,j,1,n)=help
+                  else
+                      ps(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'SD') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      sd(i179+i,j,1,n)=help
+                  else
+                      sd(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'SLP') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      msl(i179+i,j,1,n)=help
+                  else
+                      msl(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'TCC') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      tcc(i179+i,j,1,n)=help
+                  else
+                      tcc(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'U10') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      u10(i179+i,j,1,n)=help
+                  else
+                      u10(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'V10') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      v10(i179+i,j,1,n)=help
+                  else
+                      v10(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'T2') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      tt2(i179+i,j,1,n)=help
+                  else
+                      tt2(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'TD2') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      td2(i179+i,j,1,n)=help
+                  else
+                      td2(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'LSPREC') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      lsprec(i179+i,j,1,n)=help
+                  else
+                      lsprec(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'CONVPREC') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      convprec(i179+i,j,1,n)=help
+                  else
+                      convprec(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'ORO') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      oro(i179+i,j)=help
+                      excessoro(i179+i,j)=0.0 ! ISOBARIC SURFACES: SUBGRID TERRAIN DISREGARDED
+                  else
+                      oro(i-i181,j)=help
+                      excessoro(i-i181,j)=0.0 ! ISOBARIC SURFACES: SUBGRID TERRAIN DISREGARDED
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'LSM') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      lsm(i179+i,j)=help
+                  else
+                      lsm(i-i181,j)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'HMIX') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      hmix(i179+i,j,1,n)=help
+                  else
+                      hmix(i-i181,j,1,n)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'RH2') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      qvh2(i179+i,j)=help
+                  else
+                      qvh2(i-i181,j)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'TSIG1') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      tlev1(i179+i,j)=help
+                  else
+                      tlev1(i-i181,j)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'USIG1') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      ulev1(i179+i,j)=help
+                  else
+                      ulev1(i-i181,j)=help
+                  endif
+              END DO
+          END DO
+
+      ELSEIF (TRIM(fpname) .EQ. 'VSIG1') THEN
+
+          DO j=0,nymin1
+              DO i=0,nxfield-1
+                  help=zsec4(nxfield*(ny-j-1)+i+1)
+                  if(i.le.i180) then
+                      vlev1(i179+i,j)=help
+                  else
+                      vlev1(i-i181,j)=help
+                  endif
+              END DO
+          END DO
+
+
+
+
+
+
+
+
+
+
+
+
+      END IF
+
+
+!!!!!!!  BEGIN OLD LOOP STRUCTURE - WILL EVENTUALLY BE DELETED
+#ifdef NO_LONGER_NEEDED
   do j=0,nymin1
     do i=0,nxfield-1
-      if((isec1(6).eq.011).and.(isec1(7).eq.100)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.011).and.(isec1(7).eq.100)) then
+
+
+      IF (TRIM(fpname) .EQ. 'TT') THEN
   ! TEMPERATURE
          if((i.eq.0).and.(j.eq.0)) then
             do ii=1,nuvz
-              if ((isec1(8)*100.0).eq.akz(ii)) numpt=ii
+              !!!!!! DJM - orig - if ((isec1(8)*100.0).eq.akz(ii)) numpt=ii
+              if (current_grib_level .EQ. akz(ii)) numpt=ii
             end do
         endif
         help=zsec4(nxfield*(ny-j-1)+i+1)
@@ -331,11 +646,14 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           tth(i-i181,j,numpt,n)=help
         endif
       endif
-      if((isec1(6).eq.033).and.(isec1(7).eq.100)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.033).and.(isec1(7).eq.100)) then
+      IF (TRIM(fpname) .EQ. 'UU') THEN
   ! U VELOCITY
          if((i.eq.0).and.(j.eq.0)) then
             do ii=1,nuvz
-              if ((isec1(8)*100.0).eq.akz(ii)) numpu=ii
+              !!!!!! DJM - orig if ((isec1(8)*100.0).eq.akz(ii)) numpu=ii
+              if (current_grib_level .EQ. akz(ii)) numpu=ii
             end do
         endif
         help=zsec4(nxfield*(ny-j-1)+i+1)
@@ -345,11 +663,14 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           uuh(i-i181,j,numpu)=help
         endif
       endif
-      if((isec1(6).eq.034).and.(isec1(7).eq.100)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.034).and.(isec1(7).eq.100)) then
+      IF (TRIM(fpname) .EQ. 'VV') THEN
   ! V VELOCITY
          if((i.eq.0).and.(j.eq.0)) then
             do ii=1,nuvz
-              if ((isec1(8)*100.0).eq.akz(ii)) numpv=ii
+              !!!!!!  DJM - orig - if ((isec1(8)*100.0).eq.akz(ii)) numpv=ii
+              if (current_grib_level .EQ. akz(ii)) numpv=ii
             end do
         endif
         help=zsec4(nxfield*(ny-j-1)+i+1)
@@ -359,11 +680,17 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           vvh(i-i181,j,numpv)=help
         endif
       endif
-      if((isec1(6).eq.052).and.(isec1(7).eq.100)) then
+
+
+
+
+!!!!!! DJM - orig -       if((isec1(6).eq.052).and.(isec1(7).eq.100)) then
+      IF (TRIM(fpname) .EQ. 'RH') THEN
   ! RELATIVE HUMIDITY -> CONVERT TO SPECIFIC HUMIDITY LATER
          if((i.eq.0).and.(j.eq.0)) then
             do ii=1,nuvz
-              if ((isec1(8)*100.0).eq.akz(ii)) numprh=ii
+              !!!!!! DJM - orig - if ((isec1(8)*100.0).eq.akz(ii)) numprh=ii
+              if (current_grib_level .EQ. akz(ii)) numprh=ii
             end do
         endif
         help=zsec4(nxfield*(ny-j-1)+i+1)
@@ -373,20 +700,14 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           qvh(i-i181,j,numprh,n)=help
         endif
       endif
-      if((isec1(6).eq.001).and.(isec1(7).eq.001)) then
-  ! SURFACE PRESSURE
-        help=zsec4(nxfield*(ny-j-1)+i+1)
-        if(i.le.i180) then
-          ps(i179+i,j,1,n)=help
-        else
-          ps(i-i181,j,1,n)=help
-        endif
-      endif
-      if((isec1(6).eq.039).and.(isec1(7).eq.100)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.039).and.(isec1(7).eq.100)) then
+      IF (TRIM(fpname) .EQ. 'WW') THEN
   ! W VELOCITY
          if((i.eq.0).and.(j.eq.0)) then
             do ii=1,nuvz
-              if ((isec1(8)*100.0).eq.akz(ii)) numpw=ii
+              !!!!!! DJM - orig - if ((isec1(8)*100.0).eq.akz(ii)) numpw=ii
+              if (current_grib_level .EQ. akz(ii)) numpw=ii
             end do
         endif
         help=zsec4(nxfield*(ny-j-1)+i+1)
@@ -396,7 +717,20 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           wwh(i-i181,j,numpw)=help
         endif
       endif
-      if((isec1(6).eq.066).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.001).and.(isec1(7).eq.001)) then
+      IF (TRIM(fpname) .EQ. 'PS') THEN
+  ! SURFACE PRESSURE
+        help=zsec4(nxfield*(ny-j-1)+i+1)
+        if(i.le.i180) then
+          ps(i179+i,j,1,n)=help
+        else
+          ps(i-i181,j,1,n)=help
+        endif
+      endif
+
+!!!!!! DJM - orig      if((isec1(6).eq.066).and.(isec1(7).eq.001)) then
+      IF (TRIM(fpname) .EQ. 'SD') THEN
   ! SNOW DEPTH
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -405,7 +739,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           sd(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.002).and.(isec1(7).eq.102)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.002).and.(isec1(7).eq.102)) then
+      IF (TRIM(fpname) .EQ. 'SLP') THEN
   ! MEAN SEA LEVEL PRESSURE
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -414,7 +750,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           msl(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.071).and.(isec1(7).eq.244)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.071).and.(isec1(7).eq.244)) then
+      IF (TRIM(fpname) .EQ. 'TCC') THEN
   ! TOTAL CLOUD COVER
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -423,8 +761,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           tcc(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.033).and.(isec1(7).eq.105).and. &
-           (isec1(8).eq.10)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.033).and.(isec1(7).eq.105).and. &
+!!!!!!           (isec1(8).eq.10)) then
+      IF (TRIM(fpname) .EQ. 'U10') THEN
   ! 10 M U VELOCITY
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -433,8 +773,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           u10(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.034).and.(isec1(7).eq.105).and. &
-           (isec1(8).eq.10)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.034).and.(isec1(7).eq.105).and. &
+!!!!!!           (isec1(8).eq.10)) then
+      IF (TRIM(fpname) .EQ. 'V10') THEN
   ! 10 M V VELOCITY
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -443,8 +785,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           v10(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.011).and.(isec1(7).eq.105).and. &
-           (isec1(8).eq.02)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.011).and.(isec1(7).eq.105).and. &
+!!!!!!           (isec1(8).eq.02)) then
+      IF (TRIM(fpname) .EQ. 'T2') THEN
   ! 2 M TEMPERATURE
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -453,8 +797,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           tt2(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.017).and.(isec1(7).eq.105).and. &
-           (isec1(8).eq.02)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.017).and.(isec1(7).eq.105).and. &
+!!!!!!           (isec1(8).eq.02)) then
+      IF (TRIM(fpname) .EQ. 'TD2') THEN
   ! 2 M DEW POINT TEMPERATURE
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -463,7 +809,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           td2(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.062).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.062).and.(isec1(7).eq.001)) then
+     IF (TRIM(fpname) .EQ. 'LSPREC') THEN
   ! LARGE SCALE PREC.
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -472,7 +820,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           lsprec(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.063).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.063).and.(isec1(7).eq.001)) then
+     IF (TRIM(fpname) .EQ. 'CONVPREC') THEN
   ! CONVECTIVE PREC.
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -481,7 +831,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           convprec(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.007).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.007).and.(isec1(7).eq.001)) then
+     IF (TRIM(fpname) .EQ. 'ORO') THEN
   ! TOPOGRAPHY
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -492,7 +844,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           excessoro(i-i181,j)=0.0 ! ISOBARIC SURFACES: SUBGRID TERRAIN DISREGARDED
         endif
       endif
-      if((isec1(6).eq.081).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.081).and.(isec1(7).eq.001)) then
+     IF (TRIM(fpname) .EQ. 'LSM') THEN
   ! LAND SEA MASK
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -501,7 +855,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           lsm(i-i181,j)=help
         endif
       endif
-      if((isec1(6).eq.221).and.(isec1(7).eq.001)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.221).and.(isec1(7).eq.001)) then
+     IF (TRIM(fpname) .EQ. 'HMIX') THEN
   ! MIXING HEIGHT
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -510,8 +866,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           hmix(i-i181,j,1,n)=help
         endif
       endif
-      if((isec1(6).eq.052).and.(isec1(7).eq.105).and. &
-           (isec1(8).eq.02)) then
+
+!!!!!! DJM - orig -      if((isec1(6).eq.052).and.(isec1(7).eq.105).and. &
+!!!!!!           (isec1(8).eq.02)) then
+     IF (TRIM(fpname) .EQ. 'RH2') THEN
   ! 2 M RELATIVE HUMIDITY
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -520,7 +878,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           qvh2(i-i181,j)=help
         endif
       endif
-      if((isec1(6).eq.011).and.(isec1(7).eq.107)) then
+
+!!!!!! DJM - orig -       if((isec1(6).eq.011).and.(isec1(7).eq.107)) then
+     IF (TRIM(fpname) .EQ. 'TSIG1') THEN
   ! TEMPERATURE LOWEST SIGMA LEVEL
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -529,7 +889,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           tlev1(i-i181,j)=help
         endif
       endif
-      if((isec1(6).eq.033).and.(isec1(7).eq.107)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.033).and.(isec1(7).eq.107)) then
+     IF (TRIM(fpname) .EQ. 'USIG1') THEN
   ! U VELOCITY LOWEST SIGMA LEVEL
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -538,7 +900,9 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           ulev1(i-i181,j)=help
         endif
       endif
-      if((isec1(6).eq.034).and.(isec1(7).eq.107)) then
+
+!!!!!! DJM - orig      if((isec1(6).eq.034).and.(isec1(7).eq.107)) then
+     IF (TRIM(fpname) .EQ. 'VSIG1') THEN
   ! V VELOCITY LOWEST SIGMA LEVEL
         help=zsec4(nxfield*(ny-j-1)+i+1)
         if(i.le.i180) then
@@ -551,9 +915,16 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
     end do
   end do
 
-  endif
+#endif
+!!!!!!!  END OLD LOOP STRUCTURE - WILL EVENTUALLY BE DELETED
 
-  if((isec1(6).eq.33).and.(isec1(7).eq.100)) then
+
+
+
+  endif !!!!! (TRIM(fpname) .NE. 'NOFP')
+
+!!!!!! DJM - orig -   if((isec1(6).eq.33).and.(isec1(7).eq.100)) then
+     IF (TRIM(fpname) .EQ. 'UU') THEN
   ! NCEP ISOBARIC LEVELS
     iumax=iumax+1
   endif
