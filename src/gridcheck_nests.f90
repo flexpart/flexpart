@@ -34,11 +34,17 @@ subroutine gridcheck_nests
   !*****************************************************************************
   !  CHANGE: 11/01/2008, Harald Sodemann, GRIB1/2 input with ECMWF grib_api    *
   !  CHANGE: 03/12/2008, Harald Sodemann, change to f90 grib_api               *
+  !                                                                            *
+  !   Implementation of the Vtables approach                                   *
+  !   D. Morton, D. Arnold 17.11.2017                                          *
+  !     - Inclusion of specific code and usage of class_vtable                 *
+  !                                                                            *
   !*****************************************************************************
 
   use grib_api
   use par_mod
   use com_mod
+  use class_vtable
 
   implicit none
 
@@ -65,12 +71,29 @@ subroutine gridcheck_nests
   ! dimension of zsec2 at least (10+nn), where nn is the number of vertical
   ! coordinate parameters
 
-  integer :: isec1(56),isec2(22+nxmaxn+nymaxn)
+!!! DJM -- isec1() no longer needed --  integer :: isec1(56),isec2(22+nxmaxn+nymaxn)
+  integer :: isec2(22+nxmaxn+nymaxn)
   real(kind=4) :: zsec2(60+2*nuvzmax),zsec4(jpunp)
 
   !HSO  grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'gridcheck_nests'
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable related variables
+  !
+  !  Path to Vtable - current implementation assumes it's in cwd, named
+  !  "Vtable"
+  CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
+  CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
+  TYPE(Vtable) :: my_vtable    ! unallocated
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  !!  DJM
+  INTEGER current_grib_level   ! this was isec1(8) in previous versions
+
 
   xresoln(0)=1.       ! resolution enhancement for mother grid
   yresoln(0)=1.       ! resolution enhancement for mother grid
@@ -88,6 +111,34 @@ subroutine gridcheck_nests
     else
       ifn=numbwf
     endif
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!  Vtable code
+  PRINT *, 'Loading Vtable: ', VTABLE_PATH
+  call vtable_load_by_name(VTABLE_PATH, my_vtable)
+  !! Debugging tool
+  !PRINT *, 'Dump of Vtable...'
+  !call vtable_dump_records(my_vtable)
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! This is diagnostic/debugging code, and will normally be commented out.
+  ! It's purpose is to look at the provided grib file and produce an
+  ! inventory of the FP-related messages, relative to the Vtable that's
+  ! already been open.
+
+  !CALL vtable_gribfile_inventory(path(3)(1:length(3)) // trim(wfname(ifn)), &
+!&                                my_vtable)
+!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
   !
   ! OPENING OF DATA FILE (GRIB CODE)
   !
@@ -117,118 +168,34 @@ subroutine gridcheck_nests
     goto 999   ! ERROR DETECTED
   endif
 
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  ! Get the fpname
+  fpname = vtable_get_fpname(igrib, my_vtable)
+  !print *, 'fpname: ', trim(fpname)
+
+
+  !!!!!!!!!!!!!!!!!!!  VTABLE code
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
   !first see if we read GRIB1 or GRIB2
   call grib_get_int(igrib,'editionNumber',gribVer,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  if (gribVer.eq.1) then ! GRIB Edition 1
-
-  !print*,'GRiB Edition 1'
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'indicatorOfParameter',isec1(6),iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',isec1(8),iret)
+  !!  DJM - get the current_grib_level (in previous code it was isec1(8))
+  !!  It's the same in both GRIB1 and GRIB2
+  call grib_get_int(igrib,'level',current_grib_level,iret)
   call grib_check(iret,gribFunction,gribErrorMsg)
 
-  !change code for etadot to code for omega
-  if (isec1(6).eq.77) then
-    isec1(6)=135
-  endif
 
-  !print*,isec1(6),isec1(8)
-
-  else
-
-  !print*,'GRiB Edition 2'
-  !read the grib2 identifiers
-  call grib_get_int(igrib,'discipline',discipl,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterCategory',parCat,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'parameterNumber',parNum,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'typeOfFirstFixedSurface',typSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'level',valSurf,iret)
-  call grib_check(iret,gribFunction,gribErrorMsg)
-  call grib_get_int(igrib,'paramId',parId,iret) !added by mc to make it consisitent with new grid_check.f90
-  call grib_check(iret,gribFunction,gribErrorMsg) !added by mc to make it consisitent with new  grid_check.f90
-
-  !print*,discipl,parCat,parNum,typSurf,valSurf
-
-  !convert to grib1 identifiers
-  isec1(6)=-1
-  isec1(7)=-1
-  isec1(8)=-1
-  isec1(8)=valSurf     ! level
-  if ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! T
-    isec1(6)=130         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.105)) then ! U
-    isec1(6)=131         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.105)) then ! V
-    isec1(6)=132         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.0).and.(typSurf.eq.105)) then ! Q
-    isec1(6)=133         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.83).and.(typSurf.eq.105)) then ! clwc
-    isec1(6)=246         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.84).and.(typSurf.eq.105)) then ! ciwc
-    isec1(6)=247         ! indicatorOfParameter
-!ZHG end
-! ESO qc(=clwc+ciwc)
-  elseif ((parCat.eq.201).and.(parNum.eq.31).and.(typSurf.eq.105)) then ! qc
-    isec1(6)=201031      ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.1)) then !SP
-    isec1(6)=134         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.32)) then ! W, actually eta dot
-    isec1(6)=135         ! indicatorOfParameter
-  elseif ((parCat.eq.128).and.(parNum.eq.77)) then ! W, actually eta dot !added bymc to make it consistent with new gridcheck.f90
-    isec1(6)=135         ! indicatorOfParameter    !
-  elseif ((parCat.eq.3).and.(parNum.eq.0).and.(typSurf.eq.101)) then !SLP
-    isec1(6)=151         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.2).and.(typSurf.eq.103)) then ! 10U
-    isec1(6)=165         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.3).and.(typSurf.eq.103)) then ! 10V
-    isec1(6)=166         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.0).and.(typSurf.eq.103)) then ! 2T
-    isec1(6)=167         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.6).and.(typSurf.eq.103)) then ! 2D
-    isec1(6)=168         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SD
-    isec1(6)=141         ! indicatorOfParameter
-  elseif ((parCat.eq.6).and.(parNum.eq.1) .or. parId .eq. 164) then ! CC !added by mc to make it consistent with new gridchek.f90
-    isec1(6)=164         ! indicatorOfParameter
- elseif ((parCat.eq.1).and.(parNum.eq.9) .or. parId .eq. 142) then ! LSP !added by mc to make it consistent with new gridchek.f90
-    isec1(6)=142         ! indicatorOfParameter
-  elseif ((parCat.eq.1).and.(parNum.eq.10)) then ! CP
-    isec1(6)=143         ! indicatorOfParameter
-  elseif ((parCat.eq.0).and.(parNum.eq.11).and.(typSurf.eq.1)) then ! SHF
-    isec1(6)=146         ! indicatorOfParameter
-  elseif ((parCat.eq.4).and.(parNum.eq.9).and.(typSurf.eq.1)) then ! SR
-    isec1(6)=176         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.17) .or. parId .eq. 180) then ! EWSS !added by mc to make it consistent with new gridchek.f90
-    isec1(6)=180         ! indicatorOfParameter
-  elseif ((parCat.eq.2).and.(parNum.eq.18) .or. parId .eq. 181) then ! NSSS !added by mc to make it consistent with new gridchek.f90
-    isec1(6)=181         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.4)) then ! ORO
-    isec1(6)=129         ! indicatorOfParameter
-  elseif ((parCat.eq.3).and.(parNum.eq.7) .or. parId .eq. 160) then ! SDO !added by mc to make it consistent with new gridchek.f90
-    isec1(6)=160         ! indicatorOfParameter
-  elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
-       (typSurf.eq.1)) then ! LSM
-    isec1(6)=172         ! indicatorOfParameter
-  else
-    print*,'***ERROR: undefined GRiB2 message found!',discipl, &
-         parCat,parNum,typSurf
-  endif
-  if(parId .ne. isec1(6) .and. parId .ne. 77) then !added by mc to make it consistent with new gridchek.f90
-    write(*,*) 'parId',parId, 'isec1(6)',isec1(6)
-!    stop
-  endif
-
-  endif
 
   !get the size and data of the values array
-  if (isec1(6).ne.-1) then
+  !!!! -- original statement -- if (isec1(6).ne.-1) then
+  ! 'NOFP' is the fpname for a grib message not recognized by FLEXPART
+  IF (TRIM(fpname) .NE. 'NOFP') THEN
     call grib_get_real4_array(igrib,'values',zsec4,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
   endif
@@ -272,7 +239,8 @@ subroutine gridcheck_nests
   endif
 
   !HSO  get the second part of the grid dimensions only from GRiB1 messages
-  if (isec1(6) .eq. 167 .and. (gotGrib.eq.0)) then !added by mc to make it consistent with new gridchek.f90 note that gotGrid must be changed in gotGrib!!
+  if (TRIM(fpname) .EQ. 'T2'.and. (gotGrib.eq.0)) then
+!!!!!  if (isec1(6) .eq. 167 .and. (gotGrib.eq.0)) then !added by mc to make it consistent with new gridchek.f90 note that gotGrid must be changed in gotGrib!!
     call grib_get_real8(igrib,'longitudeOfFirstGridPointInDegrees', & !comment by mc: note that this was in the (if (ifield.eq.1) ..end above in gridchek.f90 see line 257
          xaux1in,iret)
     call grib_check(iret,gribFunction,gribErrorMsg)
@@ -301,25 +269,37 @@ subroutine gridcheck_nests
     gotGrib=1 !commetn by mc note tahthere gotGRIB is used instead of gotGrid!!!
   endif ! ifield.eq.1
 
-  k=isec1(8)
-  if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
-  if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+!!!!!!!!! DJM - orig -  k=isec1(8)
+k = current_grib_level
 
-  if(isec1(6).eq.129) then
+
+!!!!!! DJM - orig -   if(isec1(6).eq.131) iumax=max(iumax,nlev_ec-k+1)
+  IF (TRIM(fpname) .EQ. 'UU') iumax=max(iumax,nlev_ec-k+1)
+
+
+!!!!!! DJM - orig -   if(isec1(6).eq.135) iwmax=max(iwmax,nlev_ec-k+1)
+  IF (TRIM(fpname) .EQ. 'ETADOT') iwmax=max(iwmax,nlev_ec-k+1)
+
+  !!!!!!! DJM - orig - if(isec1(6).eq.129) then
+  IF (TRIM(fpname) .EQ. 'ORO') THEN
     do j=0,nyn(l)-1
       do i=0,nxn(l)-1
         oron(i,j,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/ga
       end do
     end do
   endif
-  if(isec1(6).eq.172) then
+
+  !!!!!!! DJM - orig - if(isec1(6).eq.172) then
+  IF (TRIM(fpname) .EQ. 'LSM') THEN
     do j=0,nyn(l)-1
       do i=0,nxn(l)-1
         lsmn(i,j,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/ga
       end do
     end do
   endif
-  if(isec1(6).eq.160) then
+
+  !!!!!! DJM - orig - if(isec1(6).eq.160) then
+  IF (TRIM(fpname) .EQ. 'EXCESSORO') THEN
     do j=0,nyn(l)-1
       do i=0,nxn(l)-1
         excessoron(i,j,l)=zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/ga

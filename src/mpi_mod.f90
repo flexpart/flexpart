@@ -143,8 +143,8 @@ module mpi_mod
   real(sp),private :: tm_tot_beg, tm_tot_end, tm_tot_total=0.
   real(dp),private :: mp_getfields_wtime_beg, mp_getfields_wtime_end, mp_getfields_wtime_total=0.
   real(sp),private :: mp_getfields_time_beg, mp_getfields_time_end, mp_getfields_time_total=0.
-  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
-  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
+!  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
+!  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
   real(dp),private :: mp_io_wtime_beg, mp_io_wtime_end, mp_io_wtime_total=0.
   real(sp),private :: mp_io_time_beg, mp_io_time_end, mp_io_time_total=0.
   real(dp),private :: mp_wetdepo_wtime_beg, mp_wetdepo_wtime_end, mp_wetdepo_wtime_total=0.
@@ -2699,19 +2699,19 @@ contains
              & mp_vt_time_beg)
       end if
 
-    case ('readwind')
-      if (imode.eq.0) then
-        call cpu_time(mp_readwind_time_beg)
-        mp_readwind_wtime_beg = mpi_wtime()
-      else
-        call cpu_time(mp_readwind_time_end)
-        mp_readwind_wtime_end = mpi_wtime()
-
-        mp_readwind_time_total = mp_readwind_time_total + &
-             &(mp_readwind_time_end - mp_readwind_time_beg)
-        mp_readwind_wtime_total = mp_readwind_wtime_total + &
-             &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
-      end if
+!    case ('readwind')
+!      if (imode.eq.0) then
+!        call cpu_time(mp_readwind_time_beg)
+!        mp_readwind_wtime_beg = mpi_wtime()
+!      else
+!        call cpu_time(mp_readwind_time_end)
+!        mp_readwind_wtime_end = mpi_wtime()
+!
+!        mp_readwind_time_total = mp_readwind_time_total + &
+!             &(mp_readwind_time_end - mp_readwind_time_beg)
+!        mp_readwind_wtime_total = mp_readwind_wtime_total + &
+!             &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
+!      end if
 
     case ('commtime')
       if (imode.eq.0) then
@@ -2787,10 +2787,10 @@ contains
                & mp_getfields_wtime_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR GETFIELDS:',&
                & mp_getfields_time_total
-          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR READWIND:',&
-               & mp_readwind_wtime_total
-          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR READWIND:',&
-               & mp_readwind_time_total
+!          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR READWIND:',&
+!               & mp_readwind_wtime_total
+!          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR READWIND:',&
+!               & mp_readwind_time_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR FILE IO:',&
                & mp_io_wtime_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR FILE IO:',&
