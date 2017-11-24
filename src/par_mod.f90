@@ -152,14 +152,14 @@ module par_mod
 !  integer,parameter :: nxmax=181,nymax=91,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=0  ! CERA 2.0 degree 92 level
 
 ! GFS
-!   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0
 
 
   !*********************************************
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  integer,parameter :: maxnests=0,nxmaxn=451,nymaxn=226
+  integer,parameter :: maxnests=1,nxmaxn=451,nymaxn=426
 
   ! nxmax,nymax        maximum dimension of wind fields in x and y
   !                    direction, respectively
@@ -217,7 +217,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=3000000
+  integer,parameter :: maxpart=30000000
   integer,parameter :: maxspec=6
 
   real,parameter :: minmass=0.0001

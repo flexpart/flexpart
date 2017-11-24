@@ -271,8 +271,10 @@ subroutine writeheader_netcdf(lnest)
   character(len=15)           :: units
   character(len=10)           :: fprefix
   character(len=3)            :: anspec
-  character                   :: adate*8,atime*6,timeunit*32
-  real, dimension(1000)       :: coord
+  CHARACTER                   :: adate*8,atime*6,timeunit*32
+  ! ESO DBG: WHY IS THIS HARDCODED TO 1000?
+  !REAL, DIMENSION(1000)       :: coord
+  real, allocatable, dimension(:) :: coord
 
   integer                     :: cache_size
   integer, dimension(6)       :: chunksizes
@@ -612,27 +614,35 @@ subroutine writeheader_netcdf(lnest)
   !******************************
   ! longitudes (grid cell centers)
   if (lnest) then
+    if (.not.allocated(coord)) allocate(coord(numxgridn))
      do i = 1,numxgridn
         coord(i) = outlon0n + (i-0.5)*dxoutn
      enddo
      call nf90_err(nf90_put_var(ncid, lonID, coord(1:numxgridn)))
+     deallocate(coord)
   else
+    if (.not.allocated(coord)) allocate(coord(numxgrid))
      do i = 1,numxgrid
         coord(i) = outlon0 + (i-0.5)*dxout
      enddo
      call nf90_err(nf90_put_var(ncid, lonID, coord(1:numxgrid)))
+     deallocate(coord)
   endif
   ! latitudes (grid cell centers)
   if (lnest) then
+    if (.not.allocated(coord)) allocate(coord(numygridn))
      do i = 1,numygridn
         coord(i) = outlat0n + (i-0.5)*dyoutn
      enddo
      call nf90_err(nf90_put_var(ncid, latID, coord(1:numygridn)))
+     deallocate(coord)
   else
+    if (.not.allocated(coord)) allocate(coord(numygrid))
      do i = 1,numygrid
         coord(i) = outlat0 + (i-0.5)*dyout
      enddo
      call nf90_err(nf90_put_var(ncid, latID, coord(1:numygrid)))
+     deallocate(coord)
   endif
   ! levels
   call nf90_err(nf90_put_var(ncid, levID, outheight(1:numzgrid)))

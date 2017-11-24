@@ -818,7 +818,7 @@ contains
     allocate(qvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
     allocate(clwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
     allocate(ciwchn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,numwfmem,numbnests))
-    allocate(ctwcn(0:nxmax-1,0:nymax-1,numwfmem,numbnests))
+    allocate(ctwcn(0:nxmaxn-1,0:nymaxn-1,numwfmem,numbnests))
 
     clwcn(:,:,:,:,:)=0.
     ciwcn(:,:,:,:,:)=0.

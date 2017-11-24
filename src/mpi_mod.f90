@@ -1960,7 +1960,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
     if (readclouds) then
       j=j+1
-      call MPI_Irecv(ctwc(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
+      call MPI_Irecv(ctwc(:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
@@ -2325,7 +2325,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
       if (readclouds) then
         j=j+1
-        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
+        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
              &MPI_COMM_WORLD,reqs(j),mp_ierr)
         if (mp_ierr /= 0) goto 600
       end if
