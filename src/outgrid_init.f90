@@ -209,35 +209,39 @@ subroutine outgrid_init
   ! gridunc,griduncn        uncertainty of outputted concentrations
   allocate(gridunc(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
        maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
+  if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
   if (ldirect.gt.0) then
     allocate(wetgridunc(0:numxgrid-1,0:numygrid-1,maxspec, &
-       maxpointspec_act,nclassunc,maxageclass),stat=stat)
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc'
-  allocate(drygridunc(0:numxgrid-1,0:numygrid-1,maxspec, &
-       maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    allocate(drygridunc(0:numxgrid-1,0:numygrid-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc'
   endif
 
-! Extra field for totals at MPI root process
-  if (lroot.and.mpi_mode.gt.0) then
-
 #ifdef USE_MPIINPLACE
 #else
-    ! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid(),
-    ! then an aux array is needed for parallel grid reduction
+! Extra field for totals at MPI root process
+  if (lroot.and.mpi_mode.gt.0) then
+! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid(),
+! then an aux array is needed for parallel grid reduction
     allocate(gridunc0(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
          maxpointspec_act,nclassunc,maxageclass),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
+  else if (.not.lroot.and.mpi_mode.gt.0) then
+    allocate(gridunc0(1,1,1,1,1,1,1),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
+  end if
 #endif
-    if (ldirect.gt.0) then
-      allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
-           maxpointspec_act,nclassunc,maxageclass),stat=stat)
-      if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc0'
-      allocate(drygridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
-           maxpointspec_act,nclassunc,maxageclass),stat=stat)
-      if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc0'
-    endif
+!  if (ldirect.gt.0) then
+  if (lroot.and.mpi_mode.gt.0) then
+    allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc0'
+    allocate(drygridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc0'
+  
 ! allocate a dummy to avoid compilator complaints
   else if (.not.lroot.and.mpi_mode.gt.0) then
     allocate(wetgridunc0(1,1,1,1,1,1),stat=stat)

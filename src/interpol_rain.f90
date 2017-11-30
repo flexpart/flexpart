@@ -55,7 +55,7 @@ subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
   ! itime2               time of the second wind field                        *
   ! ix,jy                x,y coordinates of lower left subgrid point          *
   ! level                level at which interpolation shall be done           *
-  ! memind(3)            points to the places of the wind fields              *
+  ! iwftouse             points to the place of the wind field                *
   ! nx,ny                actual field dimensions in x,y and z direction       *
   ! nxmax,nymax,nzmax    maximum field dimensions in x,y and z direction      *
   ! xt                   current x coordinate                                 *

@@ -2535,6 +2535,7 @@ contains
 !      & mp_comm_used, mp_ierr)
 ! if (mp_ierr /= 0) goto 600
 
+#ifdef USE_MPIINPLACE
 ! Using in-place reduction
     if (lroot) then
       call MPI_Reduce(MPI_IN_PLACE, griduncn, grid_size3d, mp_sp, MPI_SUM, id_root, &
@@ -2543,7 +2544,16 @@ contains
     else
       call MPI_Reduce(griduncn, 0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
+      if (mp_ierr /= 0) goto 600
     end if
+
+#else
+    call MPI_Reduce(griduncn, griduncn0, grid_size3d, mp_sp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+    if (mp_ierr /= 0) goto 600
+    if (lroot) griduncn = griduncn0
+
+#endif
 
     if ((WETDEP).and.(ldirect.gt.0)) then
       call MPI_Reduce(wetgriduncn, wetgriduncn0, grid_size2d, mp_cp, MPI_SUM, id_root, &

@@ -68,20 +68,29 @@ subroutine outgrid_init_nest
     if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
   endif
 
+#ifdef USE_MPIINPLACE
+#else
 ! Extra field for totals at MPI root process
   if (lroot.and.mpi_mode.gt.0) then
-    ! allocate(griduncn0(0:numxgridn-1,0:numygridn-1,numzgrid,maxspec, &
-    !      maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    ! if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
-
-    if (ldirect.gt.0) then
-      allocate(wetgriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
-           maxpointspec_act,nclassunc,maxageclass),stat=stat)
-      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
-      allocate(drygriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
-           maxpointspec_act,nclassunc,maxageclass),stat=stat)
-      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
-    endif
+! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid_nest(),
+! then an aux array is needed for parallel grid reduction
+    allocate(griduncn0(0:numxgridn-1,0:numygridn-1,numzgrid,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+! allocate a dummy to avoid compilator complaints
+  else if (.not.lroot.and.mpi_mode.gt.0) then
+    allocate(griduncn0(1,1,1,1,1,1,1),stat=stat)
+  end if
+#endif
+!    if (ldirect.gt.0) then
+  if (lroot.and.mpi_mode.gt.0) then
+    allocate(wetgriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+    allocate(drygriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+         maxpointspec_act,nclassunc,maxageclass),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+!  endif
 ! allocate a dummy to avoid compilator complaints
   else if (.not.lroot.and.mpi_mode.gt.0) then
     allocate(wetgriduncn0(1,1,1,1,1,1),stat=stat)

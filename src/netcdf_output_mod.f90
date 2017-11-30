@@ -272,7 +272,6 @@ subroutine writeheader_netcdf(lnest)
   character(len=10)           :: fprefix
   character(len=3)            :: anspec
   CHARACTER                   :: adate*8,atime*6,timeunit*32
-  ! ESO DBG: WHY IS THIS HARDCODED TO 1000?
   !REAL, DIMENSION(1000)       :: coord
   real, allocatable, dimension(:) :: coord
 

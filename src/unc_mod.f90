@@ -37,6 +37,7 @@ module unc_mod
   ! If MPI_IN_PLACE option is not used in mpi_mod.f90::mpif_tm_reduce_grid(),
   ! then an aux array is needed for parallel grid reduction
   real,allocatable, dimension (:,:,:,:,:,:,:) :: gridunc0
+  real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn0
 #endif
   real,allocatable, dimension (:,:,:,:,:,:,:) :: griduncn
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: drygridunc

@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
-       maxnests,ngrid,nxn,nyn,memind,xt,yt,level,itime1,itime2,itime, &
+       maxnests,ngrid,nxn,nyn,iwftouse,xt,yt,level,itime1,itime2,itime, &
        yint1,yint2,yint3)
   !                                i   i   i    i      i      i
   !   i       i    i   i    i    i  i    i     i      i      i
@@ -59,7 +59,7 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
   ! itime2               time of the second wind field                        *
   ! ix,jy                x,y coordinates of lower left subgrid point          *
   ! level                level at which interpolation shall be done           *
-  ! memind(3)            points to the places of the wind fields              *
+  ! iwftouse             points to the place of the wind field                *
   ! nx,ny                actual field dimensions in x,y and z direction       *
   ! nxmax,nymax,nzmax    maximum field dimensions in x,y and z direction      *
   ! xt                   current x coordinate                                 *
@@ -74,7 +74,7 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
   implicit none
 
   integer :: maxnests,ngrid
-  integer :: nxn(maxnests),nyn(maxnests),nxmaxn,nymaxn,nzmax,memind(numwfmem)
+  integer :: nxn(maxnests),nyn(maxnests),nxmaxn,nymaxn,nzmax,iwftouse
   integer :: m,ix,jy,ixp,jyp,itime,itime1,itime2,level,indexh
   real :: yy1(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
   real :: yy2(0:nxmaxn-1,0:nymaxn-1,nzmax,numwfmem,maxnests)
@@ -124,35 +124,39 @@ subroutine interpol_rain_nests(yy1,yy2,yy3,nxmaxn,nymaxn,nzmax, &
   ! Loop over 2 time steps
   !***********************
 
-  do m=1,2
-    indexh=memind(m)
+!  do m=1,2
+!    indexh=memind(m)
+    indexh=iwftouse
 
-    y1(m)=p1*yy1(ix ,jy ,level,indexh,ngrid) &
+    y1(1)=p1*yy1(ix ,jy ,level,indexh,ngrid) &
          + p2*yy1(ixp,jy ,level,indexh,ngrid) &
          + p3*yy1(ix ,jyp,level,indexh,ngrid) &
          + p4*yy1(ixp,jyp,level,indexh,ngrid)
-    y2(m)=p1*yy2(ix ,jy ,level,indexh,ngrid) &
+    y2(1)=p1*yy2(ix ,jy ,level,indexh,ngrid) &
          + p2*yy2(ixp,jy ,level,indexh,ngrid) &
          + p3*yy2(ix ,jyp,level,indexh,ngrid) &
          + p4*yy2(ixp,jyp,level,indexh,ngrid)
-    y3(m)=p1*yy3(ix ,jy ,level,indexh,ngrid) &
+    y3(1)=p1*yy3(ix ,jy ,level,indexh,ngrid) &
          + p2*yy3(ixp,jy ,level,indexh,ngrid) &
          + p3*yy3(ix ,jyp,level,indexh,ngrid) &
          + p4*yy3(ixp,jyp,level,indexh,ngrid)
-  end do
+!  end do
 
 
   !************************************
   ! 2.) Temporal interpolation (linear)
   !************************************
 
-  dt1=real(itime-itime1)
-  dt2=real(itime2-itime)
-  dt=dt1+dt2
+  ! dt1=real(itime-itime1)
+  ! dt2=real(itime2-itime)
+  ! dt=dt1+dt2
 
-  yint1=(y1(1)*dt2+y1(2)*dt1)/dt
-  yint2=(y2(1)*dt2+y2(2)*dt1)/dt
-  yint3=(y3(1)*dt2+y3(2)*dt1)/dt
+  ! yint1=(y1(1)*dt2+y1(2)*dt1)/dt
+  ! yint2=(y2(1)*dt2+y2(2)*dt1)/dt
+  ! yint3=(y3(1)*dt2+y3(2)*dt1)/dt
 
+   yint1=y1(1)
+   yint2=y2(1)
+   yint3=y3(1)
 
 end subroutine interpol_rain_nests
