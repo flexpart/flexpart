@@ -1,9 +1,13 @@
 SHELL = /bin/bash
 MAIN = FP_ecmwf_gfortran
 
+ROOT_DIR = /homevip/flexpart/
+
 FC       = gfortran
-INCPATH  = /xnilu_wrk/flex_wrk/bin64/grib_api/include
-LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+#INCPATH  = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+INCPATH  = ${ROOT_DIR}/gcc-5.4.0/include
+#LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib 
 LIBPATH2 =   /usr/lib/x86_64-linux-gnu/
 #FFLAGS   =   -O2           -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
 FFLAGS   =    -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
