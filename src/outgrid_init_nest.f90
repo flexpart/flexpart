@@ -82,19 +82,20 @@ subroutine outgrid_init_nest
     allocate(griduncn0(1,1,1,1,1,1,1),stat=stat)
   end if
 #endif
-!    if (ldirect.gt.0) then
-  if (lroot.and.mpi_mode.gt.0) then
-    allocate(wetgriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
-         maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
-    allocate(drygriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
-         maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+  if (ldirect.gt.0) then
+    if (lroot.and.mpi_mode.gt.0) then
+      allocate(wetgriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
+      allocate(drygriduncn0(0:numxgridn-1,0:numygridn-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR:could not allocate nested gridunc'
 !  endif
 ! allocate a dummy to avoid compilator complaints
-  else if (.not.lroot.and.mpi_mode.gt.0) then
-    allocate(wetgriduncn0(1,1,1,1,1,1),stat=stat)
-    allocate(drygriduncn0(1,1,1,1,1,1),stat=stat)
+    else if (.not.lroot.and.mpi_mode.gt.0) then
+      allocate(wetgriduncn0(1,1,1,1,1,1),stat=stat)
+      allocate(drygriduncn0(1,1,1,1,1,1),stat=stat)
+    end if
   end if
 
 ! Compute surface area and volume of each grid cell: area, volume;

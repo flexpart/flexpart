@@ -115,6 +115,12 @@ subroutine partoutput(itime)
       p3=rddx*ddy
       p4=ddx*ddy
 
+! eso: Temporary fix for particle exactly at north pole
+      if (jyp >= nymax) then
+      !  write(*,*) 'WARNING: conccalc.f90 jyp >= nymax'
+        jyp=jyp-1
+      end if
+
   ! Topography
   !***********
 

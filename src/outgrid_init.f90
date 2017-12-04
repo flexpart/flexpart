@@ -233,19 +233,20 @@ subroutine outgrid_init
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc0'
   end if
 #endif
-!  if (ldirect.gt.0) then
-  if (lroot.and.mpi_mode.gt.0) then
-    allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
-         maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc0'
-    allocate(drygridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
-         maxpointspec_act,nclassunc,maxageclass),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc0'
-  
+  if (ldirect.gt.0) then
+    if (lroot.and.mpi_mode.gt.0) then
+      allocate(wetgridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR: could not allocate wetgridunc0'
+      allocate(drygridunc0(0:numxgrid-1,0:numygrid-1,maxspec, &
+           maxpointspec_act,nclassunc,maxageclass),stat=stat)
+      if (stat.ne.0) write(*,*)'ERROR: could not allocate drygridunc0'
+
 ! allocate a dummy to avoid compilator complaints
-  else if (.not.lroot.and.mpi_mode.gt.0) then
-    allocate(wetgridunc0(1,1,1,1,1,1),stat=stat)
-    allocate(drygridunc0(1,1,1,1,1,1),stat=stat)
+    else if (.not.lroot.and.mpi_mode.gt.0) then
+      allocate(wetgridunc0(1,1,1,1,1,1),stat=stat)
+      allocate(drygridunc0(1,1,1,1,1,1),stat=stat)
+    end if
   end if
 
   !write (*,*) 'Dimensions for fields', numxgrid,numygrid, &
