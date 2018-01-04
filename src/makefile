@@ -50,12 +50,14 @@ FLEXPART-SERIAL = FLEXPART
 
 
 ifeq ($(gcc), 4.9)
+# Compiled libraries under user ~flexpart, gfortran v4.9
+	ROOT_DIR = /homevip/flexpart/
         F90       = gfortran
         MPIF90    = mpif90
-        INCPATH1  = /opt/metapps/osu12/x86_64/sci-libs/for_gcc4.9/grib_api-1.12.3/include
-        INCPATH2  =/opt/metapps/osu12/x86_64/sci-libs/for_gcc4.9/netcdf-4.3.3.1/include
-        LIBPATH1 = /opt/metapps/osu12/x86_64/sci-libs/for_gcc4.9/grib_api-1.14.2/lib
-        LIBPATH2 = /opt/metapps/osu12/x86_64/sci-libs/for_gcc4.9/netcdf-4.3.3.1/lib
+	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
+	INCPATH2  = ${ROOT_DIR}/include
+	LIBPATH1 = ${ROOT_DIR}/lib
+	LIBPATH2 = ${ROOT_DIR}/lib
 
 else ifeq ($(gcc), 5.4)
 	ROOT_DIR = /homevip/flexpart/
@@ -76,10 +78,15 @@ else
 # Default: System libraries at NILU, gfortran v4.6
         F90       = gfortran
         MPIF90    = mpif90
-        INCPATH1 = $(GRIB_API_INCDIR)
-        INCPATH2 = ${NETCDF_INCDIR}
-        LIBPATH1 = $(GRIB_API_LIBDIR)
-        LIBPATH2 = $(NETCDF_LIBDIR)
+	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
+	INCPATH2 = /usr/include
+	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
+	LIBPATH2 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
+
+        # INCPATH1 = $(GRIB_API_INCDIR)
+        # INCPATH2 = ${NETCDF_INCDIR}
+        # LIBPATH1 = $(GRIB_API_LIBDIR)
+        # LIBPATH2 = $(NETCDF_LIBDIR)
 
 endif
 
