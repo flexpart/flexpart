@@ -111,6 +111,7 @@ subroutine readcommand
   lnetcdfout, &
   surf_only, &
   cblflag, &
+  linversionout, &
   ohfields_path
 
   ! Presetting namelist command
@@ -143,6 +144,7 @@ subroutine readcommand
   lnetcdfout=0
   surf_only=0 
   cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
+  linversionout=0
   ohfields_path="../../flexin/"
 
   ! Open the command file and read user options
@@ -231,6 +233,8 @@ subroutine readcommand
     read(unitcommand,*) nested_output
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) linit_cond
+    if (old) call skplin(3,unitcommand)
+    read(unitcommand,*) linversionout      !added by RT
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) surf_only
     ! Removed for backwards compatibility.
@@ -445,6 +449,16 @@ subroutine readcommand
       write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
       write(*,*) '#### FOR DOMAIN FILLING RUNS OUTPUT FOR      ####'
       write(*,*) '#### EACH RELEASE IS FORBIDDEN !             ####'
+      stop
+  endif
+
+  ! Inversion output format only for backward runs
+  !*****************************************************************************
+  
+  if ((linversionout.eq.1).and.(ldirect.eq.1)) then
+      write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
+      write(*,*) '#### INVERSION OUTPUT FORMAT ONLY FOR        ####'
+      write(*,*) '#### BACKWARD RUNS                           ####'
       stop
   endif
 

@@ -251,6 +251,13 @@ subroutine outgrid_init
   allocate(densityoutgrid(0:max(numxgrid,numxgridn)-1, &
        0:max(numygrid,numygridn)-1,numzgrid),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
+! RLT
+  allocate(densitydrygrid(0:max(numxgrid,numxgridn)-1, &
+       0:max(numygrid,numygridn)-1,numzgrid),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
+  allocate(factor_drygrid(0:max(numxgrid,numxgridn)-1, &
+       0:max(numygrid,numygridn)-1,numzgrid),stat=stat)
+    if (stat.ne.0) write(*,*)'ERROR: could not allocate gridunc'
 
   allocate(factor3d(0:max(numxgrid,numxgridn)-1, &
        0:max(numygrid,numygridn)-1,numzgrid),stat=stat)

@@ -79,6 +79,9 @@ module par_mod
 
   real,parameter :: pi=3.14159265, r_earth=6.371e6, r_air=287.05, ga=9.81
   real,parameter :: cpa=1004.6, kappa=0.286, pi180=pi/180., vonkarman=0.4
+  ! additional constants RLT Aug-2017
+  real,parameter :: rgas=8.31447 
+  real,parameter :: r_water=461.495
 
   ! pi                      number "pi"
   ! pi180                   pi/180.
@@ -88,6 +91,8 @@ module par_mod
   ! cpa                     specific heat for dry air
   ! kappa                   exponent of formula for potential temperature
   ! vonkarman               von Karman constant
+  ! rgas                    universal gas constant [J/mol/K]
+  ! r_water                 specific gas constant for water vapor [J/kg/K]
 
   real,parameter :: karman=0.40, href=15., convke=2.0
   real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
@@ -260,6 +265,8 @@ module par_mod
   integer,parameter :: unitdates=94, unitheader=90,unitheader_txt=100, unitshortpart=95
   integer,parameter :: unitboundcond=89
   integer,parameter :: unittmp=101
+! RLT
+  integer,parameter :: unitoutfactor=102
 
 !******************************************************
 ! integer code for missing values, used in wet scavenging (PS, 2012)

@@ -100,6 +100,11 @@ subroutine conccalc(itime,weight)
       jy=int(ytra1(i))
       ixp=ix+1
       jyp=jy+1
+      ! fix (Espen 02.05.2017)
+      if(jyp>=nymax) then
+        write(*,*) 'WARNING: conccalc.f90 jyp>nymax'
+        jyp=jyp-1
+      endif
       ddx=xtra1(i)-real(ix)
       ddy=ytra1(i)-real(jy)
       rddx=1.-ddx
