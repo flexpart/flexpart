@@ -643,6 +643,6 @@ subroutine readcommand
 
 1000   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(2)(1:length(1))
+  write(*,'(a)') path(2)(1:length(2))
   stop
 end subroutine readcommand
