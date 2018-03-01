@@ -57,7 +57,7 @@ ifeq ($(gcc), 4.9)
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
 
-else ifeq ($(gcc), 5.4)
+else #ifeq ($(gcc), 5.4)
 # Compiled libraries under user ~flexpart, gfortran v5.4
 	ROOT_DIR = /homevip/flexpart/
 
@@ -68,14 +68,14 @@ else ifeq ($(gcc), 5.4)
 	INCPATH2  = /usr/include
 	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
 
-else
+#else
 # Default: System libraries at NILU, gfortran v4.6
-	F90       = /usr/bin/gfortran
-	MPIF90    = /usr/bin/mpif90.openmpi
+#	F90       = /usr/bin/gfortran
+#	MPIF90    = /usr/bin/mpif90.openmpi
 
-	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
-	INCPATH2 = /usr/include
-	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
+#	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
+#	INCPATH2 = /usr/include
+#	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
 endif
 
 
