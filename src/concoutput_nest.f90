@@ -198,18 +198,29 @@ subroutine concoutput_nest(itime,outnum)
   do ks=1,nspec
 
   write(anspec,'(i3.3)') ks
-  if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
-    if (ldirect.eq.1) then
-      open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_nest_' &
+ 
+  if (DRYBKDEP.or.WETBKDEP) then !scavdep output
+      if (DRYBKDEP) &
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_drydep_nest_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+      if (WETBKDEP) &
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_wetdep_nest_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+      write(unitoutgrid) itime
+  else
+     if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+       if (ldirect.eq.1) then
+         open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_nest_' &
            //adate// &
            atime//'_'//anspec,form='unformatted')
-    else
-      open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_nest_' &
+       else
+         open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_nest_' &
            //adate// &
            atime//'_'//anspec,form='unformatted')
-    endif
-     write(unitoutgrid) itime
-   endif
+       endif
+       write(unitoutgrid) itime
+     endif
+  endif
 
   if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
    open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_nest_' &
