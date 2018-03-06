@@ -120,12 +120,14 @@ module par_mod
   ! Maximum dimensions of the input mother grids
   !*********************************************
   
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL XF
+  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF 91 levels
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF 137 levels
+  !integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF 0.5 137 levels
+  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !FNL
+
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=152,nwzmax=152,nzmax=152 !ECMWF new 
-  !integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92 !ECMWF
   !integer,parameter :: nxmax=361,nymax=181,nuvzmax=26,nwzmax=26,nzmax=26
   !integer,parameter :: nxmax=721,nymax=361,nuvzmax=64,nwzmax=64,nzmax=64
-  integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138 !ECMWF 0.5
   !integer,parameter :: nxmax=1201,nymax=235,nuvzmax=58,nwzmax=58,nzmax=58
 
   integer,parameter :: nxshift=359 ! for ECMWF
@@ -155,8 +157,8 @@ module par_mod
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  !integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
-  integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=351 !ECMWF
+  integer,parameter :: maxnests=0, nxmaxn=0, nymaxn=0
+  !integer,parameter :: maxnests=1,nxmaxn=361,nymaxn=351 !ECMWF
   !integer,parameter :: maxnests=1, nxmaxn=201, nymaxn=161 ! FNL XF
   ! maxnests                maximum number of nested grids
   ! nxmaxn,nymaxn           maximum dimension of nested wind fields in
@@ -199,8 +201,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=4000000
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxpart=1000000
+  integer,parameter :: maxspec=1
 
 
   ! maxpart                 Maximum number of particles
