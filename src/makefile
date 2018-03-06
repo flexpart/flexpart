@@ -12,8 +12,21 @@ LIBPATH2 =   /usr/lib/x86_64-linux-gnu/
 #FFLAGS   =   -O2           -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
 FFLAGS   =    -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
 #FFLAGS   =   -fbounds-check -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -I$(INCPATH)
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH2) -L$(LIBPATH1) -lgrib_api_f90 -lgrib_api -lm -ljasper
 
+
+
+ifeq ($(gcc), 4.9)
+# Compiled libraries under user ~flexpart, gfortran v4.9
+# Use this option for automated build on jenkins / nilu-projects.nilu.no
+	ROOT_DIR = /homevip/flexpart/
+	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
+	MPIF90    = ${ROOT_DIR}/bin/mpifort
+	INCPATH  = ${ROOT_DIR}/gcc-4.9.1/include	
+	LIBPATH1 = ${ROOT_DIR}/lib
+endif
+
+
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH2) -L$(LIBPATH1) -lgrib_api_f90 -lgrib_api -lm -ljasper
 
 MODOBJS = \
 par_mod.o    com_mod.o \
