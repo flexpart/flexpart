@@ -75,7 +75,7 @@ module netcdf_output_mod
                        itsplit, lsynctime, ctl, ifine, lagespectra, ipin, &
                        ioutputforeachrelease, iflux, mdomainfill, mquasilag, & 
                        nested_output, ipout, surf_only, linit_cond, &
-                       flexversion,mpi_mode
+                       flexversion,mpi_mode,DRYBKDEP,WETBKDEP
 
   use mean_mod
 
@@ -269,7 +269,7 @@ subroutine writeheader_netcdf(lnest)
   integer, dimension(5)       :: depdIDs
   character(len=255)          :: fname
   character(len=15)           :: units
-  character(len=10)           :: fprefix
+  character(len=20)           :: fprefix
   character(len=3)            :: anspec
   CHARACTER                   :: adate*8,atime*6,timeunit*32
   !REAL, DIMENSION(1000)       :: coord
@@ -311,14 +311,16 @@ subroutine writeheader_netcdf(lnest)
      write(atime,'(i6.6)') ietime
      fprefix = 'grid_time_'
   endif
+  if (DRYBKDEP) fprefix='grid_drydep_'
+  if (WETBKDEP) fprefix='grid_wetdep_'
 
   if (lnest) then
-     fname = path(2)(1:length(2))//fprefix//adate//atime//'_nest.nc'
+     fname = path(2)(1:length(2))//trim(fprefix)//adate//atime//'_nest.nc'
      ncfnamen = fname
      nnx = numxgridn
      nny = numygridn
   else
-     fname = path(2)(1:length(2))//fprefix//adate//atime//'.nc'
+     fname = path(2)(1:length(2))//trim(fprefix)//adate//atime//'.nc'
      ncfname = fname
      nnx = numxgrid
      nny = numygrid
