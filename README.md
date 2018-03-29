@@ -1,30 +1,40 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
 
 ### What is this repository for? ###
 
-* This repository contains the development version of the Lagrangian model FLEXPART 9.2 migrated from svn
+* This repository contains the development version of the Lagrangian model FLEXPART 
 
-### How do I get set up? ###
+ ### How do I get set up? ###
 
-* Summary of set up
 * Configuration
+
+  Edit the makefile with the paths to libraries and include files
+
 * Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+
+ * Jasper and grib_api or ECCodes
+ * NetCDF (optional)
+
+* Compilation
+
+```
+> cd src
+> make 
+```
+
+* Deployment instructions 
+
+   FLEXPART is a standalone executable   
 
 ### Contribution guidelines ###
 
-* The version contributed should compile on a reference version of the system and compiler. The current reference is gfortran on Ubuntu 12.04 -- GNU Fortran (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+* The version contributed should compile on a reference version of the system and compiler. The current reference is gfortran 5.4 on Ubuntu 16.04
 * Code contribution including new features and bug fixes should be complemented with appropriate tests
-* Writing tests: 
    An essential test consists of a set of input files and directories that allow FLEXPART to run.
    A test can be accompanied by output files for verification
 * Code review
-* Other guidelines
 
-### Who do I talk to? ###
+[comment]: # "### Who do I talk to? ###"
 
-* Ignacio Pisso ip@nilu.no
+ignacio.pisso@nilu.no
