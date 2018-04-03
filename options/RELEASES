@@ -1,20 +1,20 @@
 &RELEASES_CTRL
  NSPEC=          1,
- SPECNUM_REL=         1,
+ SPECNUM_REL=        24,
  /
 &RELEASE
- IDATE1=   20140907,
- ITIME1=     070000,
- IDATE2=   20140907,
- ITIME2=     070000,
- LON1=  -75.255    ,
- LON2=  -75.255    ,
- LAT1=  38.005    ,
- LAT2=  38.005    ,
- Z1=  2500.000000    ,
- Z2=  2500.000000    ,
+ IDATE1=   20170102,
+ ITIME1=     090000,
+ IDATE2=   20170102,
+ ITIME2=     090000,
+ LON1=    0.000    ,
+ LON2=    0.000    ,
+ LAT1=   0.000    ,
+ LAT2=   0.000    ,
+ Z1=    50.000       ,
+ Z2=    50.000       ,
  ZKIND=     1,
  MASS=  1.0000E8    ,
- PARTS=   100000
+ PARTS=   10000 
  COMMENT="TEST1",
  /

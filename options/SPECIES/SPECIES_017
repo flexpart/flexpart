@@ -1,11 +1,21 @@
 &SPECIES_PARAMS
- PSPECIES="Y-91            ",
- PDECAY=  5037120.00    ,
- PCRAIN_AERO=  1.0    ,
- PCSNOW_AERO=  1.0    ,
- PCCN_AERO= 0.9    ,
- PIN_AERO= 0.1    ,
- PDENSITY=  2500.00000    ,
- PDQUER=  6.0E-07,
- PDSIGMA= 0.3    ,
+ PSPECIES="Y-91",             ! Tracer name
+ PDECAY=5037120.0,            ! Species half life
+ PWETA_GAS=-0.9E-9,           ! Below-cloud scavenging (gases) - A (weta_gas)
+ PWETB_GAS=-9.9,              ! Below-cloud scavenging (gases) - B (wetb_gas)
+ PCRAIN_AERO=1.0,             ! Below-cloud scavenging (particles) - Crain (crain_aero)
+ PCSNOW_AERO=1.0,             ! Below-cloud scavenging (particles) - Csnow (csnow_aero)
+ PCCN_AERO=0.9,               ! In-cloud scavenging (particles) - CCNeff (ccn_aero)
+ PIN_AERO=0.1,                ! In-cloud scavenging (particles) - INeff (in_aero)
+ PDENSITY=2500.0,             ! Dry deposition (particles) - rho
+ PDQUER=6.0E-07,              ! Dry deposition (particles) - dquer
+ PDSIGMA=0.3,                 ! Dry deposition (particles) - dsig
+ PDRYVEL=-9.99,               ! Alternative: dry deposition velocity
+ PRELDIFF=-9.9,               ! Dry deposition (gases) - D
+ PHENRY=-0.9E-9,              ! Dry deposition (gases) - Henrys const.
+ PF0=-9,                      ! Dry deposition (gases) - f0 (reactivity)
+ PWEIGHTMOLAR=350.0,          ! molweight
+ POHCCONST=-0.9E-9,           ! OH Reaction rate - C [cm^3/molecule/sec]
+ POHDCONST=-9.9,              ! OH Reaction rate - D [K]
+ POHNCONST=2.0,               ! OH Reaction rate - N (no unit)
  /
