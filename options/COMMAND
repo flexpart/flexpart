@@ -11,7 +11,7 @@
  LSYNCTIME=        900,
  CTL= -5.0000000    ,
  IFINE=          4,
- IOUT=    2,
+ IOUT=    1,
  IPOUT=          0,
  LSUBGRID=          0,
  LCONVECTION=          0,
