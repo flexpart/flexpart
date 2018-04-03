@@ -807,7 +807,9 @@ subroutine timemanager(metdata_format)
             if (linit_cond.ge.1) &
                  call initial_cond_calc(itime+lsynctime,j)
             itra1(j)=-999999999
-            !print*, 'terminated particle ',j,'for age'
+            if (verbosity.gt.0) then
+              print*, 'terminated particle ',j,'for age'
+            endif
           endif
         endif
 
@@ -818,9 +820,9 @@ subroutine timemanager(metdata_format)
     if(mp_measure_time) call mpif_mtime('partloop1',1)
 
 
-! Added by mc: counter of "unstable" particle velocity during a time scale
-!   of maximumtl=20 minutes (defined in com_mod)
-
+! Counter of "unstable" particle velocity during a time scale
+! of maximumtl=20 minutes (defined in com_mod)
+!************************************************************
     total_nan_intl=0
     i_nan=i_nan+1 ! added by mc to count nan during a time of maxtl (i.e. maximum tl fixed here to 20 minutes, see com_mod)
     sum_nan_count(i_nan)=nan_count

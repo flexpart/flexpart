@@ -112,7 +112,6 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   logical :: ldates_file
   integer :: ierr
   character(LEN=100) :: dates_char
-!  character :: dates_char
 
 ! Measure execution time
   if (mp_measure_time) call mpif_mtime('rootonly',0)
