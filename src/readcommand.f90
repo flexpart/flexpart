@@ -391,15 +391,16 @@ subroutine readcommand
     mintime=lsynctime
   endif
 
-!  check for netcdf output switch (use for non-namelist input only!)
+! Check for netcdf output switch
+!*******************************
   if (iout.ge.8) then
      lnetcdfout = 1
      iout = iout - 8
-! #ifndef NETCDF_OUTPUT
-!      print*,'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
-!      print*,'Please recompile with netcdf library or use standard output format.'
-!      stop
-! #endif
+#ifndef USE_NCF
+     write(*,*) 'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
+     write(*,*) 'Please recompile with netcdf library (`make [...] ncf=yes`) or use standard output format.'
+     stop
+#endif
   endif
 
   ! Check whether a valid option for gridded model output has been chosen

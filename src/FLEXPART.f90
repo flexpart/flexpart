@@ -51,9 +51,13 @@ program flexpart
   use par_mod
   use com_mod
   use conv_mod
-  use netcdf_output_mod, only: writeheader_netcdf
+
   use random_mod, only: gasdev1
   use class_gribfile
+
+#ifdef USE_NCF
+  use netcdf_output_mod, only: writeheader_netcdf
+#endif
 
   implicit none
 
@@ -351,6 +355,7 @@ program flexpart
   ! and open files that are to be kept open throughout the simulation
   !******************************************************************
 
+#ifdef USE_NCF
   if (lnetcdfout.eq.1) then 
     call writeheader_netcdf(lnest=.false.)
   else 
@@ -364,6 +369,7 @@ program flexpart
       call writeheader_nest
     endif
   endif
+#endif
 
   if (verbosity.gt.0) then
     print*,'call writeheader'

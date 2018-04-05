@@ -52,9 +52,12 @@ program flexpart
   use com_mod
   use conv_mod
   use mpi_mod
-  use netcdf_output_mod, only: writeheader_netcdf
   use random_mod, only: gasdev1
   use class_gribfile
+
+#ifdef USE_NCF
+  use netcdf_output_mod, only: writeheader_netcdf
+#endif
 
   implicit none
 
@@ -377,23 +380,24 @@ program flexpart
   !******************************************************************
 
   if (mp_measure_time) call mpif_mtime('iotime',0)
+
   if (lroot) then ! MPI: this part root process only
-
-  if (lnetcdfout.eq.1) then 
-    call writeheader_netcdf(lnest=.false.)
-  else 
-    call writeheader
-  end if
-
-  if (nested_output.eq.1) then
-    if (lnetcdfout.eq.1) then
-      call writeheader_netcdf(lnest=.true.)
-    else
-      call writeheader_nest
+#ifdef USE_NCF
+    if (lnetcdfout.eq.1) then 
+      call writeheader_netcdf(lnest=.false.)
+    else 
+      call writeheader
+    end if
+    
+    if (nested_output.eq.1) then
+      if (lnetcdfout.eq.1) then
+        call writeheader_netcdf(lnest=.true.)
+      else
+        call writeheader_nest
+      endif
     endif
-  endif
+#endif
 
-!
     if (verbosity.gt.0) then
       print*,'call writeheader'
     endif
@@ -401,15 +405,13 @@ program flexpart
     call writeheader
 ! FLEXPART 9.2 ticket ?? write header in ASCII format 
     call writeheader_txt
-!if (nested_output.eq.1) call writeheader_nest
+
     if (nested_output.eq.1.and.surf_only.ne.1) call writeheader_nest
     if (nested_output.eq.1.and.surf_only.eq.1) call writeheader_nest_surf
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
   if (mp_measure_time) call mpif_mtime('iotime',0)
-
-  !open(unitdates,file=path(2)(1:length(2))//'dates')
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'

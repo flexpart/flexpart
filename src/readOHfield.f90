@@ -94,7 +94,6 @@ subroutine readOHfield
   read(unitOH) (altOH(i),i=1,nzOH)
   read(unitOH) ((((OH_field(i,j,k,l),i=1,nxOH),j=1,nyOH),k=1,nzOH),l=1,12)
   read(unitOH) ((((OH_hourly(i,j,k,l),i=1,nxOH),j=1,nyOH),k=1,nzOH),l=1,2)
-  write(*,*) 'nzOH: ',nzOH,(altOH(i),i=1,nzOH) 
 
 end subroutine readOHfield
 

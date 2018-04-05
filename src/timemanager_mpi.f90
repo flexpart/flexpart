@@ -101,8 +101,10 @@ subroutine timemanager(metdata_format)
   use par_mod
   use com_mod
   use mpi_mod
+#ifdef USE_NCF
   use netcdf_output_mod, only: concoutput_netcdf,concoutput_nest_netcdf,&
        &concoutput_surf_netcdf,concoutput_surf_nest_netcdf
+#endif
 
   implicit none
 
@@ -480,8 +482,10 @@ subroutine timemanager(metdata_format)
           if (surf_only.ne.1) then
             if (lroot) then
               if (lnetcdfout.eq.1) then 
+#ifdef USE_NCF
                 call concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,&
                      &drygridtotalunc)
+#endif
               else 
                 call concoutput(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
               endif
@@ -493,8 +497,10 @@ subroutine timemanager(metdata_format)
           else 
             if (lroot) then
               if (lnetcdfout.eq.1) then
+#ifdef USE_NCF
                 call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,&
                      &drygridtotalunc)
+#endif
               else
                 call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
               end if
@@ -512,7 +518,7 @@ subroutine timemanager(metdata_format)
 !*********************************************
             call mpif_tm_reduce_grid_nest
  
-           if (mp_measure_time) call mpif_mtime('iotime',0)
+            if (mp_measure_time) call mpif_mtime('iotime',0)
 
             if (lnetcdfout.eq.0) then
               if (surf_only.ne.1) then
@@ -525,11 +531,9 @@ subroutine timemanager(metdata_format)
 
               else  ! :TODO: check for zeroing in the netcdf module
                 call concoutput_surf_nest(itime,outnum)
-
               end if
-
             else
-
+#ifdef USE_NCF
               if (surf_only.ne.1) then
                 if (lroot) then              
                   call concoutput_nest_netcdf(itime,outnum)
@@ -543,12 +547,9 @@ subroutine timemanager(metdata_format)
                   griduncn(:,:,:,:,:,:,:)=0.
                 end if
               endif
-
-
+#endif
             end if
           end if
-          
-
           outnum=0.
         endif
         if ((iout.eq.4).or.(iout.eq.5)) call plumetraj(itime)
