@@ -147,8 +147,7 @@ module par_mod
   
   ! ECMWF
 ! integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=359 ! 1.0 degree 92 level
-!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0 ! 1.0 degree 138 level
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
 ! integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359  ! 0.5 degree 138 level
 !  integer,parameter :: nxmax=181,nymax=91,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=0  ! CERA 2.0 degree 92 level
 
@@ -209,7 +208,7 @@ module par_mod
   !integer maxxgrid,maxygrid,maxzgrid,maxxgridn,maxygridn
   !integer,parameter :: maxxgrid=361,maxygrid=181,maxxgridn=0,maxygridn=0)
 
-  integer,parameter :: maxreceptor=200
+  integer,parameter :: maxreceptor=20
 
   ! maxreceptor             maximum number of receptor points
 
@@ -218,8 +217,8 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=3000000						
-  integer,parameter :: maxspec=6
+  integer,parameter :: maxpart=100000
+  integer,parameter :: maxspec=1
 
   real,parameter :: minmass=0.0001
 
@@ -262,7 +261,7 @@ module par_mod
   ! Dimension of random number field
   !*********************************
 
-  integer,parameter :: maxrand=200000000
+  integer,parameter :: maxrand=1000000
 
   ! maxrand                 number of random numbers used
   

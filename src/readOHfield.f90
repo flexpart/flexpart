@@ -49,10 +49,7 @@ subroutine readOHfield
 
   implicit none
 
-  character(len=150) :: thefile
-  character(len=2) :: mm
-  integer :: nid,ierr,xid,yid,zid,vid,m
-  integer :: i,j,k,l
+  integer :: i,j,k,l,ierr
   real, dimension(:), allocatable :: etaOH
 
 !  real, parameter :: gasct=8.314   ! gas constant
