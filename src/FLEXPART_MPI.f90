@@ -66,7 +66,8 @@ program flexpart
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
   integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
   integer :: detectformat
-
+  integer(selected_int_kind(16)), dimension(maxspec) :: tot_b=0, &
+       & tot_i=0
 
 
   ! Initialize mpi
@@ -205,11 +206,11 @@ program flexpart
   metdata_format = detectformat()
 
   if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
-    print *,'ECMWF metdata detected'
+    if (lroot) print *,'ECMWF metdata detected'
   elseif (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
-    print *,'NCEP metdata detected'
+    if (lroot) print *,'NCEP metdata detected'
   else
-    print *,'Unknown metdata format'
+    if (lroot) print *,'Unknown metdata format'
     stop
   endif
 
@@ -482,28 +483,24 @@ program flexpart
 
 
 ! NIK 16.02.2005 
-  if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
+  if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
+    call MPI_Reduce(tot_blc_count, tot_b, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(tot_inc_count, tot_i, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-  else
-    if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
-           & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
-           & mp_comm_used, mp_ierr)
-    end if
   end if
+  
 
   if (lroot) then
     do i=1,nspec
       write(*,*) '**********************************************'
       write(*,*) 'Scavenging statistics for species ', species(i), ':'
       write(*,*) 'Total number of occurences of below-cloud scavenging', &
-           & tot_blc_count(i)
+           & tot_b(i)
+!           & tot_blc_count(i)
       write(*,*) 'Total number of occurences of in-cloud    scavenging', &
-           & tot_inc_count(i)
+           & tot_i(i)
+!           & tot_inc_count(i)
       write(*,*) '**********************************************'
     end do
 

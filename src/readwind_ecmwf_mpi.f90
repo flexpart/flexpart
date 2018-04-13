@@ -102,12 +102,12 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
 ! coordinate parameters
 
   integer :: isec1(56),isec2(22+nxmax+nymax)
-  real(kind=4) :: zsec4(jpunp)
-  real(kind=4) :: xaux,yaux
-  real(kind=8) :: xauxin,yauxin
-  real,parameter :: eps=1.e-4
-  real(kind=4) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
-  real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
+  real(sp) :: zsec4(jpunp)
+  real(sp) :: xaux,yaux
+  real(dp) :: xauxin,yauxin
+  real(sp),parameter :: eps=1.e-4
+  real(sp) :: nsss(0:nxmax-1,0:nymax-1),ewss(0:nxmax-1,0:nymax-1)
+  real(sp) :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1,conversion_factor
 
   logical :: hflswitch,strswitch !,readcloud
 
@@ -122,7 +122,7 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
   strswitch=.false.
 !ZHG test the grib fields that have lcwc without using them
 !  readcloud=.false.
-!hg end
+
   levdiff2=nlev_ec-nwz+1
   iumax=0
   iwmax=0

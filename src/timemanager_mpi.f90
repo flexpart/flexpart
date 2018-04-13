@@ -114,16 +114,16 @@ subroutine timemanager(metdata_format)
 ! integer :: ksp
   integer :: ip
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage
+  integer :: ix,jy,ldeltat,itage,nage,idummy
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
   integer :: numpart_tot_mpi ! for summing particles on all processes
-  real :: outnum,weight,prob(maxspec)
-  real :: decfact
+  real :: outnum,weight,prob(maxspec), prob_rec(maxspec), decfact,wetscav
 
   real(sp) :: gridtotalunc
   real(dep_prec) :: drygridtotalunc=0_dep_prec,wetgridtotalunc=0_dep_prec,&
        & drydeposit(maxspec)=0_dep_prec
   real :: xold,yold,zold,xmassfract
+  real :: grfraction(3)
   real, parameter :: e_inv = 1.0/exp(1.0)
 
 ! Measure time spent in timemanager
@@ -158,6 +158,8 @@ subroutine timemanager(metdata_format)
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
 
+  if (.not.lusekerneloutput) write(*,*) 'Not using the kernel'
+  if (turboff) write(*,*) 'Turbulence switched off'
 
 
   do itime=0,ideltas,lsynctime
@@ -706,6 +708,42 @@ subroutine timemanager(metdata_format)
         xold=xtra1(j)
         yold=ytra1(j)
         zold=ztra1(j)
+
+   
+  ! RECEPTOR: dry/wet depovel
+  !****************************
+  ! Before the particle is moved 
+  ! the calculation of the scavenged mass shall only be done once after release
+  ! xscav_frac1 was initialised with a negative value
+
+      if  (DRYBKDEP) then
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_vdep_prob(itime,xtra1(j),ytra1(j),ztra1(j),prob_rec)
+            if (DRYDEPSPEC(ks)) then        ! dry deposition
+               xscav_frac1(j,ks)=prob_rec(ks)
+             else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+             endif
+         endif
+        enddo
+       endif
+
+       if (WETBKDEP) then 
+       do ks=1,nspec
+         if  ((xscav_frac1(j,ks).lt.0)) then
+            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
+            if (wetscav.gt.0) then
+                xscav_frac1(j,ks)=wetscav* &
+                       (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
+            else
+                xmass1(j,ks)=0.
+                xscav_frac1(j,ks)=0.
+            endif
+         endif
+        enddo
+       endif
 
 ! Integrate Lagevin equation for lsynctime seconds
 !*************************************************

@@ -103,7 +103,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real,parameter :: weightair=28.97
   logical :: sp_zer
-  LOGICAL,save :: init=.true.
+  logical,save :: init=.true.
   character :: adate*8,atime*6
   character(len=3) :: anspec
   integer :: mind
@@ -127,7 +127,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! Overwrite existing dates file on first call, later append to it
 ! This fixes a bug where the dates file kept growing across multiple runs
 
-! If 'dates' file exists, make a backup
+! If 'dates' file exists in output directory, make a backup
   inquire(file=path(2)(1:length(2))//'dates', exist=ldates_file)
   if (ldates_file.and.init) then
     open(unit=unitdates, file=path(2)(1:length(2))//'dates',form='formatted', &
@@ -256,23 +256,34 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   do ks=1,nspec
 
     write(anspec,'(i3.3)') ks
-    if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
-      if (ldirect.eq.1) then
-        open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//adate// &
-             atime//'_'//anspec,form='unformatted')
-      else
-        open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//adate// &
-             atime//'_'//anspec,form='unformatted')
-      endif
-      write(unitoutgrid) itime
-    endif
 
-    if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
-      open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//adate// &
+    if (DRYBKDEP.or.WETBKDEP) then !scavdep output
+      if (DRYBKDEP) & 
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_drydep_'//adate// &
            atime//'_'//anspec,form='unformatted')
+      if (WETBKDEP) & 
+      open(unitoutgrid,file=path(2)(1:length(2))//'grid_wetdep_'//adate// &
+           atime//'_'//anspec,form='unformatted')
+      write(unitoutgrid) itime
+    else
+      if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+        if (ldirect.eq.1) then
+          open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//adate// &
+               atime//'_'//anspec,form='unformatted')
+        else
+          open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//adate// &
+               atime//'_'//anspec,form='unformatted')
+        endif
+        write(unitoutgrid) itime
+      endif
 
-      write(unitoutgridppt) itime
-    endif
+      if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
+        open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//adate// &
+             atime//'_'//anspec,form='unformatted')
+
+        write(unitoutgridppt) itime
+      endif
+    endif ! if deposition output
 
     do kp=1,maxpointspec_act
       do nage=1,nageclass
@@ -352,7 +363,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
 ! Concentration output
 !*********************
-        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
+        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5).or.(iout.eq.6)) then
 
 ! Wet deposition
           sp_count_i=0
@@ -447,10 +458,18 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
                     sp_fact=sp_fact*(-1.)
                   endif
                   sp_count_r=sp_count_r+1
+                  if (lparticlecountoutput) then
+                    sparse_dump_r(sp_count_r)= &
+                         sp_fact* &
+                         grid(ix,jy,kz)
+                  else
                   sparse_dump_r(sp_count_r)= &
                        sp_fact* &
                        grid(ix,jy,kz)* &
                        factor3d(ix,jy,kz)/tot_mu(ks,kp)
+                  end if
+
+
 !                 if ((factor(ix,jy,kz)/tot_mu(ks,kp)).eq.0)
 !    +              write (*,*) factor(ix,jy,kz),tot_mu(ks,kp),ks,kp
 !                sparse_dump_u(sp_count_r)=
@@ -636,24 +655,8 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! Reinitialization of grid
 !*************************
 
-  do ks=1,nspec
-    do kp=1,maxpointspec_act
-      do i=1,numreceptor
-        creceptor(i,ks)=0.
-      end do
-      do jy=0,numygrid-1
-        do ix=0,numxgrid-1
-          do l=1,nclassunc
-            do nage=1,nageclass
-              do kz=1,numzgrid
-                gridunc(ix,jy,kz,ks,kp,l,nage)=0.
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
-  end do
+  creceptor(:,:)=0.
+  gridunc(:,:,:,:,:,:,:)=0.
 
   if (mp_measure_time) call mpif_mtime('rootonly',1)
   
