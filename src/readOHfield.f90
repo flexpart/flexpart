@@ -21,25 +21,27 @@
 
 subroutine readOHfield
 
-  !*****************************************************************************
-  !                                                                            *
-  ! Reads the OH field into memory                                             *
-  !                                                                            *
-  ! AUTHOR: R.L. Thompson, Nov 2014                                            *
-  !                                                                            *
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  !                                                                            *
-  ! path(numpath)              contains the path names                         *
-  ! lonOH(nxOH)                longitude of OH fields                          *
-  ! latOH(nyOH)                latitude of OH fields                           *
-  ! altOH(nzOH)                altitude of OH fields                           *
-  ! etaOH(nzOH)                eta-levels of OH fields                         *
-  ! OH_field(nxOH,nyOH,nzOH,m) OH concentration (molecules/cm3)                *
-  !                                                                            *
-  !                                                                            *
-  !*****************************************************************************
+!*****************************************************************************
+!                                                                            *
+! Reads the OH field into memory                                             *
+!                                                                            *
+! AUTHOR: R.L. Thompson, Nov 2014                                            *
+!                                                                            *
+! UPDATES:                                                                   *
+!   03/2018 SEC: Converted original netCDF files to binary format            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+!                                                                            *
+! path(numpath)              contains the path names                         *
+! lonOH(nxOH)                longitude of OH fields                          *
+! latOH(nyOH)                latitude of OH fields                           *
+! altOH(nzOH)                altitude of OH fields                           *
+! etaOH(nzOH)                eta-levels of OH fields                         *
+! OH_field(nxOH,nyOH,nzOH,m) OH concentration (molecules/cm3)                *
+!                                                                            *
+!                                                                            *
+!*****************************************************************************
 
   use oh_mod
   use par_mod
@@ -47,11 +49,7 @@ subroutine readOHfield
 
   implicit none
 
-  include 'netcdf.inc'
-
-  character(len=150) :: thefile
-  character(len=2) :: mm
-  integer :: nid,ierr,xid,yid,zid,vid,m
+  integer :: i,j,k,l,ierr
   real, dimension(:), allocatable :: etaOH
 
 !  real, parameter :: gasct=8.314   ! gas constant
@@ -60,144 +58,39 @@ subroutine readOHfield
 !  real, parameter :: lrate=0.0065  ! K m-1
   real, parameter :: scalehgt=7000. ! scale height in metres
 
-  ! Read OH fields and level heights
-  !********************************
 
-  do m=1,12
-  
-    ! open netcdf file
-    write(mm,fmt='(i2.2)') m
-!    thefile=trim(path(1))//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
-    thefile=trim(ohfields_path)//'OH_FIELDS/'//'geos-chem.OH.2005'//mm//'01.nc'
-    ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
-    if(ierr.ne.0) then
-      write (*,*) 'The OH field at: '//thefile// ' could not be opened'
-      write (*,*) 'please copy the OH fields there, or change the path in the'
-      write (*,*) 'COMMAND namelist!'
-      write(*,*) nf_strerror(ierr)
-      stop
-    endif
+  open(unitOH,file=trim(ohfields_path) &
+       //'OH_FIELDS/OH_variables.bin',status='old', &
+       form='UNFORMATTED', iostat=ierr, convert='little_endian')
 
-    ! inquire about variables
-    ierr=nf_inq_dimid(nid,'Lon-000',xid)
-    if(ierr.ne.0) then
-      write(*,*) nf_strerror(ierr)
-      stop
-    endif
-    ierr=nf_inq_dimid(nid,'Lat-000',yid)
-    if(ierr.ne.0) then
-      write(*,*) nf_strerror(ierr)
-      stop
-    endif
-    ierr=nf_inq_dimid(nid,'Alt-000',zid)
-    if(ierr.ne.0) then
-      write(*,*) nf_strerror(ierr)
-      stop
-    endif
-
-    if(m.eq.1) then
-
-      ! read dimension sizes
-      ierr=nf_inq_dimlen(nid,xid,nxOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif
-      ierr=nf_inq_dimlen(nid,yid,nyOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif
-      ierr=nf_inq_dimlen(nid,zid,nzOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif  
-
-      ! allocate variables
-      allocate(lonOH(nxOH))
-      allocate(latOH(nyOH))
-      allocate(etaOH(nzOH))
-      allocate(altOH(nzOH))
-      allocate(OH_field(nxOH,nyOH,nzOH,12))
-      allocate(OH_hourly(nxOH,nyOH,nzOH,2))
-
-      ! read dimension variables
-      ierr=nf_inq_varid(nid,'LON',xid)
-      ierr=nf_get_var_real(nid,xid,lonOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif
-      ierr=nf_inq_varid(nid,'LAT',yid)
-      ierr=nf_get_var_real(nid,yid,latOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif
-      ierr=nf_inq_varid(nid,'ETAC',zid)
-      ierr=nf_get_var_real(nid,zid,etaOH)
-      if(ierr.ne.0) then
-        write(*,*) nf_strerror(ierr)
-        stop
-      endif
-
-      ! convert eta-level to altitude (assume surface pressure of 1010 hPa)
-      altOH=log(1010./(etaOH*1010.))*scalehgt
-
-    endif ! m.eq.1
-
-    ! read OH_field
-    ierr=nf_inq_varid(nid,'CHEM-L_S__OH',vid)
-    ierr=nf_get_var_real(nid,vid,OH_field(:,:,:,m))
-    if(ierr.ne.0) then
-      write(*,*) nf_strerror(ierr)
-      stop
-    endif
-
-    ierr=nf_close(nid)
-
-  end do 
- 
-  deallocate(etaOH)
-
-  ! Read J(O1D) photolysis rates
-  !********************************  
-
-  ! open netcdf file
-!  thefile=trim(path(1))//'OH_FIELDS/jrate_average.nc'
-  thefile=trim(ohfields_path)//'OH_FIELDS/jrate_average.nc'
-  ierr=nf_open(trim(thefile),NF_NOWRITE,nid)
   if(ierr.ne.0) then
-    write(*,*) nf_strerror(ierr)
+    write(*,*) 'Cannot read binary OH fields in ',trim(ohfields_path)//'OH_FIELDS/OH_variables.bin'
     stop
   endif
 
-  ! read dimension variables
-  ierr=nf_inq_varid(nid,'longitude',xid)
-  ierr=nf_get_var_real(nid,xid,lonjr)
-  if(ierr.ne.0) then
-    write(*,*) nf_strerror(ierr)
-    stop
-  endif
-  ierr=nf_inq_varid(nid,'latitude',yid)
-  ierr=nf_get_var_real(nid,yid,latjr)
-  if(ierr.ne.0) then
-    write(*,*) nf_strerror(ierr)
-    stop
-  endif
+  read(unitOH) nxOH
+  read(unitOH) nyOH
+  read(unitOH) nzOH
+  write(*,*) nxOH,nyOH,nzOH
 
-  ! read jrate_average
-  ierr=nf_inq_varid(nid,'jrate',vid)
-  ierr=nf_get_var_real(nid,vid,jrate_average)
-  if(ierr.ne.0) then
-    write(*,*) nf_strerror(ierr)
-    stop
-  endif
+! allocate variables
+  allocate(lonOH(nxOH))
+  allocate(latOH(nyOH))
+  allocate(etaOH(nzOH))
+  allocate(altOH(nzOH))
+  allocate(OH_field(nxOH,nyOH,nzOH,12))
+  allocate(OH_hourly(nxOH,nyOH,nzOH,2))
 
-  ierr=nf_close(nid) 
+  read(unitOH) (lonjr(i),i=1,360)
+  read(unitOH) (latjr(i),i=1,180)
+  read(unitOH) (((jrate_average(i,j,k),i=1,360),j=1,180),k=1,12)
+  read(unitOH) (lonOH(i),i=1,nxOH)
+  read(unitOH) (latOH(i),i=1,nyOH)
+  read(unitOH) (lonOH(i),i=1,nxOH)
 
-  return
+  read(unitOH) (altOH(i),i=1,nzOH)
+  read(unitOH) ((((OH_field(i,j,k,l),i=1,nxOH),j=1,nyOH),k=1,nzOH),l=1,12)
+  read(unitOH) ((((OH_hourly(i,j,k,l),i=1,nxOH),j=1,nyOH),k=1,nzOH),l=1,2)
 
 end subroutine readOHfield
 

@@ -232,6 +232,10 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
     end do
 40  indmin=indj
 
+   if (WETBKDEP.and.(lmpreader.or.(.not.lmp_use_reader.and.lroot))) then
+        call writeprecip(itime,memind(1))
+      endif
+
   else
 
 ! No wind fields, which can be used, are currently in memory
@@ -286,7 +290,10 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
     end do
 60  indmin=indj
 
-    mind3=memstat
+!   if (WETBKDEP.and.lroot) then
+    if (WETBKDEP.and.(lmpreader.or.(.not.lmp_use_reader.and.lroot))) then
+      call writeprecip(itime,memind(1))
+    endif
 
   endif
 

@@ -30,6 +30,10 @@ SHELL = /bin/bash
 #    Compile for debugging parallel FLEXPART
 #      make [-j] mpi-dbg
 #
+#  NETCDF OUTPUT
+#    To add support for output in netCDF format, append `ncf=yes` to the
+#    `make` command
+# 
 ################################################################################
 
 ## PROGRAMS
@@ -56,8 +60,7 @@ ifeq ($(gcc), 4.9)
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
-
-else #ifeq ($(gcc), 5.4)
+else 
 # Compiled libraries under user ~flexpart, gfortran v5.4
 	ROOT_DIR = /homevip/flexpart/
 
@@ -67,16 +70,16 @@ else #ifeq ($(gcc), 5.4)
 	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
 	INCPATH2  = /usr/include
 	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
-
-#else
-# Default: System libraries at NILU, gfortran v4.6
-#	F90       = /usr/bin/gfortran
-#	MPIF90    = /usr/bin/mpif90.openmpi
-
-#	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
-#	INCPATH2 = /usr/include
-#	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
 endif
+
+
+### Enable netCDF output?
+ifeq ($(ncf), yes)
+	NCOPT = -DUSE_NCF -lnetcdff	
+else
+	NCOPT = -UUSE_NCF
+endif
+
 
 
 # path to gributils used to detect meteodata format
@@ -88,11 +91,12 @@ O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
-LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff # -fopenmp
+#LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff
+LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
@@ -138,6 +142,8 @@ OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
 	concoutput_surf_mpi.o	concoutput_surf_nest_mpi.o	\
 	getfields_mpi.o \
         readwind_ecmwf_mpi.o 
+
+OBJECTS_NCF = netcdf_output_mod.o
 
 OBJECTS = \
 advance.o		initialize.o		\
@@ -195,7 +201,11 @@ ohreaction.o            getvdep_nests.o \
 initial_cond_calc.o     initial_cond_output.o \
 dynamic_viscosity.o     get_settling.o	\
 initialize_cbl_vel.o	re_initialize_particle.o \
-cbl.o			netcdf_output_mod.o
+cbl.o
+
+ifeq ($(ncf), yes)
+	OBJECTS	:= $(OBJECTS) $(OBJECTS_NCF)
+endif
 
 %.o: %.mod
 
