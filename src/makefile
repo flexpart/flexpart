@@ -50,13 +50,12 @@ ifeq ($(gcc), 4.9)
 	LIBPATH1 = ${ROOT_DIR}/lib
 
 else
-# Default: System libraries at NILU, gfortran v4.6
+# Gfortran v5.4
 	F90       = /usr/bin/gfortran
-	MPIF90    = /usr/bin/mpif90.openmpi
-
-	INCPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/include
+	MPIF90    = /usr/bin/mpifort
 	INCPATH2 = /usr/include
-	LIBPATH1 = /xnilu_wrk/flex_wrk/bin64/grib_api/lib
+	INCPATH1 = /homevip/flexpart/gcc-5.4.0/include
+	LIBPATH1 = /homevip/flexpart/gcc-5.4.0/lib
 endif
 
 
@@ -90,7 +89,7 @@ mpi_mod.o
 OBJECTS_SERIAL = \
 	releaseparticles.o 	partoutput.o \
 	conccalc.o \
-	init_domainfill.o 	concoutput.o  \
+	init_domainfill.o 	concoutput.o \
 	timemanager.o FLEXPART.o	\
 	readpartpositions.o \
 	partoutput_short.o		\
@@ -98,6 +97,8 @@ OBJECTS_SERIAL = \
 	boundcond_domainfill.o	\
 	redist.o		\
 	concoutput_surf.o	concoutput_surf_nest.o	\
+	concoutput_inversion_nest.o 	\
+	concoutput_inversion.o \
 	getfields.o
 
 ## For MPI version 
@@ -191,7 +192,7 @@ writeheader_nest.o writeheader_nest_surf.o \
 wetdepokernel_nest.o \
 drydepokernel_nest.o    zenithangle.o \
 ohreaction.o            getvdep_nests.o \
-initial_cond_calc.o     initial_cond_output.o \
+initial_cond_calc.o     initial_cond_output.o initial_cond_output_inversion.o \
 dynamic_viscosity.o     get_settling.o	\
 initialize_cbl_vel.o	re_initialize_particle.o \
 cbl.o			netcdf_output_mod.o
@@ -293,9 +294,11 @@ com_mod.o: par_mod.o
 conccalc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 conccalc_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o unc_mod.o
 concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
@@ -342,6 +345,7 @@ init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 initial_cond_calc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 initial_cond_output.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
 initialize.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o random_mod.o
 initialize_cbl_vel.o: com_mod.o par_mod.o random_mod.o
 interpol_all.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o
