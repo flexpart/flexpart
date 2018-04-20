@@ -41,15 +41,24 @@ subroutine gethourlyOH(itime)
   implicit none
   
   integer :: itime
-  integer :: ix,jy,kz,m1,m2
+  integer :: ix,jy,kz,m1,m2,d1,d2,m,dd,ndays
   integer :: ijx,jjy
   integer :: jjjjmmdd,hhmmss
-  real :: sza,jrate,photo_O1D,zenithangle
+  real :: sza,jrate,photo_O1D,zenithangle,OH_tmp,jrate_tmp
   real(kind=dp) :: jul1,jul2
+  integer, dimension(12) :: monthdays
+
+  monthdays=(/31,28,31,30,31,30,31,31,30,31,30,31/)
 
 !  print*, 'itime: ',itime
 !  print*, 'memOHtime(1):',memOHtime(1)
 !  print*, 'memOHtime(2):',memOHtime(2)
+
+!! testing OH
+!  open(1000,file=path(2)(1:length(2))//'OH_50N_0E.txt',action='write',status='old',access='append')
+!  open(999,file=path(2)(1:length(2))//'jrate_50N_0E.txt',action='write',status='old',access='append')
+!  open(998,file=path(2)(1:length(2))//'OH_50S_0E.txt',action='write',status='old',access='append')
+!  open(997,file=path(2)(1:length(2))//'jrate_50S_0E.txt',action='write',status='old',access='append')
 
 
   ! Check hourly OH field is available for the current time step
@@ -79,9 +88,13 @@ subroutine gethourlyOH(itime)
     jul2=bdate+memOHtime(2)/86400._dp  ! date for next hour
     call caldate(jul2,jjjjmmdd,hhmmss)
     m2=(jjjjmmdd-(jjjjmmdd/10000)*10000)/100
+    dd=(jjjjmmdd-(jjjjmmdd/100)*100)
+    ndays=monthdays(m2)
 
 !    print*, 'jul2:',jul2
 !    print*, 'm2:',m2
+!    print*, 'dd:',dd
+!    print*, 'ndays:',ndays
 
     do kz=1,nzOH
       do jy=1,nyOH
@@ -92,19 +105,33 @@ subroutine gethourlyOH(itime)
           sza=zenithangle(latOH(jy),lonOH(ix),jul2)
           ! calculate J(O1D) (jrate)
           jrate=photo_O1D(sza)
+          ! interpolate monthly fields to current day
+          if(dd.ge.(ndays/2)) then
+            m=min((m2+1),12)
+            OH_tmp=OH_field(ix,jy,kz,m2)+(OH_field(ix,jy,kz,m)-OH_field(ix,jy,kz,m2))*real(dd-ndays/2)/real(ndays)
+            jrate_tmp=jrate_average(ijx,jjy,m2)+(jrate_average(ijx,jjy,m)-jrate_average(ijx,jjy,m2))*real(dd-ndays/2)/real(ndays)
+          else
+            m=max((m2-1),1)
+            OH_tmp=OH_field(ix,jy,kz,m)+(OH_field(ix,jy,kz,m2)-OH_field(ix,jy,kz,m))*real(dd+ndays/2)/real(ndays)
+            jrate_tmp=jrate_average(ijx,jjy,m)+(jrate_average(ijx,jjy,m2)-jrate_average(ijx,jjy,m))*real(dd+ndays/2)/real(ndays)
+          endif
           ! apply hourly correction to OH
-          if(jrate_average(ijx,jjy,m2).gt.0.) then
-            OH_hourly(ix,jy,kz,2)=OH_field(ix,jy,kz,m2)*jrate/jrate_average(ijx,jjy,m2)
+          if(jrate_tmp.gt.0.) then
+            OH_hourly(ix,jy,kz,2)=OH_tmp*jrate/jrate_tmp
           else
             OH_hourly(ix,jy,kz,2)=0.
           endif
-          !! for testing !!
-          ! if(jy.eq.36.and.ix.eq.36.and.kz.eq.1) then
-          !   write(999,fmt='(F6.3)') jrate/jrate_average(ijx,jjy,m2)
-          ! endif
-          ! if(jy.eq.11.and.ix.eq.36.and.kz.eq.1) then
-          !   write(998,fmt='(F6.3)') jrate/jrate_average(ijx,jjy,m2)
-          ! endif
+          !! testing OH
+!           if(jy.eq.36.and.ix.eq.37.and.kz.eq.1) then
+!             write(999,fmt='(E12.6)') OH_hourly(ix,jy,kz,2) 
+!             write(1000,fmt='(E12.6)') OH_tmp
+!             write(999,fmt='(E12.6)') jrate/jrate_tmp
+!           endif
+!           if(jy.eq.11.and.ix.eq.37.and.kz.eq.1) then
+!             write(998,fmt='(E12.6)') OH_hourly(ix,jy,kz,2)
+!             write(998,fmt='(E12.6)') OH_tmp
+!             write(997,fmt='(E12.6)') jrate/jrate_tmp
+!           endif
         end do
       end do
     end do
@@ -118,15 +145,18 @@ subroutine gethourlyOH(itime)
     call caldate(jul1,jjjjmmdd,hhmmss)
     m1=(jjjjmmdd-(jjjjmmdd/10000)*10000)/100
     memOHtime(1)=0.
+    d1=(jjjjmmdd-(jjjjmmdd/100)*100)
 
     jul2=bdate+ldirect*real(1./24.,kind=dp)  ! date for next hour
     call caldate(jul2,jjjjmmdd,hhmmss)
     m2=(jjjjmmdd-(jjjjmmdd/10000)*10000)/100
     memOHtime(2)=ldirect*3600.
+    d2=(jjjjmmdd-(jjjjmmdd/100)*100)
 
 !    print*, 'jul1:',jul1
 !    print*, 'jul2:',jul2
 !    print*, 'm1,m2:',m1,m2
+!    print*, 'd1,d2:',d1,d2
 
     do kz=1,nzOH
       do jy=1,nyOH
@@ -137,9 +167,18 @@ subroutine gethourlyOH(itime)
           sza=zenithangle(latOH(jy),lonOH(ix),jul1)
           ! calculate J(O1D) (jrate), beginning
           jrate=photo_O1D(sza)
+          ! interpolate monthly fields to current day
+          ndays=monthdays(m1)
+          if(d1.ge.(ndays/2)) then
+            m=min((m1+1),12)
+            OH_tmp=OH_field(ix,jy,kz,m1)+(OH_field(ix,jy,kz,m)-OH_field(ix,jy,kz,m1))*real(d1-ndays/2)/real(ndays)
+          else
+            m=max((m1-1),1)
+            OH_tmp=OH_field(ix,jy,kz,m)+(OH_field(ix,jy,kz,m1)-OH_field(ix,jy,kz,m))*real(d1+ndays/2)/real(ndays)
+          endif
           ! apply hourly correction to OH
           if(jrate_average(ijx,jjy,m1).gt.0.) then
-            OH_hourly(ix,jy,kz,1)=OH_field(ix,jy,kz,m1)*jrate/jrate_average(ijx,jjy,m1)
+            OH_hourly(ix,jy,kz,1)=OH_tmp*jrate/jrate_average(ijx,jjy,m1)
           else
             OH_hourly(ix,jy,kz,1)=0.
           endif
@@ -147,9 +186,18 @@ subroutine gethourlyOH(itime)
           sza=zenithangle(latOH(jy),lonOH(ix),jul2)
           ! calculate J(O1D) (jrate), after 1-hour
           jrate=photo_O1D(sza)
+          ! interpolate monthly fields to current day
+          ndays=monthdays(m2)
+          if(d2.ge.(ndays/2)) then
+            m=min((m2+1),12)
+            OH_tmp=OH_field(ix,jy,kz,m2)+(OH_field(ix,jy,kz,m)-OH_field(ix,jy,kz,m2))*real(d2-ndays/2)/real(ndays)
+          else
+            m=max((m2-1),1)
+            OH_tmp=OH_field(ix,jy,kz,m)+(OH_field(ix,jy,kz,m2)-OH_field(ix,jy,kz,m))*real(d2+ndays/2)/real(ndays)
+          endif
           ! apply hourly correction to OH
           if(jrate_average(ijx,jjy,m2).gt.0.) then
-            OH_hourly(ix,jy,kz,2)=OH_field(ix,jy,kz,m2)*jrate/jrate_average(ijx,jjy,m2)
+            OH_hourly(ix,jy,kz,2)=OH_tmp*jrate/jrate_average(ijx,jjy,m2)
           else
             OH_hourly(ix,jy,kz,2)=0.
           endif
@@ -158,6 +206,11 @@ subroutine gethourlyOH(itime)
     end do
 
   endif
+
+  !! testing OH
+!  close(999)
+!  close(998)
+
 
 end subroutine gethourlyOH
 

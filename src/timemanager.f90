@@ -114,6 +114,7 @@ subroutine timemanager
   real(dep_prec) :: drydeposit(maxspec),wetgridtotalunc,drygridtotalunc
   real :: xold,yold,zold,xmassfract
   real, parameter :: e_inv = 1.0/exp(1.0)
+  logical :: lexist
   !double precision xm(maxspec,maxpointspec_act),
   !    +                 xm_depw(maxspec,maxpointspec_act),
   !    +                 xm_depd(maxspec,maxpointspec_act)
@@ -143,7 +144,16 @@ subroutine timemanager
   ! species_lifetime(:,:)=0
   ! print*, 'Initialized lifetime'
 !CGZ-lifetime: set lifetime to 0
-  
+
+!! RLT 2018  
+!! testing OH 
+!  if(OHREA) then
+!    open(1000,file=path(2)(1:length(2))//'OH_50N_0E.txt',action='write',status='new')
+!    open(999,file=path(2)(1:length(2))//'jrate_50N_0E.txt',action='write',status='new')
+!    open(998,file=path(2)(1:length(2))//'OH_50S_0E.txt',action='write',status='new') 
+!    open(997,file=path(2)(1:length(2))//'jrate_50S_0E.txt',action='write',status='new') 
+!  endif
+
   write(*,46) float(itime)/3600,itime,numpart
 
   if (verbosity.gt.0) then
