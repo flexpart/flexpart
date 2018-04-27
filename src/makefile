@@ -36,6 +36,8 @@ SHELL = /bin/bash
 # 
 ################################################################################
 
+#FPPFLAGS+=-DUSE_MPIINPLACE
+
 ## PROGRAMS
 # Unified executable names
 # The same executable is used for both ECMWF and GFS metdata
@@ -50,26 +52,33 @@ FLEXPART-MPI-DBG = DBG_FLEXPART_MPI
 FLEXPART-SERIAL = FLEXPART
 
 
+
+
+
 ifeq ($(gcc), 4.9)
 # Compiled libraries under user ~flexpart, gfortran v4.9
 	ROOT_DIR = /homevip/flexpart/
-
-	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
-	MPIF90    = ${ROOT_DIR}/bin/mpifort
-
+        F90       = gfortran
+        MPIF90    = mpif90
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
-else 
-# Compiled libraries under user ~flexpart, gfortran v5.4
+
+else ifeq ($(gcc), 5.4)
 	ROOT_DIR = /homevip/flexpart/
+	F90       = /usr/bin/gfortran
+	MPIF90    = /usr/bin/mpif90
 
-	F90	  = /usr/bin/gfortran
-	MPIF90    = /usr/bin/mpifort
-
-	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
+	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include
 	INCPATH2  = /usr/include
 	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
+else
+        F90       = gfortran
+        MPIF90    = mpif90
+	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
+	INCPATH2 = /usr/include
+	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
+	LIBPATH2 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
 endif
 
 
@@ -82,24 +91,33 @@ endif
 
 
 
+
+# INCPATH1 = $(GRIB_API_INCDIR)
+# INCPATH2 = ${NETCDF_INCDIR}
+# LIBPATH1 = $(GRIB_API_LIBDIR)
+# LIBPATH2 = $(NETCDF_LIBDIR)
+
+
 # path to gributils used to detect meteodata format
 VPATH = gributils/
-
 
 ## OPTIMIZATION LEVEL
 O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
-#LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
 DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
-LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) -L$(LIBPATH2)
+LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) -L$(LIBPATH2)
+
+# Default behaviour is to NOT use MPI-IN-PLACE.  This may be safer.
+# DEFS = -DUSE_MPIINPLACE
+DEFS =
 
 MODOBJS = \
 par_mod.o    		com_mod.o \
@@ -109,7 +127,7 @@ unc_mod.o               oh_mod.o \
 xmass_mod.o             flux_mod.o \
 point_mod.o             outg_mod.o \
 mean_mod.o	 	random_mod.o \
-class_gribfile_mod.o
+class_gribfile_mod.o    class_vtable_mod.o
 
 MPI_MODOBJS = \
 mpi_mod.o
@@ -140,8 +158,8 @@ OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
 	boundcond_domainfill_mpi.o	\
 	redist_mpi.o		\
 	concoutput_surf_mpi.o	concoutput_surf_nest_mpi.o	\
-	getfields_mpi.o \
-        readwind_ecmwf_mpi.o 
+	getfields_mpi.o  \
+        readwind_ecmwf.o
 
 OBJECTS_NCF = netcdf_output_mod.o
 
@@ -303,13 +321,9 @@ getrb.o: par_mod.o
 getrc.o: com_mod.o par_mod.o
 getvdep.o: com_mod.o par_mod.o
 getvdep_nests.o: com_mod.o par_mod.o
-gridcheck_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
-gridcheck_emos.o: com_mod.o conv_mod.o par_mod.o
-gridcheck_fnl.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
-gridcheck_gfs.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
-gridcheck_gfs_emos.o: com_mod.o conv_mod.o par_mod.o
-gridcheck_nests.o: com_mod.o par_mod.o
-gridcheck_nests_emos.o: com_mod.o par_mod.o
+gridcheck_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o class_vtable_mod.o
+gridcheck_gfs.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o class_vtable_mod.o
+gridcheck_nests.o: com_mod.o par_mod.o class_vtable_mod.o
 gridcheck_orig_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
 hanna.o: com_mod.o hanna_mod.o par_mod.o
 hanna1.o: com_mod.o hanna_mod.o par_mod.o
@@ -372,13 +386,9 @@ readpaths.o: com_mod.o par_mod.o
 readreceptors.o: com_mod.o par_mod.o
 readreleases.o: com_mod.o par_mod.o point_mod.o xmass_mod.o
 readspecies.o: com_mod.o par_mod.o
-readwind_ecmwf.o: com_mod.o par_mod.o
-readwind_emos.o: com_mod.o par_mod.o
-readwind_gfs.o: com_mod.o par_mod.o
-readwind_gfs_emos.o: com_mod.o par_mod.o
-readwind_ecmwf_mpi.o: com_mod.o mpi_mod.o par_mod.o
-readwind_nests.o: com_mod.o par_mod.o
-readwind_nests_emos.o: com_mod.o par_mod.o
+readwind_ecmwf.o: com_mod.o par_mod.o class_vtable_mod.o
+readwind_gfs.o: com_mod.o par_mod.o class_vtable_mod.o
+readwind_nests.o: com_mod.o par_mod.o class_vtable_mod.o
 redist.o: com_mod.o conv_mod.o par_mod.o random_mod.o
 redist_mpi.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o random_mod.o
 releaseparticles.o: com_mod.o par_mod.o point_mod.o random_mod.o \
