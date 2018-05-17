@@ -328,8 +328,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
   ! Dry deposition
          sp_count_i=0
@@ -365,8 +365,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
 
 
@@ -498,8 +498,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Dry deposition
@@ -537,8 +537,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Mixing ratios
