@@ -139,6 +139,8 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   write(unitdates,'(a)') adate//atime
   close(unitdates)  
 
+  ! Overwrite existing dates file on first call, later append to it
+  ! This fixes a bug where the dates file kept growing across multiple runs
   IF (init) THEN
     file_stat='OLD'
     init=.false.
@@ -312,7 +314,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
               drygridsigma(ix,jy)= &
                    drygridsigma(ix,jy)* &
                    sqrt(real(nclassunc))
-125           drygridsigmatotal=drygridsigmatotal+ &
+              drygridsigmatotal=drygridsigmatotal+ &
                    drygridsigma(ix,jy)
             endif
 

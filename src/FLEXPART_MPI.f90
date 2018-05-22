@@ -52,9 +52,12 @@ program flexpart
   use com_mod
   use conv_mod
   use mpi_mod
-  use netcdf_output_mod, only: writeheader_netcdf
   use random_mod, only: gasdev1
   use class_gribfile
+
+#ifdef USE_NCF
+  use netcdf_output_mod, only: writeheader_netcdf
+#endif
 
   implicit none
 
@@ -63,7 +66,8 @@ program flexpart
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
   integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
   integer :: detectformat
-
+  integer(selected_int_kind(16)), dimension(maxspec) :: tot_b=0, &
+       & tot_i=0
 
 
   ! Initialize mpi
@@ -202,11 +206,11 @@ program flexpart
   metdata_format = detectformat()
 
   if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
-    print *,'ECMWF metdata detected'
+    if (lroot) print *,'ECMWF metdata detected'
   elseif (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
-    print *,'NCEP metdata detected'
+    if (lroot) print *,'NCEP metdata detected'
   else
-    print *,'Unknown metdata format'
+    if (lroot) print *,'Unknown metdata format'
     stop
   endif
 
@@ -377,23 +381,24 @@ program flexpart
   !******************************************************************
 
   if (mp_measure_time) call mpif_mtime('iotime',0)
+
   if (lroot) then ! MPI: this part root process only
-
-  if (lnetcdfout.eq.1) then 
-    call writeheader_netcdf(lnest=.false.)
-  else 
-    call writeheader
-  end if
-
-  if (nested_output.eq.1) then
-    if (lnetcdfout.eq.1) then
-      call writeheader_netcdf(lnest=.true.)
-    else
-      call writeheader_nest
+#ifdef USE_NCF
+    if (lnetcdfout.eq.1) then 
+      call writeheader_netcdf(lnest=.false.)
+    else 
+      call writeheader
+    end if
+    
+    if (nested_output.eq.1) then
+      if (lnetcdfout.eq.1) then
+        call writeheader_netcdf(lnest=.true.)
+      else
+        call writeheader_nest
+      endif
     endif
-  endif
+#endif
 
-!
     if (verbosity.gt.0) then
       print*,'call writeheader'
     endif
@@ -401,15 +406,13 @@ program flexpart
     call writeheader
 ! FLEXPART 9.2 ticket ?? write header in ASCII format 
     call writeheader_txt
-!if (nested_output.eq.1) call writeheader_nest
+
     if (nested_output.eq.1.and.surf_only.ne.1) call writeheader_nest
     if (nested_output.eq.1.and.surf_only.eq.1) call writeheader_nest_surf
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
   if (mp_measure_time) call mpif_mtime('iotime',0)
-
-  !open(unitdates,file=path(2)(1:length(2))//'dates')
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'
@@ -480,28 +483,24 @@ program flexpart
 
 
 ! NIK 16.02.2005 
-  if (lroot) then
-    call MPI_Reduce(MPI_IN_PLACE, tot_blc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
+  if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
+    call MPI_Reduce(tot_blc_count, tot_b, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-    call MPI_Reduce(MPI_IN_PLACE, tot_inc_count, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
+    call MPI_Reduce(tot_inc_count, tot_i, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
          & mp_comm_used, mp_ierr)
-  else
-    if (mp_partgroup_pid.ge.0) then ! Skip for readwind process 
-      call MPI_Reduce(tot_blc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
-           & mp_comm_used, mp_ierr)
-      call MPI_Reduce(tot_inc_count, 0, nspec, MPI_INTEGER8, MPI_SUM, id_root, &
-           & mp_comm_used, mp_ierr)
-    end if
   end if
+  
 
   if (lroot) then
     do i=1,nspec
       write(*,*) '**********************************************'
       write(*,*) 'Scavenging statistics for species ', species(i), ':'
       write(*,*) 'Total number of occurences of below-cloud scavenging', &
-           & tot_blc_count(i)
+           & tot_b(i)
+!           & tot_blc_count(i)
       write(*,*) 'Total number of occurences of in-cloud    scavenging', &
-           & tot_inc_count(i)
+           & tot_i(i)
+!           & tot_inc_count(i)
       write(*,*) '**********************************************'
     end do
 

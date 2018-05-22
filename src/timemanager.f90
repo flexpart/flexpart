@@ -100,8 +100,10 @@ subroutine timemanager(metdata_format)
   use oh_mod
   use par_mod
   use com_mod
+#ifdef USE_NCF
   use netcdf_output_mod, only: concoutput_netcdf,concoutput_nest_netcdf,&
        &concoutput_surf_netcdf,concoutput_surf_nest_netcdf
+#endif
 
   implicit none
 
@@ -388,7 +390,9 @@ subroutine timemanager(metdata_format)
         if ((iout.le.3.).or.(iout.eq.5)) then
           if (surf_only.ne.1) then 
             if (lnetcdfout.eq.1) then 
+#ifdef USE_NCF
               call concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+#endif
             else 
               call concoutput(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
             endif
@@ -398,8 +402,10 @@ subroutine timemanager(metdata_format)
              call system_clock(count_clock)
              write(*,*) 'system clock',count_clock - count_clock0   
             endif
-            if (lnetcdfout.eq.1) then 
+            if (lnetcdfout.eq.1) then
+#ifdef USE_NCF
               call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+#endif
             else
               call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
               if (verbosity.eq.1) then
@@ -418,11 +424,13 @@ subroutine timemanager(metdata_format)
                 call concoutput_surf_nest(itime,outnum)
               endif
             else
+#ifdef USE_NCF
               if (surf_only.ne.1) then
                 call concoutput_nest_netcdf(itime,outnum)
               else 
                 call concoutput_surf_nest_netcdf(itime,outnum)
               endif
+#endif
             endif
           endif
           outnum=0.

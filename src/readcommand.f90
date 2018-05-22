@@ -331,16 +331,20 @@ subroutine readcommand
         ind_rel = 0
      case (3)  ! 3 .. wet deposition in outputfield 
         ind_rel = 3
-         write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
-         write(*,*) ' #### Releaseheight is forced to 0 - 20km      #### '
-         write(*,*) ' #### Release is performed above ground lev    #### '
+        if (lroot) then
+          write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
+          write(*,*) ' #### Releaseheight is forced to 0 - 20km      #### '
+          write(*,*) ' #### Release is performed above ground lev    #### '
+        end if
          WETBKDEP=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      case (4)  ! 4 .. dry deposition in outputfield
          ind_rel = 4
-         write(*,*) ' #### FLEXPART DRY DEPOSITION BACKWARD MODE    #### '
-         write(*,*) ' #### Releaseheight is forced to 0 - 2*href    #### '
-         write(*,*) ' #### Release is performed above ground lev    #### '
+         if (lroot) then
+           write(*,*) ' #### FLEXPART DRY DEPOSITION BACKWARD MODE    #### '
+           write(*,*) ' #### Releaseheight is forced to 0 - 2*href    #### '
+           write(*,*) ' #### Release is performed above ground lev    #### '
+         end if
          DRYBKDEP=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      end select
@@ -391,15 +395,16 @@ subroutine readcommand
     mintime=lsynctime
   endif
 
-!  check for netcdf output switch (use for non-namelist input only!)
+! Check for netcdf output switch
+!*******************************
   if (iout.ge.8) then
      lnetcdfout = 1
      iout = iout - 8
-! #ifndef NETCDF_OUTPUT
-!      print*,'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
-!      print*,'Please recompile with netcdf library or use standard output format.'
-!      stop
-! #endif
+#ifndef USE_NCF
+     write(*,*) 'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
+     write(*,*) 'Please recompile with netcdf library (`make [...] ncf=yes`) or use standard output format.'
+     stop
+#endif
   endif
 
   ! Check whether a valid option for gridded model output has been chosen
