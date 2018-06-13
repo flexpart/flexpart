@@ -1,0 +1,37 @@
+This is a changelog for the dev branch of FLEXPART (see flexpart.eu)
+Created by Petra Seibert, 8 June 2018 to document and explain in detail why I changed what.
+
+makefile, 2018-06-08
+========
+
+1) Add a GPL3+ License statement, author statement, version information. Prudent to do that, not harmful.
+
+2) There are already two sections, one for gfortran4 and one for gfortran5.
+Both have NILU-specific paths. So let us have at least one generic and put that in front.
+
+2) Compiler options. 
+2.1) For the regular compile, we don't want -g (debug symols)
+2.2) We don't need -m64, on a 64bit platform this is default
+2.3) Remove $(USER) as it is never defined
+2.4) Remove -Warray-bounds, this is default.
+2.5) Add -fbacktrace in the commented-out part, it is important for debugging
+2.6) Change comment for VPATH, explain what this directive does
+2.7) Added some explanation of options as comment.  Maybe expand later.
+
+Notes and questions:
+1. Would be nice to have a debug version also for serial code.
+2. Would be nice to have "as fast as possible" option (thought it might be machine-dependent ...)
+3. What is the purpose of -Warray-bounds ? Is it relevant for Fortran? I think if there is a compile-time array-bound violation this would be a hard error?
+
+FLEXPART.f90
+========
+
+Update version string!
+
+readcommand.f90
+===========
+
+Correct misleading error message (replace "open" by "write to")
+Improve error messages: combine pathname+filename, remove unaligned closing ###
+Let STOP say in which subroutine we are stopping
+Some minor changes

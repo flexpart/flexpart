@@ -1,16 +1,24 @@
 SHELL = /bin/bash
 ################################################################################
+#   
+#  LICENSE
+#   Valid-License-Identifier:  	GPL-3.0-or-later
+#   License text: https://spdx.org/licenses/GPL-3.0-or-later.html#licenseText
+#
 #  DESCRIPTION
 #    Makefile for FLEXPART. Standard (serial) and parallel (MPI) version
 #
 #    Dependencies are resolved in this makefile, so parallel make is
 #    possible ("make -j")
 #
-#    At NILU we have installed gcc-4.9.1 and libraries under user /homevip/flexpart
-#    ("ROOT_DIR")
-#    To use gfortran version 4.9, add "gcc=4.9" to the make command, e.g.
+#    
+#    The makefile is prepared for the environment at NILU.
+#    There, gcc-4.9.1 and libraries are installed under user /homevip/flexpart
+#    NILU users can compile with gfortran version 4.9 by addin "gcc=4.9" to the make command, e.g.
 #       'make -j ecmwf gcc=4.9',
-#    also set environment variable LD_LIBRARY_PATH to point to compiler libraries
+#    You also set environment variable LD_LIBRARY_PATH to point to compiler libraries
+#
+#    Other users will have to edit the 
 #
 #    Makefile was modified to produce unified executable for both ECMWF and GFS meteo data formats
 #    gributils were included to detect format of meteo data
@@ -22,17 +30,22 @@ SHELL = /bin/bash
 # 
 #  USAGE
 #    Compile serial FLEXPART 
-#      make [-j] serial
+#      make [-j] [serial] [ncf=yes}
 #
 #    Compile parallel FLEXPART 
-#      make [-j] mpi
+#      make [-j] mpi [ncf=yes}
 #     
 #    Compile for debugging parallel FLEXPART
-#      make [-j] mpi-dbg
+#      make [-j] mpi-dbg [ncf=yes}
 #
-#  NETCDF OUTPUT
-#    To add support for output in netCDF format, append `ncf=yes` to the
-#    `make` command
+#    ncf=yes adds support for output in netCDF format. Requires netCDF libs to be installed.
+#
+#  AUTHORS
+#    NILU people, Petra Seibert (PS), 2018
+#
+#  VERSION and CHANGES
+#    v1.0 as found in git branch dev on flexpart.eu, 2018-06-08
+#    v1.1 PS, make the file more useful for non-NILU users
 # 
 ################################################################################
 
@@ -49,9 +62,17 @@ FLEXPART-MPI-DBG = DBG_FLEXPART_MPI
 # Serial processing executable
 FLEXPART-SERIAL = FLEXPART
 
+ifneq ($(gcc), 4.9)
+# make sure that all paths correspond to your system
+	F90	  = gfortran
+	MPIF90    = mpifort
 
-ifeq ($(gcc), 4.9)
-# Compiled libraries under user ~flexpart, gfortran v4.9
+	INCPATH1  = /usr/include	
+	INCPATH2  = /usr/include
+	LIBPATH1  = /usr/lib
+else 
+# NILU: Compiled libraries under user ~flexpart, gfortran v4.9
+	ROOT_DIR = /homevip/flexpart/
 	ROOT_DIR = /homevip/flexpart/
 
 	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
@@ -60,16 +81,6 @@ ifeq ($(gcc), 4.9)
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
-else 
-# Compiled libraries under user ~flexpart, gfortran v5.4
-	ROOT_DIR = /homevip/flexpart/
-
-	F90	  = /usr/bin/gfortran
-	MPIF90    = /usr/bin/mpifort
-
-	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
-	INCPATH2  = /usr/include
-	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
 endif
 
 
@@ -82,7 +93,7 @@ endif
 
 
 
-# path to gributils used to detect meteodata format
+#add path to gributils to default searchpath of make
 VPATH = gributils/
 
 
@@ -91,12 +102,16 @@ O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
-#LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
 
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
+#FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  # -fcheck=all -fbacktrace -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
+# Explanation of unusual gfortran options
+# -fmessage-length=0: do not wrap around compiler messages at col 72
+# -flto=jobserver: use GNU make's job server mode to determine the number of parallel jobs. This is useful when the Makefile calling GCC is already executing in parallel. (+ in front of $(FC) further down also needed for parallel compiling).
+
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero   -fcheck=all
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)

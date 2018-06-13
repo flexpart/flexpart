@@ -28,8 +28,10 @@ subroutine readcommand
   !     Author: A. Stohl                                                       *
   !                                                                            *
   !     18 May 1996                                                            *
-  !     HSO, 1 July 2014                                                       *
-  !     Added optional namelist input                                          *
+  !     Unknown, unknown: various                                              *
+  !     HSO, 1 July 2014: Added optional namelist input                        *
+  !     Unknown, unknown: various                                              *
+  !     Petra Seibert, 2018-06-08: improve error msgs                          *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -152,7 +154,8 @@ subroutine readcommand
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
   !**************************************************************************
-  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old',form='formatted',err=999)
+  open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
+    form='formatted',err=999)
 
   ! try namelist input (default)
   read(unitcommand,command,iostat=readerror)
@@ -247,7 +250,7 @@ subroutine readcommand
 
   ! write command file in namelist format to output directory if requested
   if (nmlout.and.lroot) then
-    open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=1000)
+    open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=998)
     write(unitcommand,nml=command)
     close(unitcommand)
   endif
@@ -634,20 +637,19 @@ subroutine readcommand
     edate=juldate(ibdate,ibtime)
     ideltas=nint((edate-bdate)*86400.)
   else
-    write(*,*) ' #### FLEXPART MODEL ERROR! DIRECTION IN      #### '
-    write(*,*) ' #### FILE "COMMAND" MUST BE EITHER -1 OR 1.  #### '
+    write(*,*) ' #### FLEXPART MODEL ERROR! DIRECTION IN'
+    write(*,*) ' #### FILE "COMMAND" MUST BE EITHER -1 OR 1.'
     stop
   endif
 
   return
 
-999   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"    #### '
-  write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(1)(1:length(1))
-  stop
-
-1000   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"    #### '
-  write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(2)(1:length(2))
-  stop
+998 write(*,900) ' #### FLEXPART MODEL ERROR! FILE "COMMAND.namelist"'
+  write(*,900)   ' #### CANNOT WRITE TO '// &
+    path(2)(1:length(2))//'COMMAND.namelist'
+  stop 'stopped in readcommand'
+999 write(*,900) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"'
+  write(*,900)   ' #### CANNOT OPEN '//path(1)(1:length(1))//'COMMAND'
+  stop 'stopped in readcommand'
+900 format (a)
 end subroutine readcommand
