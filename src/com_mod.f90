@@ -301,7 +301,7 @@ module com_mod
   ! nuvz,nwz                vertical dimension of original ECMWF data
   ! nxfield                 same as nx for limited area fields,
   !                    but for global fields nx=nxfield+1
-  ! nmixz                   number of levels up to maximum PBL height (3500 m)
+  ! nmixz                   number of levels up to maximum PBL height (hmixmax)
 
   ! nuvz is used for u,v components
   ! nwz is used for w components (staggered grid)

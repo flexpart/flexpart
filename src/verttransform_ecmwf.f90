@@ -1,4 +1,4 @@
-!**********************************************************************
+! **********************************************************************
 ! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
 ! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
 ! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
@@ -17,7 +17,7 @@
 !                                                                     *
 ! You should have received a copy of the GNU General Public License   *
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
+! **********************************************************************
 
 subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !                         i  i   i   i   i
@@ -35,6 +35,9 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !     12 August 1996                                                         *
 !     Update: 16 January 1998                                                *
 !                                                                            *
+!                                                                            *
+!*****************************************************************************
+!  CHANGES                                                                   *
 !     Major update: 17 February 1999                                         *
 !     by G. Wotawa                                                           *
 !                                                                            *
@@ -42,18 +45,30 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !     - Slope correction for vertical velocity: Modification of calculation  *
 !       procedure                                                            *
 !                                                                            *
-!*****************************************************************************
-!  Changes, Bernd C. Krueger, Feb. 2001:
+!  Bernd C. Krueger, Feb. 2001:
 !   Variables tth and qvh (on eta coordinates) from common block
-!
-! Sabine Eckhardt, March 2007
-! added the variable cloud for use with scavenging - descr. in com_mod
-!
-! Unified ECMWF and GFS builds
+!                                                                            *
+! Sabine Eckhardt, March 2007:
+!   added the variable cloud for use with scavenging - descr. in com_mod
+!                                                                            *
+! Who? When?                                                                 *
+!   Unified ECMWF and GFS builds
 ! Marian Harustak, 12.5.2017 
 !     - Renamed from verttransform to verttransform_ecmwf
-!*****************************************************************************
-! Date: 2017-05-30 modification of a bug in ew. Don Morton (CTBTO project)   *
+!                                                                            *
+! Don Morton, 2017-05-30: 
+!   modification of a bug in ew. Don Morton (CTBTO project)                  *
+!                                                                            *
+!  undocumented modifications by NILU for v10                                *
+!                                                                            *
+!  Petra Seibert, 2018-06-13:                                                *
+!   - fix bug of ticket:140 (find reference position for vertical grid)      *
+!   - put back SAVE attribute for INIT, just to be safe                      *
+!   - minor changes, most of them just cosmetics                             *
+!   for details see changelog.txt                                            *
+!                                                                            *
+! ****************************************************************************
+
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -72,7 +87,6 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   use par_mod
   use com_mod
   use cmapf_mod, only: cc2gll
-!  use mpi_mod
 
   implicit none
 
@@ -81,12 +95,20 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: rhoh,uvzlev,wzlev
   real,dimension(0:nxmax-1,0:nymax-1,nzmax) :: pinmconv
-  real,dimension(0:nxmax-1,0:nymax-1) ::  tvold,pold,pint,tv
+!>   for reference profile (PS)  
+  real ::  tvoldref, poldref, pintref, psmean, psstd
+  integer :: ixyref(2)
+  integer, parameter :: ioldref = 1 ! PS 2018-06-13: set to 0 if you 
+!!   want old method of searching reference location for the vertical grid
+!!   1 for new method (options for other methods 2,... in the future)
+
   real,dimension(0:nymax-1) :: cosf
+  real,dimension(0:nxmax-1,0:nymax-1) ::  tvold,pold,pint,tv
+!! automatic arrays introduced in v10 by ?? to achieve better loop order (PS)
 
   integer,dimension(0:nxmax-1,0:nymax-1) :: rain_cloud_above,idx
 
-  integer :: ix,jy,kz,iz,n,kmin,ix1,jy1,ixp,jyp,ixm,jym,kz_inv
+  integer :: ix,jy,kz,iz,n,kmin,ix1,jy1,ixp,jyp,ixref,jyref,kz_inv
   real :: f_qvsat,pressure,rh,lsp,convp,cloudh_min,prec
   real :: ew,dz1,dz2,dz
   real :: xlon,ylat,xlonr,dzdx,dzdy
@@ -95,9 +117,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   real,parameter :: const=r_air/ga
   real,parameter :: precmin = 0.002 ! minimum prec in mm/h for cloud diagnostics
 
-  logical :: init = .true.
-  logical :: init_w = .false.
-  logical :: init_r = .false.
+  logical, save :: init = .true. ! PS 2018-06-13: add back save attribute
 
 
   !ZHG SEP 2014 tests  
@@ -119,79 +139,84 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! If verttransform is called the first time, initialize heights of the   *
 ! z levels in meter. The heights are the heights of model levels, where  *
 ! u,v,T and qv are given, and of the interfaces, where w is given. So,   *
-! the vertical resolution in the z system is doubled. As reference point,*
+! the vertical rESOlution in the z system is doubled. As reference point,*
 ! the lower left corner of the grid is used.                             *
 ! Unlike in the eta system, no difference between heights for u,v and    *
 ! heights for w exists.                                                  *
 !*************************************************************************
 
-
-!eso measure CPU time
+!ESO measure CPU time
 !  call mpif_mtime('verttransform',0)
 
   if (init) then
 
+!! Search for a point with high surface pressure (i.e. not above significant
+!!  topography) Then, use this point to construct a reference z profile, 
+!!  to be used at all times
+! *****************************************************************************
 
-    if (init_r) then
+    if (ioldref .eq. 0) then ! old reference grid point
+       do jy=0,nymin1
+         do ix=0,nxmin1
+           if (ps(ix,jy,1,n).gt.1000.e2) then
+             ixref=ix
+             jyref=jy
+             goto 3
+           endif
+         end do
+       end do
+3     continue
 
-        open(333,file='heights.txt', &
-          form='formatted')
-        do kz=1,nuvz
-            read(333,*) height(kz)
-        end do
-        close(333)
-        write(*,*) 'height read'
-    else
+      print*,'oldheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+    else ! new reference grid point
+!     PS: the old version fails if the pressure is <=1000 hPa in the whole
+!     domain. Let us find a good replacement, not just a quick fix.
+!     Search point near to mean pressure after excluding mountains
 
+      psmean = sum( ps(:,:,1,n) ) / (nx*ny)
+      print*,'height: fg psmean',psmean
+      psstd = sqrt(sum( (ps(:,:,1,n) - psmean)**2 ) / (nx*ny))
 
-! Search for a point with high surface pressure (i.e. not above significant topography)
-! Then, use this point to construct a reference z profile, to be used at all times
-!*****************************************************************************
+!>    new psmean using only points within $\plusminus\sigma$  
+!      psmean = sum( ps(:,:,1,n), abs(ps(:,:,1,n)-psmean) < psstd ) / &
+!        count(abs(ps(:,:,1,n)-psmean) < psstd)
 
-    do jy=0,nymin1
-      do ix=0,nxmin1
-        if (ps(ix,jy,1,n).gt.100000.) then
-          ixm=ix
-          jym=jy
-          goto 3
-        endif
-      end do
-    end do
-3   continue
+!>    new psmean using only points with $p\gt \overbar{p}+\sigma_p$  
+!>    (reject mountains, accept valleys)
+      psmean = sum( ps(:,:,1,n), ps(:,:,1,n) > psmean - psstd ) / &
+        count(ps(:,:,1,n) > psmean - psstd)
+      print*,'height: std, new psmean',psstd,psmean
+      ixyref = minloc( abs( ps(:,:,1,n) - psmean ) )
+      ixref = ixyref(1)
+      jyref = ixyref(2)
+      print*,'newheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+    endif  
 
-
-    tvold(ixm,jym)=tt2(ixm,jym,1,n)*(1.+0.378*ew(td2(ixm,jym,1,n))/ &
-         ps(ixm,jym,1,n))
-    pold(ixm,jym)=ps(ixm,jym,1,n)
+    tvoldref=tt2(ixref,jyref,1,n)* &
+      ( 1. + 0.378*ew(td2(ixref,jyref,1,n) ) / ps(ixref,jyref,1,n))
+    poldref=ps(ixref,jyref,1,n)
     height(1)=0.
 
     do kz=2,nuvz
-      pint=akz(kz)+bkz(kz)*ps(ixm,jym,1,n)
-      tv=tth(ixm,jym,kz,n)*(1.+0.608*qvh(ixm,jym,kz,n))
 
-      if (abs(tv(ixm,jym)-tvold(ixm,jym)).gt.0.2) then
-        height(kz)= &
-             height(kz-1)+const*log(pold(ixm,jym)/pint(ixm,jym))* &
-             (tv(ixm,jym)-tvold(ixm,jym))/log(tv(ixm,jym)/tvold(ixm,jym))
+      pintref = akz(kz)+bkz(kz)*ps(ixref,jyref,1,n)
+      tv = tth(ixref,jyref,kz,n)*(1.+0.608*qvh(ixref,jyref,kz,n))
+
+      if (abs(tv(ixref,jyref)-tvoldref) .gt. 0.2) then
+        height(kz) = height(kz-1) +      &
+          const*log( poldref/pintref ) * &
+          ( tv(ixref,jyref) - tvoldref ) / log( tv(ixref,jyref) / tvoldref )
       else
-        height(kz)=height(kz-1)+ &
-             const*log(pold(ixm,jym)/pint(ixm,jym))*tv(ixm,jym)
+        height(kz) = height(kz-1) + &
+          const*log( poldref/pintref ) * tv(ixref,jyref)
       endif
 
-      tvold(ixm,jym)=tv(ixm,jym)
-      pold(ixm,jym)=pint(ixm,jym)
+      tvoldref = tv(ixref,jyref)
+      poldref = pintref
+      print*,'height=',kz,height(kz),tvoldref,poldref
+
     end do
 
-    if (init_w) then
-        open(333,file='heights.txt', &
-          form='formatted')
-        do kz=1,nuvz
-              write(333,*) height(kz)
-        end do
-        close(333)
-    endif
-
-    endif ! init
 
 ! Determine highest levels that can be within PBL
 !************************************************
@@ -206,24 +231,15 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
 ! Do not repeat initialization of the Cartesian z grid
 !*****************************************************
-
     init=.false.
 
-!    dbg_height = height
-
-  endif
+  endif ! init block (vertical grid construction)
 
 
 ! Loop over the whole grid
 !*************************
 
-
-  do jy=0,nymin1
-    do ix=0,nxmin1
-      tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
-           ps(ix,jy,1,n))
-    enddo
-  enddo
+  tvold(:,:)=tt2(:,:,1,n) * (1.+0.378*ew( td2(:,:,1,n) ) / ps(:,:,1,n))
   pold=ps(:,:,1,n)
   uvzlev(:,:,1)=0.
   wzlev(:,:,1)=0.
@@ -234,19 +250,19 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !******************************
 
   do kz=2,nuvz
-    pint=akz(kz)+bkz(kz)*ps(:,:,1,n)
-    tv=tth(:,:,kz,n)*(1.+0.608*qvh(:,:,kz,n))
-    rhoh(:,:,kz)=pint(:,:)/(r_air*tv)
+    pint(:,:)=akz(kz)+bkz(kz)*ps(:,:,1,n)
+    tv(:,:)=tth(:,:,kz,n)*(1.+0.608*qvh(:,:,kz,n))
+    rhoh(:,:,kz)=pint(:,:)/(r_air*tv(:,:))
 
-    where (abs(tv-tvold).gt.0.2) 
-      uvzlev(:,:,kz)=uvzlev(:,:,kz-1)+const*log(pold/pint)* &
-           (tv-tvold)/log(tv/tvold)
+    where (abs(tv(:,:)-tvold(:,:)).gt.0.2) 
+      uvzlev(:,:,kz)=uvzlev(:,:,kz-1)+const*log(pold(:,:)/pint(:,:))* &
+           (tv(:,:)-tvold(:,:))/log(tv(:,:)/tvold(:,:))
     elsewhere
-      uvzlev(:,:,kz)=uvzlev(:,:,kz-1)+const*log(pold/pint)*tv
+      uvzlev(:,:,kz)=uvzlev(:,:,kz-1)+const*log(pold(:,:)/pint(:,:))*tv(:,:)
     endwhere
 
-    tvold=tv
-    pold=pint
+    tvold(:,:)=tv(:,:)
+    pold(:,:)=pint(:,:)
   end do
 
 
@@ -259,31 +275,30 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! pinmconv=(h2-h1)/(p2-p1)
 
   pinmconv(:,:,1)=(uvzlev(:,:,2))/ &
-       ((aknew(2)+bknew(2)*ps(:,:,1,n))- &
-       (aknew(1)+bknew(1)*ps(:,:,1,n)))
+    ((aknew(2)+bknew(2)*ps(:,:,1,n))- &
+     (aknew(1)+bknew(1)*ps(:,:,1,n)))
   do kz=2,nz-1
     pinmconv(:,:,kz)=(uvzlev(:,:,kz+1)-uvzlev(:,:,kz-1))/ &
-         ((aknew(kz+1)+bknew(kz+1)*ps(:,:,1,n))- &
-         (aknew(kz-1)+bknew(kz-1)*ps(:,:,1,n)))
+      ((aknew(kz+1)+bknew(kz+1)*ps(:,:,1,n))- &
+       (aknew(kz-1)+bknew(kz-1)*ps(:,:,1,n)))
   end do
   pinmconv(:,:,nz)=(uvzlev(:,:,nz)-uvzlev(:,:,nz-1))/ &
        ((aknew(nz)+bknew(nz)*ps(:,:,1,n))- &
-       (aknew(nz-1)+bknew(nz-1)*ps(:,:,1,n)))
+        (aknew(nz-1)+bknew(nz-1)*ps(:,:,1,n)))
 
-! Levels, where u,v,t and q are given
-!************************************
-
+! Levels where u,v,t and q are given
+!***********************************
 
   uu(:,:,1,n)=uuh(:,:,1)
   vv(:,:,1,n)=vvh(:,:,1)
   tt(:,:,1,n)=tth(:,:,1,n)
   qv(:,:,1,n)=qvh(:,:,1,n)
-!hg adding the cloud water 
+!HG adding the cloud water 
   if (readclouds) then
     clwc(:,:,1,n)=clwch(:,:,1,n)
     if (.not.sumclouds) ciwc(:,:,1,n)=ciwch(:,:,1,n)
   end if
-!hg 
+!HG 
   pv(:,:,1,n)=pvh(:,:,1)
   rho(:,:,1,n)=rhoh(:,:,1)
 
@@ -291,48 +306,52 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   vv(:,:,nz,n)=vvh(:,:,nuvz)
   tt(:,:,nz,n)=tth(:,:,nuvz,n)
   qv(:,:,nz,n)=qvh(:,:,nuvz,n)
-!hg adding the cloud water
+!HG adding the cloud water
   if (readclouds) then
     clwc(:,:,nz,n)=clwch(:,:,nuvz,n)
-    if (.not.sumclouds) ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
+    if (.not. sumclouds) ciwc(:,:,nz,n)=ciwch(:,:,nuvz,n)
   end if
-!hg
+!HG
   pv(:,:,nz,n)=pvh(:,:,nuvz)
   rho(:,:,nz,n)=rhoh(:,:,nuvz)
 
-
   kmin=2
   idx=kmin
-  do iz=2,nz-1
+  iz_loop: do iz=2,nz-1
     do jy=0,nymin1
       do ix=0,nxmin1
-        if(height(iz).gt.uvzlev(ix,jy,nuvz)) then
+        if (height(iz).gt.uvzlev(ix,jy,nuvz)) then
+        
           uu(ix,jy,iz,n)=uu(ix,jy,nz,n)
           vv(ix,jy,iz,n)=vv(ix,jy,nz,n)
           tt(ix,jy,iz,n)=tt(ix,jy,nz,n)
           qv(ix,jy,iz,n)=qv(ix,jy,nz,n)
-!hg adding the cloud water
+!HG adding the cloud water
           if (readclouds) then
             clwc(ix,jy,iz,n)=clwc(ix,jy,nz,n)
-            if (.not.sumclouds) ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
+            if (.not. sumclouds) ciwc(ix,jy,iz,n)=ciwc(ix,jy,nz,n)
           end if
-!hg
+!HG
           pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
           rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
+
         else
-          innuvz: do kz=idx(ix,jy),nuvz
-            if (idx(ix,jy) .le. kz .and. (height(iz).gt.uvzlev(ix,jy,kz-1)).and. &
-                 (height(iz).le.uvzlev(ix,jy,kz))) then
+
+          kz_loop: do kz=idx(ix,jy),nuvz
+            if (idx(ix,jy) .le. kz .and. height(iz).gt.uvzlev(ix,jy,kz-1) &
+                .and. height(iz).le.uvzlev(ix,jy,kz)) then
               idx(ix,jy)=kz
-              exit innuvz
+              exit kz_loop
             endif
-          enddo innuvz
+          enddo kz_loop
+
         endif
       enddo
     enddo
     do jy=0,nymin1
       do ix=0,nxmin1
-        if(height(iz).le.uvzlev(ix,jy,nuvz)) then
+        if (height(iz).le.uvzlev(ix,jy,nuvz)) then
+        
           kz=idx(ix,jy)
           dz1=height(iz)-uvzlev(ix,jy,kz-1)
           dz2=uvzlev(ix,jy,kz)-height(iz)
@@ -343,38 +362,39 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
                +tth(ix,jy,kz,n)*dz1)/dz
           qv(ix,jy,iz,n)=(qvh(ix,jy,kz-1,n)*dz2 &
                +qvh(ix,jy,kz,n)*dz1)/dz
-!hg adding the cloud water
+!HG adding the cloud water
           if (readclouds) then
             clwc(ix,jy,iz,n)=(clwch(ix,jy,kz-1,n)*dz2+clwch(ix,jy,kz,n)*dz1)/dz
-            if (.not.sumclouds) &
-                 &ciwc(ix,jy,iz,n)=(ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
+            if (.not. sumclouds) ciwc(ix,jy,iz,n)= &
+              (ciwch(ix,jy,kz-1,n)*dz2+ciwch(ix,jy,kz,n)*dz1)/dz
           end if
-!hg
+!HG
           pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
           rho(ix,jy,iz,n)=(rhoh(ix,jy,kz-1)*dz2+rhoh(ix,jy,kz)*dz1)/dz
+
         endif
       enddo
     enddo
-  enddo
+  enddo iz_loop
 
 
-! Levels, where w is given
+! Levels where w is given
 !*************************
 
   ww(:,:,1,n)=wwh(:,:,1)*pinmconv(:,:,1)
   ww(:,:,nz,n)=wwh(:,:,nwz)*pinmconv(:,:,nz)
   kmin=2
   idx=kmin
-  do iz=2,nz
+  iz_loop2: do iz=2,nz
     do jy=0,nymin1
       do ix=0,nxmin1
-        inn:         do kz=idx(ix,jy),nwz
-          if(idx(ix,jy) .le. kz .and. height(iz).gt.wzlev(ix,jy,kz-1).and. &
-               height(iz).le.wzlev(ix,jy,kz)) then
+        kz_loop2: do kz=idx(ix,jy),nwz
+          if (idx(ix,jy) .le. kz .and. height(iz).gt.wzlev(ix,jy,kz-1) &
+            .and. height(iz).le.wzlev(ix,jy,kz)) then
             idx(ix,jy)=kz
-            exit inn
+            exit kz_loop2
           endif
-        enddo inn
+        enddo kz_loop2
       enddo
     enddo
     do jy=0,nymin1
@@ -384,24 +404,20 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
         dz2=wzlev(ix,jy,kz)-height(iz)
         dz=dz1+dz2
         ww(ix,jy,iz,n)=(wwh(ix,jy,kz-1)*pinmconv(ix,jy,kz-1)*dz2 &
-             +wwh(ix,jy,kz)*pinmconv(ix,jy,kz)*dz1)/dz
+                      + wwh(ix,jy,kz)  *pinmconv(ix,jy,kz)*dz1)/dz
       enddo
     enddo
-  enddo
+  enddo iz_loop2
 
 ! Compute density gradients at intermediate levels
 !*************************************************
 
-  drhodz(:,:,1,n)=(rho(:,:,2,n)-rho(:,:,1,n))/ &
-       (height(2)-height(1))
+  drhodz(:,:,1,n)=(rho(:,:,2,n)-rho(:,:,1,n))/(height(2)-height(1))
   do kz=2,nz-1
     drhodz(:,:,kz,n)=(rho(:,:,kz+1,n)-rho(:,:,kz-1,n))/ &
-         (height(kz+1)-height(kz-1))
+      (height(kz+1)-height(kz-1))
   end do
   drhodz(:,:,nz,n)=drhodz(:,:,nz-1,n)
-
-!    end do
-!  end do
 
 
 !****************************************************************
@@ -410,22 +426,22 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !****************************************************************
 
   do jy=1,ny-2
-    cosf(jy)=1./cos((real(jy)*dy+ylat0)*pi180)
+    cosf(jy) = 1. / cos( ( real(jy)*dy + ylat0 )*pi180 )
   enddo
 
   kmin=2
   idx=kmin
-  do iz=2,nz-1
+  iz_loop3: do iz=2,nz-1
     do jy=1,ny-2
       do ix=1,nx-2
 
-        inneta: do kz=idx(ix,jy),nz
-          if (idx(ix,jy) .le. kz .and. (height(iz).gt.uvzlev(ix,jy,kz-1)).and. &
-               (height(iz).le.uvzlev(ix,jy,kz))) then
+        kz_loop3: do kz=idx(ix,jy),nz
+          if (idx(ix,jy) .le. kz .and. height(iz).gt.uvzlev(ix,jy,kz-1) &
+            .and. height(iz).le.uvzlev(ix,jy,kz)) then
             idx(ix,jy)=kz
-            exit inneta
+            exit kz_loop3
           endif
-        enddo inneta
+        enddo kz_loop3
       enddo
     enddo
 
@@ -441,59 +457,57 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
         jyp=jy+1
 
         dzdx1=(uvzlev(ixp,jy,kz-1)-uvzlev(ix1,jy,kz-1))/2.
-        dzdx2=(uvzlev(ixp,jy,kz)-uvzlev(ix1,jy,kz))/2.
+        dzdx2=(uvzlev(ixp,jy,kz)  -uvzlev(ix1,jy,kz)  )/2.
         dzdx=(dzdx1*dz2+dzdx2*dz1)/dz
 
         dzdy1=(uvzlev(ix,jyp,kz-1)-uvzlev(ix,jy1,kz-1))/2.
-        dzdy2=(uvzlev(ix,jyp,kz)-uvzlev(ix,jy1,kz))/2.
+        dzdy2=(uvzlev(ix,jyp,kz)  -uvzlev(ix,jy1,kz)  )/2.
         dzdy=(dzdy1*dz2+dzdy2*dz1)/dz
 
-        ww(ix,jy,iz,n)=ww(ix,jy,iz,n)+(dzdx*uu(ix,jy,iz,n)*dxconst*cosf(jy)+dzdy*vv(ix,jy,iz,n)*dyconst)
+        ww(ix,jy,iz,n)=ww(ix,jy,iz,n) +( dzdx*uu(ix,jy,iz,n)*dxconst*cosf(jy) &
+          + dzdy*vv(ix,jy,iz,n)*dyconst)
 
-      end do
+      enddo
+    enddo
 
-    end do
-  end do
+  enddo iz_loop3
 
 ! If north pole is in the domain, calculate wind velocities in polar
 ! stereographic coordinates
 !*******************************************************************
 
   if (nglobal) then
+    
     do iz=1,nz
       do jy=int(switchnorthg)-2,nymin1
         ylat=ylat0+real(jy)*dy
         do ix=0,nxmin1
           xlon=xlon0+real(ix)*dx
           call cc2gll(northpolemap,ylat,xlon,uu(ix,jy,iz,n), &
-               vv(ix,jy,iz,n),uupol(ix,jy,iz,n), &
-               vvpol(ix,jy,iz,n))
-        end do
-      end do
-    end do
+               vv(ix,jy,iz,n),uupol(ix,jy,iz,n), vvpol(ix,jy,iz,n))
+        enddo
+      enddo
+    enddo
 
 
     do iz=1,nz
 
-! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
+!   CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
 !
-!   AMSnauffer Nov 18 2004 Added check for case vv=0
-!
+!   AMS nauffer Nov 18 2004 Added check for case vv=0
+
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
-      ffpol=sqrt(uu(nx/2-1,nymin1,iz,n)**2+ &
-           vv(nx/2-1,nymin1,iz,n)**2)
+      ffpol=sqrt(uu(nx/2-1,nymin1,iz,n)**2+vv(nx/2-1,nymin1,iz,n)**2)
       if (vv(nx/2-1,nymin1,iz,n).lt.0.) then
-        ddpol=atan(uu(nx/2-1,nymin1,iz,n)/ &
-             vv(nx/2-1,nymin1,iz,n))-xlonr
+        ddpol=atan(uu(nx/2-1,nymin1,iz,n)/vv(nx/2-1,nymin1,iz,n))-xlonr
       else if (vv(nx/2-1,nymin1,iz,n).gt.0.) then
-        ddpol=pi+atan(uu(nx/2-1,nymin1,iz,n)/ &
-             vv(nx/2-1,nymin1,iz,n))-xlonr
+        ddpol=pi+atan(uu(nx/2-1,nymin1,iz,n)/vv(nx/2-1,nymin1,iz,n))-xlonr
       else
-        ddpol=pi/2-xlonr
+        ddpol=pi/2.-xlonr
       endif
-      if(ddpol.lt.0.) ddpol=2.0*pi+ddpol
-      if(ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
+      if (ddpol.lt.0.) ddpol=2.0*pi+ddpol
+      if (ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
 
 ! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
       xlon=180.0
@@ -501,32 +515,30 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
       ylat=90.0
       uuaux=-ffpol*sin(xlonr+ddpol)
       vvaux=-ffpol*cos(xlonr+ddpol)
-      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux, &
-           vvpolaux)
+      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux, vvpolaux)
 
       jy=nymin1
       do ix=0,nxmin1
         uupol(ix,jy,iz,n)=uupolaux
         vvpol(ix,jy,iz,n)=vvpolaux
-      end do
-    end do
+      enddo
+    enddo
 
-
-! Fix: Set W at pole to the zonally averaged W of the next equator-
-! ward parallel of latitude
+! Fix: Set W (vertical wind) at pole to the zonally averaged W of the next 
+! equator-ward parallel 
 
     do iz=1,nz
       wdummy=0.
       jy=ny-2
       do ix=0,nxmin1
         wdummy=wdummy+ww(ix,jy,iz,n)
-      end do
+      enddo
       wdummy=wdummy/real(nx)
       jy=nymin1
       do ix=0,nxmin1
         ww(ix,jy,iz,n)=wdummy
-      end do
-    end do
+      enddo
+    enddo
 
   endif
 
@@ -536,39 +548,36 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !*******************************************************************
 
   if (sglobal) then
+  
     do iz=1,nz
       do jy=0,int(switchsouthg)+3
         ylat=ylat0+real(jy)*dy
         do ix=0,nxmin1
           xlon=xlon0+real(ix)*dx
           call cc2gll(southpolemap,ylat,xlon,uu(ix,jy,iz,n), &
-               vv(ix,jy,iz,n),uupol(ix,jy,iz,n), &
-               vvpol(ix,jy,iz,n))
-        end do
-      end do
-    end do
+               vv(ix,jy,iz,n),uupol(ix,jy,iz,n),vvpol(ix,jy,iz,n))
+        enddo
+      enddo
+    enddo
 
     do iz=1,nz
 
-! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
+!   CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
 !
-!   AMSnauffer Nov 18 2004 Added check for case vv=0
-!
+!   AMS nauffer Nov 18 2004 Added check for case vv=0
+
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
-      ffpol=sqrt(uu(nx/2-1,0,iz,n)**2+ &
-           vv(nx/2-1,0,iz,n)**2)
+      ffpol=sqrt(uu(nx/2-1,0,iz,n)**2+vv(nx/2-1,0,iz,n)**2)
       if (vv(nx/2-1,0,iz,n).lt.0.) then
-        ddpol=atan(uu(nx/2-1,0,iz,n)/ &
-             vv(nx/2-1,0,iz,n))+xlonr
+        ddpol=atan(uu(nx/2-1,0,iz,n)/vv(nx/2-1,0,iz,n))+xlonr
       else if (vv(nx/2-1,0,iz,n).gt.0.) then
-        ddpol=pi+atan(uu(nx/2-1,0,iz,n)/ &
-             vv(nx/2-1,0,iz,n))+xlonr
+        ddpol=pi+atan(uu(nx/2-1,0,iz,n)/vv(nx/2-1,0,iz,n))+xlonr
       else
-        ddpol=pi/2-xlonr
+        ddpol=pi/2.-xlonr
       endif
-      if(ddpol.lt.0.) ddpol=2.0*pi+ddpol
-      if(ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
+      if (ddpol.lt.0.) ddpol=2.0*pi+ddpol
+      if (ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
 
 ! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
       xlon=180.0
@@ -576,65 +585,66 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
       ylat=-90.0
       uuaux=+ffpol*sin(xlonr-ddpol)
       vvaux=-ffpol*cos(xlonr-ddpol)
-      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux, &
-           vvpolaux)
+      call cc2gll(northpolemap,ylat,xlon,uuaux,vvaux,uupolaux,vvpolaux)
 
       jy=0
       do ix=0,nxmin1
         uupol(ix,jy,iz,n)=uupolaux
         vvpol(ix,jy,iz,n)=vvpolaux
-      end do
-    end do
+      enddo
+    enddo
 
-
-! Fix: Set W at pole to the zonally averaged W of the next equator-
-! ward parallel of latitude
+! Fix: Set W (vertical wind) at pole to the zonally averaged W of the next 
+! equator-ward parallel 
 
     do iz=1,nz
       wdummy=0.
       jy=1
       do ix=0,nxmin1
         wdummy=wdummy+ww(ix,jy,iz,n)
-      end do
+      enddo
       wdummy=wdummy/real(nx)
       jy=0
       do ix=0,nxmin1
         ww(ix,jy,iz,n)=wdummy
-      end do
-    end do
+      enddo
+    enddo
   endif
 
 
-!***********************************************************************************  
-  if (readclouds) then !HG METHOD
-! The method is loops all grids vertically and constructs the 3D matrix for clouds
-! Cloud top and cloud bottom gid cells are assigned as well as the total column 
-! cloud water. For precipitating grids, the type and whether it is in or below 
+!****************************************************************************** 
+  if (readclouds) then ! HG METHOD
+
+! Loops over all grid cells vertically and construct the 3D matrix for clouds
+! Cloud top and cloud bottom grid cells are assigned as well as the total column
+! cloud water. For precipitating columns, the type and whether it is in or below
 ! cloud scavenging are assigned with numbers 2-5 (following the old metod).
-! Distinction is done for lsp and convp though they are treated the same in regards
-! to scavenging. Also clouds that are not precipitating are defined which may be 
-! to include future cloud processing by non-precipitating-clouds. 
-!***********************************************************************************
-    write(*,*) 'Global ECMWF fields: using cloud water'
+! A distinction is made between lsp and convp though they are treated the equally 
+! with regard to scavenging. Also, clouds that are not precipitating are defined which 
+! may be used in the future for cloud processing by non-precipitating-clouds. 
+!*******************************************************************************
+
+!PS    write(*,*) 'Global ECMWF fields: using cloud water'
     clw(:,:,:,n)=0.0
-!    icloud_stats(:,:,:,n)=0.0
     ctwc(:,:,n)=0.0
     clouds(:,:,:,n)=0
 ! If water/ice are read separately into clwc and ciwc, store sum in clwc
-    if (.not.sumclouds) then 
+    if (.not. sumclouds) then 
       clwc(:,:,:,n) = clwc(:,:,:,n) + ciwc(:,:,:,n)
-    end if
+    endif
     do jy=0,nymin1
       do ix=0,nxmin1
         lsp=lsprec(ix,jy,1,n)
         convp=convprec(ix,jy,1,n)
-        prec=lsp+convp
+        prec=lsp+convp  ! Note PS: prec is not used currently
 !        tot_cloud_h=0
 ! Find clouds in the vertical
+!! Note PS: bad loop order. 
         do kz=1, nz-1 !go from top to bottom
           if (clwc(ix,jy,kz,n).gt.0) then      
 ! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3 
-            clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
+            clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))* &
+              (height(kz+1)-height(kz))
 !            tot_cloud_h=tot_cloud_h+(height(kz+1)-height(kz)) 
             
 !            icloud_stats(ix,jy,4,n)= icloud_stats(ix,jy,4,n)+clw(ix,jy,kz,n)          ! Column cloud water [m3/m3]
@@ -650,9 +660,11 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
         end do
 
 ! If Precipitation. Define removal type in the vertical
-        if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
+        if (lsp.gt.0.01 .or. convp.gt.0.01) then ! cloud and precipitation
+!! Note PS: such hardcoded limits would better be parameters defined in par_mod
 
           do kz=nz,1,-1 !go Bottom up!
+!! Note PS: bad loop order
             if (clw(ix,jy,kz,n).gt. 0) then ! is in cloud
               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+height(kz)-height(kz-1) 
               clouds(ix,jy,kz,n)=1                               ! is a cloud
@@ -661,7 +673,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
               else
                 clouds(ix,jy,kz,n)=2                             ! convp in-cloud
               endif                                              ! convective or large scale
-            elseif((clw(ix,jy,kz,n).le.0) .and. (cloudh_min.ge.height(kz))) then ! is below cloud
+            elseif( clw(ix,jy,kz,n).le.0 .and. cloudh_min.ge.height(kz)) then ! is below cloud
               if (lsp.ge.convp) then
                 clouds(ix,jy,kz,n)=5                             ! lsp dominated washout
               else
@@ -670,36 +682,43 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
             endif
 
             if (height(kz).ge. 19000) then                        ! set a max height for removal
+!! Note PS: such hardcoded limits would better be parameters defined in par_mod
               clouds(ix,jy,kz,n)=0
-            endif !clw>0
-          end do !nz
+            endif ! clw>0
+          enddo ! kz
         endif ! precipitation
       end do
     end do
 
-! eso: copy the relevant data to clw4 to reduce amount of communicated data for MPI
+! ESO: copy the relevant data to clw4 to reduce amount of communicated data for MPI
 !    ctwc(:,:,n) = icloud_stats(:,:,4,n)
 
 !**************************************************************************
   else       ! use old definitions
 !**************************************************************************
+
 !   create a cloud and rainout/washout field, clouds occur where rh>80%
 !   total cloudheight is stored at level 0
-    write(*,*) 'Global fields: using cloud water from Parameterization'
+
+!PS    write(*,*) 'Global fields: using cloud water from Parameterization'
     do jy=0,nymin1
       do ix=0,nxmin1
-! OLD METHOD
         rain_cloud_above(ix,jy)=0
         lsp=lsprec(ix,jy,1,n)
         convp=convprec(ix,jy,1,n)
         cloudsh(ix,jy,n)=0
         do kz_inv=1,nz-1
+!! Note PS: bad loop order. 
           kz=nz-kz_inv+1
           pressure=rho(ix,jy,kz,n)*r_air*tt(ix,jy,kz,n)
           rh=qv(ix,jy,kz,n)/f_qvsat(pressure,tt(ix,jy,kz,n))
           clouds(ix,jy,kz,n)=0
-          if (rh.gt.0.8) then ! in cloud
-            if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
+
+          if (rh .gt. 0.8) then ! in cloud
+!! Note PS: such hardcoded limits would better be parameters defined in par_mod
+
+            if (lsp.gt.0.01 .or. convp.gt.0.01) then ! cloud and precipitation
+!! Note PS: such hardcoded limits would better be parameters defined in par_mod
               rain_cloud_above(ix,jy)=1
               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+ &
                    height(kz)-height(kz-1)
@@ -711,7 +730,9 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
             else ! no precipitation
               clouds(ix,jy,kz,n)=1 ! cloud
             endif
+
           else ! no cloud
+
             if (rain_cloud_above(ix,jy).eq.1) then ! scavenging
               if (lsp.ge.convp) then
                 clouds(ix,jy,kz,n)=5 ! lsp dominated washout
@@ -719,12 +740,13 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
                 clouds(ix,jy,kz,n)=4 ! convp dominated washout
               endif
             endif
+
           endif
         end do
-!END OLD METHOD
+
       end do
     end do
-  endif !readclouds
+  endif ! END OLD METHOD
 
 
      !********* TEST ***************
@@ -868,20 +890,20 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !            icloudbot(ix,jy,n)=icmv
 !            icloudthck(ix,jy,n)=icmv
 !          endif
-!hg__________________________________
+!HG__________________________________
 !           rcw(ix,jy)=2E-7*prec**0.36
 !           rpc(ix,jy)=prec
-!hg end______________________________
+!HG end______________________________
 
-!      endif !hg read clouds
-
-
+!      endif !HG read clouds
 
 
-!eso measure CPU time
+
+
+!ESO measure CPU time
 !  call mpif_mtime('verttransform',1)
 
-!eso print out the same measure as in Leo's routine
+!ESO print out the same measure as in Leo's routine
     ! write(*,*) 'verttransform: ', &
     !      sum(tt(:,:,:,n)*tt(:,:,:,n)), &
     !      sum(uu(:,:,:,n)*uu(:,:,:,n)),sum(vv(:,:,:,n)*vv(:,:,:,n)),&

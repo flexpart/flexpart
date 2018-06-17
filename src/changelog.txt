@@ -1,8 +1,8 @@
 This is a changelog for the dev branch of FLEXPART (see flexpart.eu)
 Created by Petra Seibert, 8 June 2018 to document and explain in detail why I changed what.
 
-makefile, 2018-06-08
-========
+* makefile, 2018-06-08
+  ========
 
 1) Add a GPL3+ License statement, author statement, version information. Prudent to do that, not harmful.
 
@@ -23,15 +23,42 @@ Notes and questions:
 2. Would be nice to have "as fast as possible" option (thought it might be machine-dependent ...)
 3. What is the purpose of -Warray-bounds ? Is it relevant for Fortran? I think if there is a compile-time array-bound violation this would be a hard error?
 
-FLEXPART.f90
-========
+* FLEXPART.f90
+  ========
 
 Update version string!
 
-readcommand.f90
-===========
+* readcommand.f90
+  ===========
 
 Correct misleading error message (replace "open" by "write to")
 Improve error messages: combine pathname+filename, remove unaligned closing ###
 Let STOP say in which subroutine we are stopping
 Some minor changes
+
+* verttransform_ecmwf.f90 PS 2018-06-13
+  ===================
+
+1) Remove some of commented out testing stuff
+2) Fix indenting in the init if block
+3) Code layout improvement
+4) Change name of loops to represent the index
+5) Fix ticket:140 Introduce a new way of establishing the reference position
+   for the vertical grid. Also correct a minor bug in the calculation
+   of height (array assignment where it was not intended)
+6) Add back the SAVE attribute to INIT, just to be sure
+7) Bring some more code under the IF (INIT) block
+8) make some annotations
+
+* com_mod.f90  PS 2018-06-13
+  =======
+  
+  correct the comment for nmixz
+
+* verttransform_nest.f90 PS 2018-06-17
+  ===================
+1) insert proper boundaries for implied loops in array expressions
+  (fixes bug annoted by ESO in 2016)
+2) Code layout improvement
+3) Change name of loops to represent the index
+4) make some annotations
