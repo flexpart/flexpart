@@ -30,127 +30,21 @@
     DYOUTLAT
 
 10. -----.-           4X, F7.1
-     1000.0
+      100.0
     LEVEL 1           HEIGHT OF LEVEL (UPPER BOUNDARY)
 
 10. -----.-           4X, F7.1
-     2000.0
+      500.0
     LEVEL 2           HEIGHT OF LEVEL (UPPER BOUNDARY)
 
 10. -----.-           4X, F7.1
-     3000.0
+     1000.0
     LEVEL 3           HEIGHT OF LEVEL (UPPER BOUNDARY)
 
 10. -----.-           4X, F7.1
-     4000.0
+    10000.0
     LEVEL 4           HEIGHT OF LEVEL (UPPER BOUNDARY)
 
 10. -----.-           4X, F7.1
-     5000.0
-    LEVEL 5           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-     6000.0
-    LEVEL 6           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-     7000.0
-    LEVEL 7           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-     8000.0
-    LEVEL 8           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-     9000.0
-    LEVEL 9           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    10000.0
-    LEVEL10           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    11000.0
-    LEVEL11           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    12000.0
-    LEVEL12           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    13000.0
-    LEVEL13           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    14000.0
-    LEVEL14           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    15000.0
-    LEVEL15           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    16000.0
-    LEVEL16           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    17000.0
-    LEVEL17           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    18000.0
-    LEVEL18           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    19000.0
-    LEVEL19           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    20000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    21000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    22000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    23000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    24000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    25000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    26000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    27000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    28000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    29000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
-    30000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-10. -----.-           4X, F7.1
     40000.0
-    LEVEL20           HEIGHT OF LEVEL (UPPER BOUNDARY)
-
-
+    LEVEL 5           HEIGHT OF LEVEL (UPPER BOUNDARY)
