@@ -156,15 +156,15 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! *****************************************************************************
 
     if (ioldref .eq. 0) then ! old reference grid point
-       do jy=0,nymin1
-         do ix=0,nxmin1
-           if (ps(ix,jy,1,n).gt.1000.e2) then
-             ixref=ix
-             jyref=jy
-             goto 3
-           endif
-         end do
-       end do
+      do jy=0,nymin1
+        do ix=0,nxmin1
+          if (ps(ix,jy,1,n).gt.1000.e2) then
+            ixref=ix
+            jyref=jy
+            goto 3
+          endif
+        end do
+      end do
 3     continue
 
 !      print*,'oldheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
@@ -174,7 +174,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !     Search point near to mean pressure after excluding mountains
 
       psmean = sum( ps(:,:,1,n) ) / (nx*ny)
-      print*,'height: fg psmean',psmean
+!      print*,'height: fg psmean',psmean
       psstd = sqrt(sum( (ps(:,:,1,n) - psmean)**2 ) / (nx*ny))
 
 !>    new psmean using only points within $\plusminus\sigma$  
@@ -200,7 +200,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
     do kz=2,nuvz
 
       pintref = akz(kz)+bkz(kz)*ps(ixref,jyref,1,n)
-      tv = tth(ixref,jyref,kz,n)*(1.+0.608*qvh(ixref,jyref,kz,n))
+      tv(ixref,jyref) = tth(ixref,jyref,kz,n)*(1.+0.608*qvh(ixref,jyref,kz,n))
 
       if (abs(tv(ixref,jyref)-tvoldref) .gt. 0.2) then
         height(kz) = height(kz-1) +      &
@@ -213,7 +213,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
       tvoldref = tv(ixref,jyref)
       poldref = pintref
-      print*,'height=',kz,height(kz),tvoldref,poldref
+!      print*,'height=',kz,height(kz),tvoldref,poldref
 
     end do
 

@@ -49,6 +49,7 @@ Some minor changes
 6) Add back the SAVE attribute to INIT, just to be sure
 7) Bring some more code under the IF (INIT) block
 8) make some annotations
+   [minor modification PS 2018-06-25]
 
 * com_mod.f90  PS 2018-06-13
   =======
@@ -62,3 +63,12 @@ Some minor changes
 2) Code layout improvement
 3) Change name of loops to represent the index
 4) make some annotations
+
+* verttransform_ecmwf.f90 PS 2018-06-25
+  ===================
+
+1) Some code layout improvement in the first part
+2) Fix ticket:140 Introduce a new way of establishing the reference position
+   for the vertical grid. Also correct a minor bug in the calculation
+   of height (array assignment where it was not intended)
+3) Add back the SAVE attribute to INIT, just to be sure

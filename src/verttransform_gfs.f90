@@ -20,50 +20,58 @@
 !**********************************************************************
 
 subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
-  !                      i  i   i   i   i
-  !*****************************************************************************
-  !                                                                            *
-  !     This subroutine transforms temperature, dew point temperature and      *
-  !     wind components from eta to meter coordinates.                         *
-  !     The vertical wind component is transformed from Pa/s to m/s using      *
-  !     the conversion factor pinmconv.                                        *
-  !     In addition, this routine calculates vertical density gradients        *
-  !     needed for the parameterization of the turbulent velocities.           *
-  !                                                                            *
-  !     Author: A. Stohl, G. Wotawa                                            *
-  !                                                                            *
-  !     12 August 1996                                                         *
-  !     Update: 16 January 1998                                                *
-  !                                                                            *
-  !     Major update: 17 February 1999                                         *
-  !     by G. Wotawa                                                           *
-  !     CHANGE 17/11/2005 Caroline Forster, NCEP GFS version                   *
-  !                                                                            *
-  !   - Vertical levels for u, v and w are put together                        *
-  !   - Slope correction for vertical velocity: Modification of calculation    *
-  !     procedure                                                              *
-  !                                                                            *
-  !*****************************************************************************
-  !  Changes, Bernd C. Krueger, Feb. 2001:
-  !   Variables tth and qvh (on eta coordinates) from common block
-  !
-  !   Unified ECMWF and GFS builds                                      
-  !   Marian Harustak, 12.5.2017                                        
-  !     - Renamed routine from verttransform to verttransform_gfs
-  !
-  !*****************************************************************************
-  !                                                                            *
-  ! Variables:                                                                 *
-  ! nx,ny,nz                        field dimensions in x,y and z direction    *
-  ! uu(0:nxmax,0:nymax,nzmax,2)     wind components in x-direction [m/s]       *
-  ! vv(0:nxmax,0:nymax,nzmax,2)     wind components in y-direction [m/s]       *
-  ! ww(0:nxmax,0:nymax,nzmax,2)     wind components in z-direction [deltaeta/s]*
-  ! tt(0:nxmax,0:nymax,nzmax,2)     temperature [K]                            *
-  ! pv(0:nxmax,0:nymax,nzmax,2)     potential voriticity (pvu)                 *
-  ! ps(0:nxmax,0:nymax,2)           surface pressure [Pa]                      *
-  ! clouds(0:nxmax,0:nymax,0:nzmax,2) cloud field for wet deposition           *
-  !                                                                            *
-  !*****************************************************************************
+!                      i  i   i   i   i
+!*****************************************************************************
+!                                                                            *
+!     This subroutine transforms temperature, dew point temperature and      *
+!     wind components from eta to meter coordinates.                         *
+!     The vertical wind component is transformed from Pa/s to m/s using      *
+!     the conversion factor pinmconv.                                        *
+!     In addition, this routine calculates vertical density gradients        *
+!     needed for the parameterization of the turbulent velocities.           *
+!                                                                            *
+!     Author: A. Stohl, G. Wotawa                                            *
+!                                                                            *
+!     12 August 1996                                                         *
+!     Update: 16 January 1998                                                *
+!                                                                            *
+!     Major update: 17 February 1999                                         *
+!     by G. Wotawa                                                           *
+!     CHANGE 17/11/2005 Caroline Forster, NCEP GFS version                   *
+!                                                                            *
+!   - Vertical levels for u, v and w are put together                        *
+!   - Slope correction for vertical velocity: Modification of calculation    *
+!     procedure                                                              *
+!                                                                            *
+!*****************************************************************************
+!  Changes, Bernd C. Krueger, Feb. 2001:
+!    Variables tth and qvh (on eta coordinates) from common block
+!
+!   Unified ECMWF and GFS builds                                      
+!   Marian Harustak, 12.5.2017                                        
+!     - Renamed from verttransform to verttransform_ecmwf
+!
+!  undocumented modifications by NILU for v10                                *
+!                                                                            *
+!  Petra Seibert, 2018-06-13:                                                *
+!   - fix bug of ticket:140 (find reference position for vertical grid)      *
+!   - put back SAVE attribute for INIT, just to be safe                      *
+!   - minor changes, most of them just cosmetics                             *
+!   for details see changelog.txt                                            *
+!                                                                            *
+!*****************************************************************************
+!                                                                            *
+! Variables:                                                                 *
+! nx,ny,nz                        field dimensions in x,y and z direction    *
+! uu(0:nxmax,0:nymax,nzmax,2)     wind components in x-direction [m/s]       *
+! vv(0:nxmax,0:nymax,nzmax,2)     wind components in y-direction [m/s]       *
+! ww(0:nxmax,0:nymax,nzmax,2)     wind components in z-direction [deltaeta/s]*
+! tt(0:nxmax,0:nymax,nzmax,2)     temperature [K]                            *
+! pv(0:nxmax,0:nymax,nzmax,2)     potential voriticity (pvu)                 *
+! ps(0:nxmax,0:nymax,2)           surface pressure [Pa]                      *
+! clouds(0:nxmax,0:nymax,0:nzmax,2) cloud field for wet deposition           *
+!                                                                            *
+!*****************************************************************************
 
   use par_mod
   use com_mod
@@ -71,12 +79,20 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
 
   implicit none
 
-  integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp,ixm,jym
+  integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp
   integer :: rain_cloud_above,kz_inv
   real :: f_qvsat,pressure
   real :: rh,lsp,convp
   real :: rhoh(nuvzmax),pinmconv(nzmax)
   real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi
+
+!>   for reference profile (PS)  
+  real ::  tvoldref, poldref, pintref, psmean, psstd
+  integer :: ixyref(2), ixref,jyref
+  integer, parameter :: ioldref = 1 ! PS 2018-06-13: set to 0 if you 
+!!   want old method of searching reference location for the vertical grid
+!!   1 for new method (options for other methods 2,... in the future)
+
   real :: xlon,ylat,xlonr,dzdx,dzdy
   real :: dzdx1,dzdx2,dzdy1,dzdy2,cosf
   real :: uuaux,vvaux,uupolaux,vvpolaux,ddpol,ffpol,wdummy
@@ -87,59 +103,92 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   real :: wzlev(nwzmax),uvwzlev(0:nxmax-1,0:nymax-1,nzmax)
   real,parameter :: const=r_air/ga
 
-  ! NCEP version
+  logical, save :: init = .true. ! PS 2018-06-13: add back save attribute
+
+!> GFS version
   integer :: llev, i
 
-  logical :: init = .true.
 
 
-  !*************************************************************************
-  ! If verttransform is called the first time, initialize heights of the   *
-  ! z levels in meter. The heights are the heights of model levels, where  *
-  ! u,v,T and qv are given.                                                *
-  !*************************************************************************
+!*************************************************************************
+! If verttransform is called the first time, initialize heights of the   *
+! z levels in meter. The heights are the heights of model levels, where  *
+! u,v,T and qv are given.                                                *
+!*************************************************************************
 
   if (init) then
 
-  ! Search for a point with high surface pressure (i.e. not above significant topography)
-  ! Then, use this point to construct a reference z profile, to be used at all times
-  !*****************************************************************************
+! Search for a point with high surface pressure (i.e. not above significant topography)
+! Then, use this point to construct a reference z profile, to be used at all times
+!*****************************************************************************
 
-    do jy=0,nymin1
-      do ix=0,nxmin1
-        if (ps(ix,jy,1,n).gt.100000.) then
-          ixm=ix
-          jym=jy
+    if (ioldref .eq. 0) then ! old reference grid point
+      do jy=0,nymin1
+        do ix=0,nxmin1
+          if (ps(ix,jy,1,n).gt.1000.e2) then
+            ixref=ix
+            jyref=jy
           goto 3
         endif
       end do
     end do
 3   continue
+!      print*,'oldheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+    else ! new reference grid point
+!     PS: the old version fails if the pressure is <=1000 hPa in the whole
+!     domain. Let us find a good replacement, not just a quick fix.
+!     Search point near to mean pressure after excluding mountains
 
+      psmean = sum( ps(:,:,1,n) ) / (nx*ny)
+!      print*,'height: fg psmean',psmean
+      psstd = sqrt(sum( (ps(:,:,1,n) - psmean)**2 ) / (nx*ny))
 
-    tvold=tt2(ixm,jym,1,n)*(1.+0.378*ew(td2(ixm,jym,1,n))/ &
-    ps(ixm,jym,1,n))
-    pold=ps(ixm,jym,1,n)
+!>    new psmean using only points within $\plusminus\sigma$  
+!      psmean = sum( ps(:,:,1,n), abs(ps(:,:,1,n)-psmean) < psstd ) / &
+!        count(abs(ps(:,:,1,n)-psmean) < psstd)
+
+!>    new psmean using only points with $p\gt \overbar{p}+\sigma_p$  
+!>    (reject mountains, accept valleys)
+      psmean = sum( ps(:,:,1,n), ps(:,:,1,n) > psmean - psstd ) / &
+        count(ps(:,:,1,n) > psmean - psstd)
+!      print*,'height: std, new psmean',psstd,psmean
+      ixyref = minloc( abs( ps(:,:,1,n) - psmean ) )
+      ixref = ixyref(1)
+      jyref = ixyref(2)
+!      print*,'newheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+    endif  
+
+    tvoldref=tt2(ixref,jyref,1,n)* &
+      ( 1. + 0.378*ew(td2(ixref,jyref,1,n) ) / ps(ixref,jyref,1,n))
+    poldref=ps(ixref,jyref,1,n)
     height(1)=0.
+    kz=1
+!    print*,'height=',kz,height(kz),tvoldref,poldref
 
     do kz=2,nuvz
-      pint=akz(kz)+bkz(kz)*ps(ixm,jym,1,n)
-      tv=tth(ixm,jym,kz,n)*(1.+0.608*qvh(ixm,jym,kz,n))
+      
+      pintref = akz(kz) 
+      ! Note that for GFS data, the akz variable contains the input level
+      ! pressure values. bkz is zero (I removed all terms with bkz that
+      ! were erroneously copied from verttransform_ecmwf). [PS, June 2018]
+       
+      tv = tth(ixref,jyref,kz,n)*(1.+0.608*qvh(ixref,jyref,kz,n))
 
-      if (abs(tv-tvold).gt.0.2) then
-        height(kz)=height(kz-1)+const*log(pold/pint)* &
-        (tv-tvold)/log(tv/tvold)
+      if (abs(tv-tvoldref) .gt. 0.2) then
+        height(kz)=height(kz-1) + &
+          const * log(poldref/pintref) * (tv-tvoldref) / log(tv/tvoldref)
       else
-        height(kz)=height(kz-1)+const*log(pold/pint)*tv
+        height(kz) = height(kz-1) + const*log(poldref/pintref)*tv
       endif
 
-      tvold=tv
-      pold=pint
+      tvoldref=tv
+      poldref=pintref
+!      print*,'height=',kz,height(kz),tvoldref,poldref
     end do
 
 
-  ! Determine highest levels that can be within PBL
-  !************************************************
+! Determine highest levels that can be within PBL
+!************************************************
 
     do kz=1,nz
       if (height(kz).gt.hmixmax) then
@@ -149,34 +198,34 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
     end do
 9   continue
 
-  ! Do not repeat initialization of the Cartesian z grid
-  !*****************************************************
+! Do not repeat initialization of the Cartesian z grid
+!*****************************************************
 
     init=.false.
 
-  endif
+  endif ! init block (vertical grid construction)
 
 
-  ! Loop over the whole grid
-  !*************************
+! Loop over the whole grid
+!*************************
 
   do jy=0,nymin1
     do ix=0,nxmin1
 
-  ! NCEP version: find first level above ground
+! NCEP version: find first level above ground
       llev = 0
       do i=1,nuvz
         if (ps(ix,jy,1,n).lt.akz(i)) llev=i
       end do
        llev = llev+1
        if (llev.gt.nuvz-2) llev = nuvz-2
-  !     if (llev.eq.nuvz-2) write(*,*) 'verttransform
-  !    +WARNING: LLEV eq NUZV-2'
-  ! NCEP version
+!     if (llev.eq.nuvz-2) write(*,*) 'verttransform
+!    +WARNING: LLEV eq NUZV-2'
+! NCEP version
 
 
-  ! compute height of pressure levels above ground
-  !***********************************************
+! compute height of pressure levels above ground
+!***********************************************
 
       tvold=tth(ix,jy,llev,n)*(1.+0.608*qvh(ix,jy,llev,n))
       pold=akz(llev)
@@ -201,7 +250,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
         pold=pint
       end do
 
-  ! pinmconv=(h2-h1)/(p2-p1)
+! pinmconv=(h2-h1)/(p2-p1)
 
       pinmconv(llev)=(uvwzlev(ix,jy,llev+1)-uvwzlev(ix,jy,llev))/ &
            ((aknew(llev+1)+bknew(llev+1)*ps(ix,jy,1,n))- &
@@ -216,8 +265,8 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
            (aknew(nz-1)+bknew(nz-1)*ps(ix,jy,1,n)))
 
 
-  ! Levels, where u,v,t and q are given
-  !************************************
+! Levels, where u,v,t and q are given
+!************************************
 
       uu(ix,jy,1,n)=uuh(ix,jy,llev)
       vv(ix,jy,1,n)=vvh(ix,jy,llev)
@@ -266,8 +315,8 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       end do
 
 
-  ! Levels, where w is given
-  !*************************
+! Levels, where w is given
+!*************************
 
       ww(ix,jy,1,n)=wwh(ix,jy,llev)*pinmconv(llev)
       ww(ix,jy,nz,n)=wwh(ix,jy,nwz)*pinmconv(nz)
@@ -286,8 +335,8 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       end do
 
 
-  ! Compute density gradients at intermediate levels
-  !*************************************************
+! Compute density gradients at intermediate levels
+!*************************************************
 
       drhodz(ix,jy,1,n)=(rho(ix,jy,2,n)-rho(ix,jy,1,n))/ &
            (height(2)-height(1))
@@ -301,25 +350,25 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   end do
 
 
-  !****************************************************************
-  ! Compute slope of eta levels in windward direction and resulting
-  ! vertical wind correction
-  !****************************************************************
+!****************************************************************
+! Compute slope of eta levels in windward direction and resulting
+! vertical wind correction
+!****************************************************************
 
   do jy=1,ny-2
     cosf=cos((real(jy)*dy+ylat0)*pi180)
     do ix=1,nx-2
 
-  ! NCEP version: find first level above ground
+! NCEP version: find first level above ground
       llev = 0
       do i=1,nuvz
        if (ps(ix,jy,1,n).lt.akz(i)) llev=i
       end do
        llev = llev+1
        if (llev.gt.nuvz-2) llev = nuvz-2
-  !     if (llev.eq.nuvz-2) write(*,*) 'verttransform
-  !    +WARNING: LLEV eq NUZV-2'
-  ! NCEP version
+!     if (llev.eq.nuvz-2) write(*,*) 'verttransform
+!    +WARNING: LLEV eq NUZV-2'
+! NCEP version
 
       kmin=llev+1
       do iz=2,nz-1
@@ -360,9 +409,9 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   end do
 
 
-  ! If north pole is in the domain, calculate wind velocities in polar
-  ! stereographic coordinates
-  !*******************************************************************
+! If north pole is in the domain, calculate wind velocities in polar
+! stereographic coordinates
+!*******************************************************************
 
   if (nglobal) then
     do jy=int(switchnorthg)-2,nymin1
@@ -380,7 +429,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
 
     do iz=1,nz
 
-  ! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
+! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
       ffpol=sqrt(uu(nx/2-1,nymin1,iz,n)**2+vv(nx/2-1,nymin1,iz,n)**2)
@@ -395,7 +444,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       if(ddpol.lt.0.) ddpol=2.0*pi+ddpol
       if(ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
 
-  ! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
+! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
       xlon=180.0
       xlonr=xlon*pi/180.
       ylat=90.0
@@ -410,8 +459,8 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
     end do
 
 
-  ! Fix: Set W at pole to the zonally averaged W of the next equator-
-  ! ward parallel of latitude
+! Fix: Set W at pole to the zonally averaged W of the next equator-
+! ward parallel of latitude
 
     do iz=1,nz
       wdummy=0.
@@ -429,9 +478,9 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   endif
 
 
-  ! If south pole is in the domain, calculate wind velocities in polar
-  ! stereographic coordinates
-  !*******************************************************************
+! If south pole is in the domain, calculate wind velocities in polar
+! stereographic coordinates
+!*******************************************************************
 
   if (sglobal) then
     do jy=0,int(switchsouthg)+3
@@ -447,7 +496,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
 
     do iz=1,nz
 
-  ! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
+! CALCULATE FFPOL, DDPOL FOR CENTRAL GRID POINT
       xlon=xlon0+real(nx/2-1)*dx
       xlonr=xlon*pi/180.
       ffpol=sqrt(uu(nx/2-1,0,iz,n)**2+vv(nx/2-1,0,iz,n)**2)
@@ -461,7 +510,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       if(ddpol.lt.0.) ddpol=2.0*pi+ddpol
       if(ddpol.gt.2.0*pi) ddpol=ddpol-2.0*pi
 
-  ! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
+! CALCULATE U,V FOR 180 DEG, TRANSFORM TO POLAR STEREOGRAPHIC GRID
       xlon=180.0
       xlonr=xlon*pi/180.
       ylat=-90.0
@@ -477,8 +526,8 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
     end do
 
 
-  ! Fix: Set W at pole to the zonally averaged W of the next equator-
-  ! ward parallel of latitude
+! Fix: Set W at pole to the zonally averaged W of the next equator-
+! ward parallel of latitude
 
     do iz=1,nz
       wdummy=0.
@@ -495,9 +544,9 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   endif
 
 
-  !   write (*,*) 'initializing clouds, n:',n,nymin1,nxmin1,nz
-  !   create a cloud and rainout/washout field, clouds occur where rh>80%
-  !   total cloudheight is stored at level 0
+!   write (*,*) 'initializing clouds, n:',n,nymin1,nxmin1,nz
+!   create a cloud and rainout/washout field, clouds occur where rh>80%
+!   total cloudheight is stored at level 0
   do jy=0,nymin1
     do ix=0,nxmin1
       rain_cloud_above=0
