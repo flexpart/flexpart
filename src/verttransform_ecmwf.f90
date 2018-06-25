@@ -20,7 +20,7 @@
 ! **********************************************************************
 
 subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
-!                         i  i   i   i   i
+!                              i  i   i   i   i
 !*****************************************************************************
 !                                                                            *
 !     This subroutine transforms temperature, dew point temperature and      *
@@ -167,7 +167,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
        end do
 3     continue
 
-      print*,'oldheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+!      print*,'oldheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
     else ! new reference grid point
 !     PS: the old version fails if the pressure is <=1000 hPa in the whole
 !     domain. Let us find a good replacement, not just a quick fix.
@@ -185,11 +185,11 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !>    (reject mountains, accept valleys)
       psmean = sum( ps(:,:,1,n), ps(:,:,1,n) > psmean - psstd ) / &
         count(ps(:,:,1,n) > psmean - psstd)
-      print*,'height: std, new psmean',psstd,psmean
+!      print*,'height: std, new psmean',psstd,psmean
       ixyref = minloc( abs( ps(:,:,1,n) - psmean ) )
       ixref = ixyref(1)
       jyref = ixyref(2)
-      print*,'newheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
+!      print*,'newheights at' ,ixref,jyref,ps(ixref,jyref,1,n)
     endif  
 
     tvoldref=tt2(ixref,jyref,1,n)* &
