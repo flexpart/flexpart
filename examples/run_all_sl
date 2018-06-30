@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#OUTPUT="$(ls -1 *.sl)"
+OUTPUTdefault="$(ls -1 *.sl)"
+OUTPUT=${OUTPUTvar:-$OUTPUTdefault}
+echo $OUTPUT
+rm joblist
+
+
+for i in ${OUTPUT}
+do
+   echo sbatch $i | tee -a joblist1$group
+   sbatch $i | tee -a joblist2$group
+done
+
+
+
