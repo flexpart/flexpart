@@ -72,3 +72,26 @@ Some minor changes
    for the vertical grid. Also correct a minor bug in the calculation
    of height (array assignment where it was not intended)
 3) Add back the SAVE attribute to INIT, just to be sure
+
+
+
+* checking type (EC/GFS) of grib files PS 2018-06-26
+  ===================
+replaced the CTBTO code by shorter & simper code with proper license  
+
+Affected files:
+
+calcmatrix.f90
+calcpar.f90
+calcpar_nests.f90
+check_gribfile_mod.f90
+convmix.f90
+detectformat.f90
+FLEXPART.f90
+FLEXPART_MPI.f90
+getfields.f90
+getfields_mpi.f90
+obukhov.f90
+richardson.f90
+timemanager.f90
+timemanager_mpi.f90

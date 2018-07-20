@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
+subroutine calcpar(n,uuh,vvh,pvh,id_centre)
   !                   i  i   i   o
   !*****************************************************************************
   !                                                                            *
@@ -45,8 +45,9 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   !   Marian Harustak, 12.5.2017                                               *
   !     - Merged calcpar and calcpar_gfs into one routine using if-then        *
   !       for meteo-type dependent code                                        *
-  !*****************************************************************************
-
+  !                                                                            *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection   *
+  !                                                                            *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -54,7 +55,7 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   ! uuh                                                                        *
   ! vvh                                                                        *
   ! pvh                                                                        *
-  ! metdata_format     format of metdata (ecmwf/gfs)                           * 
+  ! id_centre          format of metdata (ecmwf/gfs)                           *
   !                                                                            *
   ! Constants:                                                                 *
   !                                                                            *
@@ -67,11 +68,11 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
 
   use par_mod
   use com_mod
-  use class_gribfile
+  use check_gribfile_mod
 
   implicit none
 
-  integer :: metdata_format
+  integer :: id_centre
   integer :: n,ix,jy,i,kz,lz,kzmin,llev,loop_start
   real :: ttlev(nuvzmax),qvlev(nuvzmax),obukhov,scalev,ol,hmixplus
   real :: ulev(nuvzmax),vlev(nuvzmax),ew,rh,vd(maxspec),subsceff,ylat
@@ -124,7 +125,7 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   ! 2) Calculation of inverse Obukhov length scale
   !***********************************************
 
-      if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+      if (id_centre.eq.icg_id_ncep) then
         ! NCEP version: find first level above ground
         llev = 0
         do i=1,nuvz
@@ -136,11 +137,13 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
 
         ! calculate inverse Obukhov length scale with tth(llev)
         ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-             tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akz(llev),metdata_format)
+             tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n), &
+             akm,bkm,akz(llev),id_centre)
       else
         llev=0
         ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-            tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akzdummy,metdata_format)
+            tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n), &
+            akm,bkm,akzdummy,id_centre)
       end if
 
       if (ol.ne.0.) then
@@ -160,15 +163,15 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
         qvlev(i)=qvh(ix,jy,i,n)
       end do
 
-      if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+      if (id_centre.eq.icg_id_ncep) then
         ! NCEP version hmix has been read in in readwind.f, is therefore not calculated here
       call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
            ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
-             td2(ix,jy,1,n),hmixdummy,wstar(ix,jy,1,n),hmixplus,metdata_format)
+             td2(ix,jy,1,n),hmixdummy,wstar(ix,jy,1,n),hmixplus,id_centre)
       else
         call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
              ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
-             td2(ix,jy,1,n),hmix(ix,jy,1,n),wstar(ix,jy,1,n),hmixplus,metdata_format)
+             td2(ix,jy,1,n),hmix(ix,jy,1,n),wstar(ix,jy,1,n),hmixplus,id_centre)
       end if
 
       if(lsubgrid.eq.1) then
@@ -217,7 +220,7 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
            ps(ix,jy,1,n))
       pold=ps(ix,jy,1,n)
       zold=0.
-      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+      if (id_centre.eq.icg_id_ecmwf) then
         loop_start=2
       else
         loop_start=llev
@@ -241,7 +244,7 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   !    to be identified as the tropopause
   !************************************************************************
 
-      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+      if (id_centre.eq.icg_id_ecmwf) then
         loop_start=1
       else
         loop_start=llev

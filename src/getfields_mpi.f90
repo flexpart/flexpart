@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine getfields(itime,nstop,memstat,metdata_format)
+subroutine getfields(itime,nstop,memstat,id_centre)
 !                       i     o       o
 !*****************************************************************************
 !                                                                            *
@@ -59,9 +59,10 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
 !          
 !   Unified ECMWF and GFS builds                                             
 !   Marian Harustak, 12.5.2017                                               
-!     - Added passing of metdata_format as it was needed by called routines  
-!          
-!*****************************************************************************
+!     - Added passing of id_centre as it was needed by called routines  
+!                                                                           
+!  Petra Seibert, 2018-06-26: simplified version met data format detection  
+!                                                                           !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
 ! lwindinterval [s]    time difference between the two wind fields read in   *
@@ -80,7 +81,7 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
 !                                          [deltaeta/s]                      *
 ! tt(0:nxmax,0:nymax,nuvzmax,numwfmem)   temperature [K]                     *
 ! ps(0:nxmax,0:nymax,numwfmem)           surface pressure [Pa]               *
-! metdata_format     format of metdata (ecmwf/gfs)                           *
+! id_centre            format of metdata (ecmwf/gfs)                           *
 !                                                                            *
 ! Constants:                                                                 *
 ! idiffmax             maximum allowable time difference between 2 wind      *
@@ -91,11 +92,11 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
   use par_mod
   use com_mod
   use mpi_mod, only: lmpreader,lmp_use_reader,lmp_sync
-  use class_gribfile
+  use check_gribfile_mod
 
   implicit none
 
-  integer :: metdata_format
+  integer :: id_centre
   integer :: indj,itime,nstop,memaux,mindread
 ! mindread: index of where to read 3rd field
   integer, intent(out) :: memstat
@@ -210,15 +211,15 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
     do indj=indmin,numbwf-1
       if (ldirect*wftime(indj+1).gt.ldirect*itime) then
         if (lmpreader.or..not. lmp_use_reader) then
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          if (id_centre.eq.icg_id_ecmwf) then
             call readwind_ecmwf(indj+1,mindread,uuh,vvh,wwh)
           else
             call readwind_gfs(indj+1,mindread,uuh,vvh,wwh)
           end if
           call readwind_nests(indj+1,mindread,uuhn,vvhn,wwhn)
-          call calcpar(mindread,uuh,vvh,pvh,metdata_format)
-          call calcpar_nests(mindread,uuhn,vvhn,pvhn,metdata_format)
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call calcpar(mindread,uuh,vvh,pvh,id_centre)
+          call calcpar_nests(mindread,uuhn,vvhn,pvhn,id_centre)
+          if (id_centre.eq.icg_id_ecmwf) then
             call verttransform_ecmwf(mindread,uuh,vvh,wwh,pvh)
           else
             call verttransform_gfs(mindread,uuh,vvh,wwh,pvh)
@@ -248,15 +249,15 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
            (ldirect*wftime(indj+1).gt.ldirect*itime)) then
         memind(1)=1
         if (lmpreader.or..not.lmp_use_reader) then
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          if (id_centre.eq.icg_id_ecmwf) then
             call readwind_ecmwf(indj,memind(1),uuh,vvh,wwh)
           else
             call readwind_gfs(indj,memind(1),uuh,vvh,wwh)
           end if
           call readwind_nests(indj,memind(1),uuhn,vvhn,wwhn)
-          call calcpar(memind(1),uuh,vvh,pvh,metdata_format)
-          call calcpar_nests(memind(1),uuhn,vvhn,pvhn,metdata_format)
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call calcpar(memind(1),uuh,vvh,pvh,id_centre)
+          call calcpar_nests(memind(1),uuhn,vvhn,pvhn,id_centre)
+          if (id_centre.eq.icg_id_ecmwf) then
             call verttransform_ecmwf(memind(1),uuh,vvh,wwh,pvh)
           else
             call verttransform_gfs(memind(1),uuh,vvh,wwh,pvh)
@@ -266,15 +267,15 @@ subroutine getfields(itime,nstop,memstat,metdata_format)
         memtime(1)=wftime(indj)
         memind(2)=2
         if (lmpreader.or..not.lmp_use_reader) then
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          if (id_centre.eq.icg_id_ecmwf) then
             call readwind_ecmwf(indj+1,memind(2),uuh,vvh,wwh)
           else
             call readwind_gfs(indj+1,memind(2),uuh,vvh,wwh)
           end if
           call readwind_nests(indj+1,memind(2),uuhn,vvhn,wwhn)
-          call calcpar(memind(2),uuh,vvh,pvh,metdata_format)
-          call calcpar_nests(memind(2),uuhn,vvhn,pvhn,metdata_format)
-          if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+          call calcpar(memind(2),uuh,vvh,pvh,id_centre)
+          call calcpar_nests(memind(2),uuhn,vvhn,pvhn,id_centre)
+          if (id_centre.eq.icg_id_ecmwf) then
             call verttransform_ecmwf(memind(2),uuh,vvh,wwh,pvh)
           else
             call verttransform_gfs(memind(2),uuh,vvh,wwh,pvh)

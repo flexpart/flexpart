@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine timemanager(metdata_format)
+subroutine timemanager(id_centre)
 
 !*****************************************************************************
 !                                                                            *
@@ -51,7 +51,10 @@ subroutine timemanager(metdata_format)
 !   Variables uap,ucp,uzp,us,vs,ws,cbt now in module com_mod                 *
 !  Unified ECMWF and GFS builds                                              *
 !   Marian Harustak, 12.5.2017                                               *
-!   - Added passing of metdata_format as it was needed by called routines    *
+!   - Added passing of id_centre as it was needed by called routines         *
+!                                                                            *
+!  Petra Seibert, 2018-06-26: simplified version met data format detection   *
+!                                                                            *
 !*****************************************************************************
 !                                                                            *
 ! Variables:                                                                 *
@@ -85,7 +88,7 @@ subroutine timemanager(metdata_format)
 !                    polation                                                *
 ! xtra1(maxpart), ytra1(maxpart), ztra1(maxpart) =                           *
 !                    spatial positions of trajectories                       *
-! metdata_format     format of metdata (ecmwf/gfs)                           *
+! id_centre          format of metdata (ecmwf/gfs)                           *
 !                                                                            *
 ! Constants:                                                                 *
 ! maxpart            maximum number of trajectories                          *
@@ -108,7 +111,7 @@ subroutine timemanager(metdata_format)
 
   implicit none
 
-  integer :: metdata_format
+  integer :: id_centre
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0
 ! integer :: ksp
@@ -213,7 +216,7 @@ subroutine timemanager(metdata_format)
         write (*,*) 'timemanager> call convmix -- backward'
       endif
 ! readwind process skips this step
-      if (.not.(lmpreader.and.lmp_use_reader)) call convmix(itime,metdata_format)
+      if (.not.(lmpreader.and.lmp_use_reader)) call convmix(itime,id_centre)
     endif
 
 ! Get necessary wind fields if not available
@@ -226,7 +229,7 @@ subroutine timemanager(metdata_format)
 ! or MPI communication time only (for other processes)
     if (mp_measure_time) call mpif_mtime('getfields',0)
 
-    call getfields(itime,nstop1,memstat,metdata_format)
+    call getfields(itime,nstop1,memstat,id_centre)
 
     if (mp_measure_time) call mpif_mtime('getfields',1)
 
@@ -354,7 +357,7 @@ subroutine timemanager(metdata_format)
       if (verbosity.gt.0) then
         write (*,*) 'timemanager> call convmix -- forward'
       endif
-      call convmix(itime,metdata_format)
+      call convmix(itime,id_centre)
     endif
 
 ! If middle of averaging period of output fields is reached, accumulated

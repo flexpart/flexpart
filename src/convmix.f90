@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine convmix(itime,metdata_format)
+subroutine convmix(itime,id_centre)
   !                     i
   !**************************************************************
   !handles all the calculations related to convective mixing
@@ -38,15 +38,18 @@ subroutine convmix(itime,metdata_format)
   !
   !   Unified ECMWF and GFS builds                                             
   !   Marian Harustak, 12.5.2017                                              
-  !     - Merged convmix and convmix_gfs into one routine using if-then           
+  !     - Merged convmix and convmix_gfs into one routine using if-then      
   !       for meteo-type dependent code                                        
+  !                                                                          
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection 
+  !                                                                          
   !**************************************************************
 
   use flux_mod
   use par_mod
   use com_mod
   use conv_mod
-  use class_gribfile
+  use check_gribfile_mod
 
   implicit none
 
@@ -54,7 +57,7 @@ subroutine convmix(itime,metdata_format)
   integer :: ipconv
   integer :: jy, kpart, ktop, ngrid,kz
   integer :: igrid(maxpart), ipoint(maxpart), igridn(maxpart,maxnests)
-  integer :: metdata_format
+  integer :: id_centre
 
   ! itime [s]                 current time
   ! igrid(maxpart)            horizontal grid position of each particle
@@ -115,7 +118,7 @@ subroutine convmix(itime,metdata_format)
   !**********************************************************
 
     ngrid=0
-    if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+    if (id_centre.eq.icg_id_ecmwf) then
     do j=numbnests,1,-1
       if ( x.gt.xln(j)+eps .and. x.lt.xrn(j)-eps .and. &
            y.gt.yln(j)+eps .and. y.lt.yrn(j)-eps ) then
@@ -188,7 +191,7 @@ subroutine convmix(itime,metdata_format)
       tt2conv=(tt2(ix,jy,1,mind1)*dt2+tt2(ix,jy,1,mind2)*dt1)*dtt
       td2conv=(td2(ix,jy,1,mind1)*dt2+td2(ix,jy,1,mind2)*dt1)*dtt
 !!$      do kz=1,nconvlev+1      !old
-      if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+      if (id_centre.eq.icg_id_ecmwf) then
         do kz=1,nuvz-1           !bugfix
         tconv(kz)=(tth(ix,jy,kz+1,mind1)*dt2+ &
              tth(ix,jy,kz+1,mind2)*dt1)*dtt
@@ -207,7 +210,7 @@ subroutine convmix(itime,metdata_format)
       end if
 
   ! Calculate translocation matrix
-      call calcmatrix(lconv,delt,cbaseflux(ix,jy),metdata_format)
+      call calcmatrix(lconv,delt,cbaseflux(ix,jy),id_centre)
       igrold = igr
       ktop = 0
     endif
@@ -284,7 +287,7 @@ subroutine convmix(itime,metdata_format)
 
   ! calculate translocation matrix
   !*******************************
-        call calcmatrix(lconv,delt,cbasefluxn(ix,jy,inest),metdata_format)
+        call calcmatrix(lconv,delt,cbasefluxn(ix,jy,inest),id_centre)
         igrold = igr
         ktop = 0
       endif

@@ -146,8 +146,8 @@ module par_mod
   !*********************************************
   
   ! ECMWF
-! integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=359 ! 1.0 degree 92 level
-  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
+ integer,parameter :: nxmax=721,nymax=362,nuvzmax=36,nwzmax=36,nzmax=36,nxshift=0 ! 1.0 degree 92 level
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
 ! integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359  ! 0.5 degree 138 level
 !  integer,parameter :: nxmax=181,nymax=91,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=0  ! CERA 2.0 degree 92 level
 

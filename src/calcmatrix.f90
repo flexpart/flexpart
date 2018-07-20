@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine calcmatrix(lconv,delt,cbmf,metdata_format)
+subroutine calcmatrix(lconv,delt,cbmf,id_centre)
   !                        o    i    o
   !*****************************************************************************
   !                                                                            *
@@ -39,24 +39,27 @@ subroutine calcmatrix(lconv,delt,cbmf,metdata_format)
   !   Marian Harustak, 12.5.2017                                               *
   !     - Merged calcmatrix and calcmatrix_gfs into one routine using if-then  *
   !       for meteo-type dependent code                                        *
+  !                                                                            *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection   *
+  !                                                                            *
   !*****************************************************************************
   !                                                                            *
   !  lconv        indicates whether there is convection in this cell, or not   *
   !  delt         time step for convection [s]                                 *
   !  cbmf         cloud base mass flux                                         *
-  !  metdata_format format of metdata (ecmwf/gfs)                              *
+  !  id_centre    format of metdata (ecmwf/gfs)                                *
   !                                                                            *
   !*****************************************************************************
 
   use par_mod
   use com_mod
   use conv_mod
-  use class_gribfile
+  use check_gribfile_mod
 
   implicit none
 
   real :: rlevmass,summe
-  integer :: metdata_format
+  integer :: id_centre
 
   integer :: iflag, k, kk, kuvz
 
@@ -87,7 +90,7 @@ subroutine calcmatrix(lconv,delt,cbmf,metdata_format)
   ! Emanuel subroutine needs pressure in hPa, therefore convert all pressures
   do kuvz = 2,nuvz
     k = kuvz-1
-    if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+    if (id_centre.eq.icg_id_ecmwf) then
     pconv(k) = (akz(kuvz) + bkz(kuvz)*psconv)
     phconv(kuvz) = (akm(kuvz) + bkm(kuvz)*psconv)
     else

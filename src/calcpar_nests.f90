@@ -19,7 +19,7 @@
 ! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
 !**********************************************************************
 
-subroutine calcpar_nests(n,uuhn,vvhn,pvhn,metdata_format)
+subroutine calcpar_nests(n,uuhn,vvhn,pvhn,id_centre)
   !                         i  i    i    o
   !*****************************************************************************
   !                                                                            *
@@ -43,12 +43,15 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn,metdata_format)
   !                                                                            *
   !   Unified ECMWF and GFS builds                                             *
   !   Marian Harustak, 12.5.2017                                               *
-  !     - Added passing of metdata_format as it was needed by called routines  *
+  !     - Added passing of id_centre as it was needed by called routines       *
+  !                                                                            *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection   *
+  !                                                                            *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
   ! n                  temporal index for meteorological fields (1 to 3)       *
-  ! metdata_format     format of metdata (ecmwf/gfs)                           *
+  ! id_centre          format of metdata (ecmwf/gfs)                           *
   !                                                                            *
   ! Constants:                                                                 *
   !                                                                            *
@@ -64,7 +67,7 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn,metdata_format)
 
   implicit none
 
-  integer :: metdata_format
+  integer :: id_centre
   integer :: n,ix,jy,i,l,kz,lz,kzmin
   real :: ttlev(nuvzmax),qvlev(nuvzmax),obukhov,scalev,ol,hmixplus,dummyakzllev
   real :: ulev(nuvzmax),vlev(nuvzmax),ew,rh,vd(maxspec),subsceff,ylat
@@ -115,7 +118,7 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn,metdata_format)
 
       ol=obukhov(psn(ix,jy,1,n,l),tt2n(ix,jy,1,n,l), &
            td2n(ix,jy,1,n,l),tthn(ix,jy,2,n,l),ustarn(ix,jy,1,n,l), &
-           sshfn(ix,jy,1,n,l),akm,bkm,dummyakzllev,metdata_format)
+           sshfn(ix,jy,1,n,l),akm,bkm,dummyakzllev,id_centre)
       if (ol.ne.0.) then
         olin(ix,jy,1,n,l)=1./ol
       else
@@ -136,7 +139,7 @@ subroutine calcpar_nests(n,uuhn,vvhn,pvhn,metdata_format)
       call richardson(psn(ix,jy,1,n,l),ustarn(ix,jy,1,n,l),ttlev, &
            qvlev,ulev,vlev,nuvz,akz,bkz,sshfn(ix,jy,1,n,l), &
            tt2n(ix,jy,1,n,l),td2n(ix,jy,1,n,l),hmixn(ix,jy,1,n,l), &
-           wstarn(ix,jy,1,n,l),hmixplus,metdata_format)
+           wstarn(ix,jy,1,n,l),hmixplus,id_centre)
 
       if(lsubgrid.eq.1) then
         subsceff=min(excessoron(ix,jy,l),hmixplus)

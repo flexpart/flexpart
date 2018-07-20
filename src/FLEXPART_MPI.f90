@@ -39,6 +39,9 @@ program flexpart
   !     - Distinguished calls to ecmwf/gfs gridcheck versions based on         *
   !       detected metdata format                                              *
   !     - Passed metdata format down to timemanager                            *
+  !                                                                            *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection   *
+  !                                                                            *
   !*****************************************************************************
   !                                                                            *
   ! Variables:                                                                 *
@@ -53,7 +56,7 @@ program flexpart
   use conv_mod
   use mpi_mod
   use random_mod, only: gasdev1
-  use class_gribfile
+  use check_gribfile_mod
 
 #ifdef USE_NCF
   use netcdf_output_mod, only: writeheader_netcdf
@@ -61,11 +64,9 @@ program flexpart
 
   implicit none
 
-  integer :: i,j,ix,jy,inest
+  integer :: i,j,ix,jy,inest,id_centre
   integer :: idummy = -320
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
-  integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
-  integer :: detectformat
   integer(selected_int_kind(16)), dimension(maxspec) :: tot_b=0, &
        & tot_i=0
 
@@ -202,15 +203,13 @@ program flexpart
 
   ! Detect metdata format
   !**********************
-
-  metdata_format = detectformat()
-
-  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+  call cg_get_centre(path(3)(1:length(3)) // trim(wfname(1)), id_centre)
+  if (id_centre.eq.icg_id_ecmwf) then
     if (lroot) print *,'ECMWF metdata detected'
-  elseif (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
-    if (lroot) print *,'NCEP metdata detected'
+  elseif (id_centre.eq.icg_id_ncep) then
+    if (lroot) print *,'NCEP met data detected'
   else
-    if (lroot) print *,'Unknown metdata format'
+    if (lroot) print *,'Unknown met data format'
     stop
   endif
 
@@ -232,7 +231,7 @@ program flexpart
     write(*,*) 'call gridcheck'
   endif
 
-  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+  if (id_centre.eq.icg_id_ecmwf) then
     call gridcheck_ecmwf
   else
     call gridcheck_gfs
@@ -479,7 +478,7 @@ program flexpart
   endif
 
 
-  call timemanager(metdata_format)
+  call timemanager(id_centre)
 
 
 ! NIK 16.02.2005 

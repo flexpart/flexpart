@@ -21,7 +21,6 @@ SHELL = /bin/bash
 #    Other users will have to edit the 
 #
 #    Makefile was modified to produce unified executable for both ECMWF and GFS meteo data formats
-#    gributils were included to detect format of meteo data
 #
 #    Cpp directives USE_MPIINPLACE were added to three source files. The effect of these directives 
 #    are to enable the MPI_IN_PLACE option only if compiled with a -DUSE_MPIINPLACE directive. 
@@ -105,7 +104,8 @@ O_LEV_DBG = g # [0,g]
 LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
 
 #FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
-FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  # -fcheck=all -fbacktrace -march=native
+#FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  # -fcheck=all -fbacktrace -march=native
+FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -cpp -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  -fcheck=all -fbacktrace -march=native
 
 # Explanation of unusual gfortran options
 # -fmessage-length=0: do not wrap around compiler messages at col 72
@@ -124,7 +124,8 @@ unc_mod.o               oh_mod.o \
 xmass_mod.o             flux_mod.o \
 point_mod.o             outg_mod.o \
 mean_mod.o	 	random_mod.o \
-class_gribfile_mod.o
+check_gribfile_mod.o    
+
 
 MPI_MODOBJS = \
 mpi_mod.o
@@ -196,7 +197,7 @@ readwind_nests.o        calcpar_nests.o \
 verttransform_nests.o   interpol_all_nests.o \
 interpol_wind_nests.o   interpol_misslev_nests.o \
 interpol_vdep_nests.o   interpol_rain_nests.o \
-readageclasses.o        detectformat.o  \
+readageclasses.o        \
 calcfluxes.o            fluxoutput.o \
 qvsat.o                 skplin.o \
 convect43c.o            \
@@ -271,8 +272,8 @@ boundcond_domainfill.o: com_mod.o par_mod.o point_mod.o random_mod.o
 boundcond_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 calcfluxes.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
-calcmatrix.o: com_mod.o conv_mod.o par_mod.o class_gribfile_mod.o
-calcpar.o: com_mod.o par_mod.o class_gribfile_mod.o
+calcmatrix.o: check_gribfile_mod.o conv_mod.o com_mod.o par_mod.o 
+calcpar.o: com_mod.o par_mod.o check_gribfile_mod.o
 calcpar_nests.o: com_mod.o par_mod.o
 calcpv.o: com_mod.o par_mod.o
 calcpv_nests.o: com_mod.o par_mod.o
@@ -298,21 +299,21 @@ concoutput_surf_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o \
 	point_mod.o unc_mod.o mean_mod.o
 conv_mod.o: par_mod.o
 convect43c.o: conv_mod.o par_mod.o
-convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o class_gribfile_mod.o
+convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o check_gribfile_mod.o
 coordtrafo.o: com_mod.o par_mod.o point_mod.o
-detectformat.o: com_mod.o par_mod.o class_gribfile_mod.o
 distance.o: par_mod.o
 distance2.o: par_mod.o
 drydepokernel.o: com_mod.o par_mod.o unc_mod.o
 drydepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 erf.o: par_mod.o
-FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o class_gribfile_mod.o
+FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o check_gribfile_mod.o
+FLEXPART.o: check_gribfile_mod.o random_mod.o conv_mod.o com_mod.o par_mod.o point_mod.o 
 FLEXPART_MPI.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o point_mod.o \
-	random_mod.o netcdf_output_mod.o class_gribfile_mod.o
+	random_mod.o netcdf_output_mod.o check_gribfile_mod.o
 fluxoutput.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
 get_settling.o: com_mod.o par_mod.o
-getfields.o: com_mod.o par_mod.o class_gribfile_mod.o
-getfields_mpi.o: com_mod.o par_mod.o mpi_mod.o class_gribfile_mod.o
+getfields.o: com_mod.o par_mod.o check_gribfile_mod.o
+getfields_mpi.o: com_mod.o par_mod.o mpi_mod.o check_gribfile_mod.o
 gethourlyOH.o: com_mod.o oh_mod.o par_mod.o
 getrb.o: par_mod.o
 getrc.o: com_mod.o par_mod.o
@@ -353,7 +354,7 @@ juldate.o: par_mod.o
 mean_mod.o: par_mod.o
 mpi_mod.o: com_mod.o par_mod.o unc_mod.o
 netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-obukhov.o: par_mod.o class_gribfile_mod.o
+obukhov.o: par_mod.o check_gribfile_mod.o
 ohreaction.o: com_mod.o oh_mod.o par_mod.o
 openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
@@ -400,7 +401,7 @@ releaseparticles.o: com_mod.o par_mod.o point_mod.o random_mod.o \
 	xmass_mod.o
 releaseparticles_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o xmass_mod.o
-richardson.o: par_mod.o class_gribfile_mod.o
+richardson.o: par_mod.o check_gribfile_mod.o
 scalev.o: par_mod.o
 shift_field.o: par_mod.o
 shift_field_0.o: par_mod.o

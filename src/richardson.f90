@@ -20,7 +20,7 @@
 !**********************************************************************
 
 subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
-       akz,bkz,hf,tt2,td2,h,wst,hmixplus,metdata_format)
+       akz,bkz,hf,tt2,td2,h,wst,hmixplus,id_centre)
   !                        i    i    i     i    i    i    i
   ! i   i  i   i   i  o  o     o
   !****************************************************************************
@@ -40,6 +40,9 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   !     of alternative boundary-layer height formulations. Boundary-Layer     *
   !     Meteor. 81, 245-269.                                                  *
   !                                                                           *
+  !                                                                           *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection  *
+  !                                                                           *
   !****************************************************************************
   !                                                                           *
   !     Update: 1999-02-01 by G. Wotawa                                       *
@@ -55,6 +58,9 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   !       - Merged richardson and richardson_gfs into one routine using       *
   !         if-then for meteo-type dependent code                             *
   !                                                                           *
+  !                                                                           *
+  !  Petra Seibert, 2018-06-26: simplified version met data format detection  *
+  !                                                                           *
   !****************************************************************************
   !                                                                           *
   ! Variables:                                                                *
@@ -63,7 +69,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   ! psurf                      surface pressure at point (xt,yt) [Pa]         *
   ! tv                         virtual temperature                            *
   ! wst                        convective velocity scale                      *
-  ! metdata_format             format of metdata (ecmwf/gfs)                  *
+  ! id_centre                  format of metdata (ecmwf/gfs)                  *
   !                                                                           *
   ! Constants:                                                                *
   ! ric                        critical Richardson number                     *
@@ -71,11 +77,11 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   !****************************************************************************
 
   use par_mod
-  use class_gribfile
+  use check_gribfile_mod
 
   implicit none
 
-  integer :: metdata_format
+  integer :: id_centre
   integer :: i,k,nuvz,iter,llev,loop_start
   real :: tv,tvold,zref,z,zold,pint,pold,theta,thetaref,ri
   real :: akz(nuvz),bkz(nuvz),ulev(nuvz),vlev(nuvz),hf,wst,tt2,td2,ew
@@ -88,7 +94,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
   excess=0.0
   iter=0
 
-  if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
+  if (id_centre.eq.icg_id_ncep) then
     ! NCEP version: find first model level above ground
     !**************************************************
 
@@ -122,7 +128,7 @@ subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
 
   ! Integrate z up to one level above zt
   !*************************************
-  if (metdata_format.eq.GRIBFILE_CENTRE_ECMWF) then
+  if (id_centre.eq.icg_id_ecmwf) then
     loop_start=2
   else
     loop_start=llev
