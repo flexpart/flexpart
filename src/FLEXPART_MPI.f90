@@ -150,7 +150,7 @@ program flexpart
   if (verbosity.gt.0) then
     write(*,*) 'call readpaths'
   endif 
-  call readpaths(pathfile)
+  call readpaths
  
   if (verbosity.gt.1) then !show clock info 
      !print*,'length(4)',length(4)

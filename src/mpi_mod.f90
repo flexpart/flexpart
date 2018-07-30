@@ -1960,7 +1960,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
     if (readclouds) then
       j=j+1
-      call MPI_Irecv(ctwc(:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+      call MPI_Irecv(ctwc(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
@@ -2325,7 +2325,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
       if (readclouds) then
         j=j+1
-        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
              &MPI_COMM_WORLD,reqs(j),mp_ierr)
         if (mp_ierr /= 0) goto 600
       end if
@@ -2461,6 +2461,19 @@ contains
            & mp_comm_used, mp_ierr)
     end if
 
+    !CGZ MOVED THIS PART HERE FROM OUTSIDE MPI_IN_PLACE (see below)
+    !**********************************************************
+  ! Receptor concentrations    
+    if (lroot) then
+      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    else
+      call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+    end if
+    !**********************************************************
+
 #else
 
       call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_sp, MPI_SUM, id_root, &
@@ -2481,15 +2494,18 @@ contains
       if (mp_ierr /= 0) goto 600
     end if
 
+    !CGZ MOVED THIS PART TO MPI_IN_PLACE (line 2467)
+    !**********************************************************
 ! Receptor concentrations    
-    if (lroot) then
-      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
-           & mp_comm_used,mp_ierr)
-      if (mp_ierr /= 0) goto 600
-    else
-      call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
-           & mp_comm_used,mp_ierr)
-    end if
+  !  if (lroot) then
+  !    call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
+  !         & mp_comm_used,mp_ierr)
+  !    if (mp_ierr /= 0) goto 600
+  !  else
+  !    call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
+  !         & mp_comm_used,mp_ierr)
+  !  end if
+    !**********************************************************
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 

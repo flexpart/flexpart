@@ -159,7 +159,7 @@ module par_mod
   ! Maximum dimensions of the nested input grids
   !*********************************************
 
-  integer,parameter :: maxnests=0,nxmaxn=0,nymaxn=0
+  integer,parameter :: maxnests=1,nxmaxn=451,nymaxn=226
 
   ! nxmax,nymax        maximum dimension of wind fields in x and y
   !                    direction, respectively
@@ -217,7 +217,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=100000
+  integer,parameter :: maxpart=1000000
   integer,parameter :: maxspec=1
 
   real,parameter :: minmass=0.0001
@@ -261,7 +261,7 @@ module par_mod
   ! Dimension of random number field
   !*********************************
 
-  integer,parameter :: maxrand=1000000
+  integer,parameter :: maxrand=20000000
 
   ! maxrand                 number of random numbers used
   

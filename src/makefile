@@ -64,7 +64,7 @@ ifeq ($(gcc), 4.9)
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
 
-else ifeq ($(gcc), 5.4)
+else
 	ROOT_DIR = /homevip/flexpart/
 	F90       = /usr/bin/gfortran
 	MPIF90    = /usr/bin/mpif90
@@ -72,13 +72,6 @@ else ifeq ($(gcc), 5.4)
 	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include
 	INCPATH2  = /usr/include
 	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
-else
-        F90       = gfortran
-        MPIF90    = mpif90
-	INCPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/include
-	INCPATH2 = /usr/include
-	LIBPATH1 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
-	LIBPATH2 = /xnilu_wrk/projects/FLEXPART/flex_wrk/bin64/grib_api/lib
 endif
 
 
@@ -112,8 +105,8 @@ FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -
 
 DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
-LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) -L$(LIBPATH2)
-LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) -L$(LIBPATH2)
+LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) # -L$(LIBPATH2)
+LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) # -L$(LIBPATH2)
 
 # Default behaviour is to NOT use MPI-IN-PLACE.  This may be safer.
 # DEFS = -DUSE_MPIINPLACE

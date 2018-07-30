@@ -82,7 +82,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   real,parameter :: eps=1.e-4
   real :: ewss(0:nxmaxn-1,0:nymaxn-1),nsss(0:nxmaxn-1,0:nymaxn-1)
   real :: plev1,pmean,tv,fu,hlev1,ff10m,fflev1
-  real :: conversion_factor !added by mc to make it consistent with new gridchek.f90
+  real :: conversion_factor=1000. !added by mc to make it consistent with new gridchek.f90
 
   logical :: hflswitch,strswitch
 
@@ -124,8 +124,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   PRINT *, 'Loading Vtable: ', VTABLE_PATH
   call vtable_load_by_name(VTABLE_PATH, my_vtable)
   !! Debugging tool
-  PRINT *, 'Dump of Vtable...'
-  call vtable_dump_records(my_vtable)
+  !PRINT *, 'Dump of Vtable...'
+  !call vtable_dump_records(my_vtable)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -136,8 +136,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   ! inventory of the FP-related messages, relative to the Vtable that's
   ! already been open.
 
-  CALL vtable_gribfile_inventory( path(numpath+2*(l-1)+1)(1:length(numpath+2*(l-1)+1))// trim(wfnamen(l, indj)), &
-&                                my_vtable)
+!  CALL vtable_gribfile_inventory( path(numpath+2*(l-1)+1)(1:length(numpath+2*(l-1)+1))// trim(wfnamen(l, indj)), &
+! &                                my_vtable)
 
   !!!!!!!!!!!!!!!!!!!  VTABLE code
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -177,7 +177,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !!!!!!!!!!!!!!!!!!!  VTABLE code
   ! Get the fpname
   fpname = vtable_get_fpname(igrib, my_vtable)
-  print *, 'fpname: ', trim(fpname)
+  !print *, 'fpname: ', trim(fpname)
 
 
   !!!!!!!!!!!!!!!!!!!  VTABLE code
@@ -430,7 +430,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
       !!       in snow depth, but I don't feel 100% good about this just yet.  It may
       !!       need to be scrutinized more closely in the future.
 
-      conversion_factor = 1.0
+! eso: reverted conversion factor to 1000.
+      conversion_factor = 1000.0
       DO j=0,nyn(l)-1
         DO i=0,nxn(l)-1
             sdn(i,j,1,n,l) = zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/conversion_factor

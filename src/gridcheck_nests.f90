@@ -337,14 +337,16 @@ k = current_grib_level
   ! Output of grid info
   !********************
 
-  write(*,'(a,i2,a)') ' Nested domain ',l,':'
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
-       xlon0n(l),' to ',xlon0n(l)+(nxn(l)-1)*dxn(l), &
-       '   Grid distance: ',dxn(l)
-  write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range : ', &
-       ylat0n(l),' to ',ylat0n(l)+(nyn(l)-1)*dyn(l), &
-       '   Grid distance: ',dyn(l)
-  write(*,*)
+  if (lroot) then
+     write(*,'(a,i2,a)') ' Nested domain ',l,':'
+     write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Longitude range: ', &
+          xlon0n(l),' to ',xlon0n(l)+(nxn(l)-1)*dxn(l), &
+          '   Grid distance: ',dxn(l)
+     write(*,'(a,f10.5,a,f10.5,a,f10.5)') '  Latitude range : ', &
+          ylat0n(l),' to ',ylat0n(l)+(nyn(l)-1)*dyn(l), &
+          '   Grid distance: ',dyn(l)
+     write(*,*)
+  end if
 
   ! Determine, how much the resolutions in the nests are enhanced as
   ! compared to the mother grid

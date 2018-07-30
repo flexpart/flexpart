@@ -339,7 +339,8 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
       !!       in snow depth, but I don't feel 100% good about this just yet.  It may
       !!       need to be scrutinized more closely in the future.
 
-      conversion_factor = 1.0
+! eso: reverted conversion factor to 1000.
+      conversion_factor = 1000.0
       DO j=0,nymin1
         DO i=0,nxfield-1
             sd(i,j,1,n) = zsec4(nxfield*(ny-j-1)+i+1)/conversion_factor
@@ -528,7 +529,7 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
         END DO
       END DO
 
-  ELSE IF(TRIM(fpname) .EQ. 'CICE') then  !! CIWC  Cloud ice water content
+  ELSE IF(TRIM(fpname) .EQ. 'CIWC') then  !! CIWC  Cloud ice water content
       DO j=0,nymin1
         DO i=0,nxfield-1
             ciwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
