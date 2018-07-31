@@ -67,10 +67,17 @@ subroutine initial_cond_output_inversion(itime)
   real :: sp_fact,fact_recept
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   logical :: sp_zer,lexist
+  logical,save :: listart=.true.
+  logical,save,allocatable,dimension(:) :: listartrel
   character :: adate*8,atime*6
   character :: areldate*8,areltime*6
   character(len=3) :: anspec
 
+  if(listart) then
+    allocate(listartrel(maxpointspec_act))
+    listartrel(:)=.true.
+  endif
+  print*, 'listartrel = ',listartrel
 
   !*********************************************************************
   ! Determine the standard deviation of the mean concentration or mixing
@@ -99,17 +106,19 @@ subroutine initial_cond_output_inversion(itime)
 
       inquire(file=path(2)(1:length(2))//'grid_initial_'//areldate// &
          areltime//'_'//anspec,exist=lexist)
-      if(lexist) then
+      if(lexist.and..not.listartrel(kp)) then
         ! open and append to existing file
         open(97,file=path(2)(1:length(2))//'grid_initial_'//areldate// &
              areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append') 
       else
         ! open new file
         open(97,file=path(2)(1:length(2))//'grid_initial_'//areldate// &
-             areltime//'_'//anspec,form='unformatted',status='new',action='write')
+             areltime//'_'//anspec,form='unformatted',status='replace',action='write')
       endif
       write(97) jjjjmmdd
       write(97) ihmmss
+
+      listartrel(kp)=.false.
 
       if (ind_rel.eq.1) then
         fact_recept=rho_rel(kp)
@@ -175,5 +184,9 @@ subroutine initial_cond_output_inversion(itime)
 
   end do
 
+  ! reset listart
+  if (listart) then
+    listart=.false.
+  endif
 
 end subroutine initial_cond_output_inversion

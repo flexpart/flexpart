@@ -179,23 +179,23 @@ subroutine getfields(itime,nstop)
   rho_dry=(prs-pwater)/(r_air*tt)
 
   ! test density
-  write(rowfmt,'(A,I6,A)') '(',nymax,'(E11.4,1X))'
-  if(itime.eq.0) then
-    open(500,file=path(2)(1:length(2))//'rho_dry.txt',status='replace',action='write')
-    do kz=1,nzmax
-      do ix=1,nxmax
-        write(500,fmt=rowfmt) rho_dry(ix,:,kz,1)
-      end do
-    end do
-    close(500)
-    open(500,file=path(2)(1:length(2))//'rho.txt',status='replace',action='write')
-    do kz=1,nzmax
-      do ix=1,nxmax
-        write(500,fmt=rowfmt) rho(ix,:,kz,1)
-      end do
-    end do
-    close(500)
-  endif
+!  write(rowfmt,'(A,I6,A)') '(',nymax,'(E11.4,1X))'
+!  if(itime.eq.0) then
+!    open(500,file=path(2)(1:length(2))//'rho_dry.txt',status='replace',action='write')
+!    do kz=1,nzmax
+!      do ix=1,nxmax
+!        write(500,fmt=rowfmt) rho_dry(ix,:,kz,1)
+!      end do
+!    end do
+!    close(500)
+!    open(500,file=path(2)(1:length(2))//'rho.txt',status='replace',action='write')
+!    do kz=1,nzmax
+!      do ix=1,nxmax
+!        write(500,fmt=rowfmt) rho(ix,:,kz,1)
+!      end do
+!    end do
+!    close(500)
+!  endif
 
   lwindinterv=abs(memtime(2)-memtime(1))
 

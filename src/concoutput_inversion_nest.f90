@@ -98,11 +98,18 @@ subroutine concoutput_inversion_nest(itime,outnum)
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real,parameter :: weightair=28.97
   logical :: sp_zer
+  logical,save :: lnstart=.true.
+  logical,save,allocatable,dimension(:) :: lnstartrel
   character :: adate*8,atime*6
   character(len=3) :: anspec
   logical :: lexist
   character :: areldate*8,areltime*6
 
+  if(lnstart) then
+    allocate(lnstartrel(maxpointspec_act))
+    lnstartrel(:)=.true.
+  endif
+  print*, 'lnstartrel = ',lnstartrel
 
   ! Determine current calendar date, needed for the file name
   !**********************************************************
@@ -244,27 +251,27 @@ subroutine concoutput_inversion_nest(itime,outnum)
           ! concentrations
           inquire(file=path(2)(1:length(2))//'grid_conc_nest_'//areldate// &
                   areltime//'_'//anspec,exist=lexist)
-          if(lexist) then
+          if(lexist.and..not.lnstartrel(kp)) then
             ! open and append to existing file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_nest_'//areldate// &
                  areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
           else
             ! open new file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_nest_'//areldate// &
-                 areltime//'_'//anspec,form='unformatted',status='new',action='write')
+                 areltime//'_'//anspec,form='unformatted',status='replace',action='write')
           endif
         else
           ! residence times
           inquire(file=path(2)(1:length(2))//'grid_time_nest_'//areldate// &
                   areltime//'_'//anspec,exist=lexist)
-          if(lexist) then
+          if(lexist.and..not.lnstartrel(kp)) then
             ! open and append to existing file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_nest_'//areldate// &
                  areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
           else
             ! open new file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_nest_'//areldate// &
-                 areltime//'_'//anspec,form='unformatted',status='new',action='write')
+                 areltime//'_'//anspec,form='unformatted',status='replace',action='write')
           endif
         endif
         write(unitoutgrid) jjjjmmdd
@@ -275,19 +282,20 @@ subroutine concoutput_inversion_nest(itime,outnum)
         ! mixing ratio
         inquire(file=path(2)(1:length(2))//'grid_pptv_nest_'//areldate// &
                 areltime//'_'//anspec,exist=lexist)
-        if(lexist) then
+        if(lexist.and..not.lnstartrel(kp)) then
           ! open and append to existing file
           open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_nest_'//areldate// &
                areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
         else
           ! open new file
           open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_nest_'//areldate// &
-               areltime//'_'//anspec,form='unformatted',status='new',action='write')
+               areltime//'_'//anspec,form='unformatted',status='replace',action='write')
         endif
         write(unitoutgridppt) jjjjmmdd
         write(unitoutgridppt) ihmmss
       endif
 
+      lnstartrel(kp)=.false.
 
       do nage=1,nageclass
 
@@ -620,14 +628,14 @@ subroutine concoutput_inversion_nest(itime,outnum)
 ! RLT Aug 2017
 ! Write out conversion factor for dry air
   inquire(file=path(2)(1:length(2))//'factor_drygrid_nest',exist=lexist)
-  if (lexist) then
+  if (lexist.and..not.lnstart) then
     ! open and append
     open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid_nest',form='unformatted',&
             status='old',action='write',access='append')
   else
     ! create new
     open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid_nest',form='unformatted',&
-            status='new',action='write')
+            status='replace',action='write')
   endif
   sp_count_i=0
   sp_count_r=0
@@ -659,6 +667,10 @@ subroutine concoutput_inversion_nest(itime,outnum)
   write(unitoutfactor) (sparse_dump_r(i),i=1,sp_count_r)
   close(unitoutfactor)
 
+  ! reset lnstart
+  if (lnstart) then
+    lnstart=.false.
+  endif
 
   ! Reinitialization of grid
   !*************************

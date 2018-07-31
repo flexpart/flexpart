@@ -93,8 +93,8 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 !real factor(0:numxgrid-1,0:numygrid-1,numzgrid)
 !real sparse_dump_r(numxgrid*numygrid*numzgrid)
 !integer sparse_dump_i(numxgrid*numygrid*numzgrid)
-
 !real sparse_dump_u(numxgrid*numygrid*numzgrid)
+
   real(dep_prec) :: auxgrid(nclassunc)
   real(sp) :: gridtotal,gridsigmatotal,gridtotalunc
   real(dep_prec) :: wetgridtotal,wetgridsigmatotal,wetgridtotalunc
@@ -107,10 +107,21 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
   character(len=3) :: anspec
   logical :: lexist
   character :: areldate*8,areltime*6
+  logical,save :: lstart=.true.
+  logical,save,allocatable,dimension(:) :: lstartrel
+  integer :: ierr
+  character(LEN=100) :: dates_char
+  integer, parameter :: unitrelnames=654
 
+
+  if(lstart) then
+    allocate(lstartrel(maxpointspec_act))
+    lstartrel(:)=.true.
+  endif
+  print*, 'lstartrel = ',lstartrel
 
   if (verbosity.eq.1) then
-    print*,'inside concoutput_surf '
+    print*,'inside concoutput_inversion '
     CALL SYSTEM_CLOCK(count_clock)
     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
   endif
@@ -122,14 +133,50 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
   call caldate(jul,jjjjmmdd,ihmmss)
   write(adate,'(i8.8)') jjjjmmdd
   write(atime,'(i6.6)') ihmmss
-!write(unitdates,'(a)') adate//atime
+!  write(unitdates,'(a)') adate//atime
+
+
+! Prepare output files for dates
+!**********************************************************
+
+  ! Overwrite existing dates file on first call, later append to it
+  ! If 'dates' file exists in output directory, copy to new file dates.old
+  inquire(file=path(2)(1:length(2))//'dates', exist=lexist)
+  if (lexist.and.lstart) then
+    ! copy contents of existing dates file to dates.old
+    print*, 'warning: replacing old dates file'
+    open(unit=unitdates, file=path(2)(1:length(2))//'dates',form='formatted', &
+         &access='sequential', status='old', action='read', iostat=ierr)
+    open(unit=unittmp, file=path(2)(1:length(2))//'dates.old', access='sequential', &
+         &status='replace', action='write', form='formatted', iostat=ierr)
+    do while (.true.)
+      read(unitdates, '(a)', iostat=ierr) dates_char
+      if (ierr.ne.0) exit
+      write(unit=unittmp, fmt='(a)', iostat=ierr, advance='yes') trim(dates_char)
+    end do
+    close(unit=unitdates)
+    close(unit=unittmp)
+    ! create new dates file
+    open(unit=unitdates, file=path(2)(1:length(2))//'dates',form='formatted', &
+         &access='sequential', status='replace', iostat=ierr)
+    close(unit=unitdates)
+  endif
 
   open(unitdates,file=path(2)(1:length(2))//'dates', ACCESS='APPEND')
   write(unitdates,'(a)') adate//atime
   close(unitdates)
 
-  print*, 'outnum:',outnum
-  print*, 'datetime:',adate//atime
+  !CGZ: Make a filename with names of releases
+  if (lstart) then
+    open(unit=unitrelnames, file=path(2)(1:length(2))//'releases_out',form='formatted', &
+         &access='sequential', status='replace', iostat=ierr)
+    close(unitrelnames)
+  endif
+
+  print*, 'after creating dates files: lstart = ',lstart
+!  print*, 'outnum:',outnum
+!  print*, 'datetime:',adate//atime
+
 
 ! For forward simulations, output fields have dimension MAXSPEC,
 ! for backward simulations, output fields have dimension MAXPOINT.
@@ -153,7 +200,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
 
   if (verbosity.eq.1) then
-    print*,'concoutput_surf 2'
+    print*,'concoutput_inversion 2'
     CALL SYSTEM_CLOCK(count_clock)
     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
   endif
@@ -230,7 +277,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 !*********************************************************************
 
   if (verbosity.eq.1) then
-    print*,'concoutput_surf 3 (sd)'
+    print*,'concoutput_inversion 3 (sd)'
     CALL SYSTEM_CLOCK(count_clock)
     WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
   endif
@@ -248,10 +295,11 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
     write(anspec,'(i3.3)') ks
 
+    ! loop over releases
     do kp=1,maxpointspec_act
 
       print*, 'itime = ',itime
-      print*, 'lage(1) = ',lage(1)
+      !print*, 'lage(1) = ',lage(1)
       print*, 'ireleasestart(kp) = ',ireleasestart(kp)
       print*, 'ireleaseend(kp) = ',ireleaseend(kp)
 
@@ -267,41 +315,47 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
       call caldate(jul,jjjjmmdd,ihmmss)     
       write(areldate,'(i8.8)') jjjjmmdd
       write(areltime,'(i6.6)') ihmmss
-      print*, areldate//areltime
+      print*, 'areldate/areltime = ',areldate//areltime
 
       ! calculate date of field
       jul=bdate+real(itime,kind=dp)/86400._dp
       call caldate(jul,jjjjmmdd,ihmmss)
       write(adate,'(i8.8)') jjjjmmdd
       write(atime,'(i6.6)') ihmmss
-      print*, adate//atime
+!      print*, adate//atime
 
       if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
         if (ldirect.eq.1) then
           ! concentrations
           inquire(file=path(2)(1:length(2))//'grid_conc_'//areldate// &
                   areltime//'_'//anspec,exist=lexist)
-          if(lexist) then
+          if(lexist.and..not.lstartrel(kp)) then
             ! open and append to existing file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//areldate// &
                  areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
           else
             ! open new file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_conc_'//areldate// &
-                 areltime//'_'//anspec,form='unformatted',status='new',action='write')
+                 areltime//'_'//anspec,form='unformatted',status='replace',action='write')
           endif
         else
           ! residence times
           inquire(file=path(2)(1:length(2))//'grid_time_'//areldate// &
                   areltime//'_'//anspec,exist=lexist)
-          if(lexist) then
+          if(lexist.and..not.lstartrel(kp)) then
             ! open and append to existing file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//areldate// &
                  areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
           else
             ! open new file
             open(unitoutgrid,file=path(2)(1:length(2))//'grid_time_'//areldate// &
-                 areltime//'_'//anspec,form='unformatted',status='new',action='write')
+                 areltime//'_'//anspec,form='unformatted',status='replace',action='write')
+            ! add part of the filename to a file (similar to dates) for easier post-processing
+            open(unit=unitrelnames, file=path(2)(1:length(2))//'releases_out',form='formatted', &
+                 & access='APPEND', iostat=ierr)
+            write(unitrelnames,'(a)') areldate//areltime//'_'//anspec
+            call flush(unit=unitrelnames)
+            close(unitrelnames)
           endif
         endif
         write(unitoutgrid) jjjjmmdd
@@ -312,19 +366,20 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
         ! mixing ratio
         inquire(file=path(2)(1:length(2))//'grid_pptv_'//areldate// &
                 areltime//'_'//anspec,exist=lexist)
-        if(lexist) then
+        if(lexist.and..not.lstartrel(kp)) then
           ! open and append to existing file
           open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//areldate// &
                areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append')
         else
           ! open new file
           open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//areldate// &
-               areltime//'_'//anspec,form='unformatted',status='new',action='write')
+               areltime//'_'//anspec,form='unformatted',status='replace',action='write')
         endif   
         write(unitoutgridppt) jjjjmmdd
         write(unitoutgridppt) ihmmss
       endif
 
+      lstartrel(kp)=.false.
 
       do nage=1,nageclass
 
@@ -400,7 +455,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 !*******************************************************************
 
         if (verbosity.eq.1) then
-          print*,'concoutput_surf 4 (output)'
+          print*,'concoutput_inversion 4 (output)'
           CALL SYSTEM_CLOCK(count_clock)
           WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
         endif
@@ -411,7 +466,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
         if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
 
           if (verbosity.eq.1) then
-            print*,'concoutput_surf (Wet deposition)'
+            print*,'concoutput_inversion (Wet deposition)'
             CALL SYSTEM_CLOCK(count_clock)
             WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
           endif
@@ -494,7 +549,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 !!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
           if (verbosity.eq.1) then
-            print*,'concoutput_surf (Concentrations)'
+            print*,'concoutput_inversion (Concentrations)'
             CALL SYSTEM_CLOCK(count_clock)
             WRITE(*,*) 'SYSTEM_CLOCK',count_clock - count_clock0   
           endif
@@ -528,6 +583,7 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
                   sparse_dump_u(sp_count_r)= &
                        gridsigma(ix,jy,kz)* &
                        factor3d(ix,jy,kz)/tot_mu(ks,kp)
+
                 else ! concentration is zero
                   sp_zer=.true.
                 endif
@@ -683,14 +739,14 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! RLT Aug 2017
 ! Write out conversion factor for dry air
   inquire(file=path(2)(1:length(2))//'factor_drygrid',exist=lexist)
-  if (lexist) then
+  if (lexist.and..not.lstart) then
     ! open and append
     open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid',form='unformatted',&
             status='old',action='write',access='append')
   else
     ! create new
     open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid',form='unformatted',&
-            status='new',action='write')
+            status='replace',action='write')
   endif
   sp_count_i=0
   sp_count_r=0
@@ -753,19 +809,26 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! Write out conversion factor for dry air
   if (numreceptor.gt.0) then
     inquire(file=path(2)(1:length(2))//'factor_dryreceptor',exist=lexist)
-     if (lexist) then
+     if (lexist.and..not.lstart) then
      ! open and append
       open(unitoutfactor,file=path(2)(1:length(2))//'factor_dryreceptor',form='unformatted',&
               status='old',action='write',access='append')
     else
       ! create new
       open(unitoutfactor,file=path(2)(1:length(2))//'factor_dryreceptor',form='unformatted',&
-              status='new',action='write')
+              status='replace',action='write')
     endif
     write(unitoutfactor) itime
     write(unitoutfactor) (factor_dryrecept(i),i=1,numreceptor)
     close(unitoutfactor)
   endif
+
+  ! reset lstart
+  if (lstart) then
+    lstart=.false.
+  endif
+  print*, 'after writing output files: lstart = ',lstart
+
 
 ! Reinitialization of grid
 !*************************
@@ -788,6 +851,5 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
       end do
     end do
   end do
-
 
 end subroutine concoutput_inversion
