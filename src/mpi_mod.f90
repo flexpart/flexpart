@@ -189,8 +189,8 @@ contains
 !   mpi_mode    default 0, set to 2/3 if running MPI version
 !   mp_np       number of running processes, decided at run-time
 !***********************************************************************
-    use par_mod, only: maxpart, numwfmem, dep_prec
-    use com_mod, only: mpi_mode, verbosity
+    use par_mod, only: maxpart, numwfmem, dep_prec, maxreceptor, maxspec
+    use com_mod, only: mpi_mode, verbosity, creceptor0
 
     implicit none
 
@@ -336,7 +336,7 @@ contains
     end if
 
 ! Set maxpart per process
-! eso 08/2016: Increase maxpart per process, in case of unbalanced distribution
+! ESO 08/2016: Increase maxpart per process, in case of unbalanced distribution
     maxpart_mpi=int(mp_maxpart_factor*real(maxpart)/real(mp_partgroup_np))
     if (mp_np == 1) maxpart_mpi = maxpart
 
@@ -364,6 +364,13 @@ contains
       reqs(:)=MPI_REQUEST_NULL
     end if
 
+! Write whether MPI_IN_PLACE is used or not
+#ifdef USE_MPIINPLACE
+    if (lroot) write(*,*) 'Using MPI_IN_PLACE operations'
+#else
+    if (lroot) allocate(creceptor0(maxreceptor,maxspec))
+    if (lroot) write(*,*) 'Not using MPI_IN_PLACE operations'
+#endif
     goto 101
 
 100 write(*,*) '#### mpi_mod::mpif_init> ERROR ####', mp_ierr
@@ -2461,8 +2468,6 @@ contains
            & mp_comm_used, mp_ierr)
     end if
 
-    !CGZ MOVED THIS PART HERE FROM OUTSIDE MPI_IN_PLACE (see below)
-    !**********************************************************
   ! Receptor concentrations    
     if (lroot) then
       call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
@@ -2472,13 +2477,18 @@ contains
       call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
            & mp_comm_used,mp_ierr)
     end if
-    !**********************************************************
 
 #else
 
       call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
+      if (mp_ierr /= 0) goto 600
       if (lroot) gridunc = gridunc0
+
+      call MPI_Reduce(creceptor, creceptor0,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      if (lroot) creceptor = creceptor0
 
 #endif
 
@@ -2494,18 +2504,6 @@ contains
       if (mp_ierr /= 0) goto 600
     end if
 
-    !CGZ MOVED THIS PART TO MPI_IN_PLACE (line 2467)
-    !**********************************************************
-! Receptor concentrations    
-  !  if (lroot) then
-  !    call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
-  !         & mp_comm_used,mp_ierr)
-  !    if (mp_ierr /= 0) goto 600
-  !  else
-  !    call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
-  !         & mp_comm_used,mp_ierr)
-  !  end if
-    !**********************************************************
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 

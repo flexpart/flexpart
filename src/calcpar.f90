@@ -45,12 +45,6 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   !   Marian Harustak, 12.5.2017                                               *
   !     - Merged calcpar and calcpar_gfs into one routine using if-then        *
   !       for meteo-type dependent code                                        *
-  !                                                                            *
-  !                                                                            *
-  !   Don Morton, 13.10.2017                                                   *
-  !     - Repairing problems from merger and documenting the merger of         *
-  !       Harustak                                                             *
-  !                                                                            *
   !*****************************************************************************
 
   !*****************************************************************************
@@ -81,18 +75,11 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   integer :: n,ix,jy,i,kz,lz,kzmin,llev,loop_start
   real :: ttlev(nuvzmax),qvlev(nuvzmax),obukhov,scalev,ol,hmixplus
   real :: ulev(nuvzmax),vlev(nuvzmax),ew,rh,vd(maxspec),subsceff,ylat
-  real :: altmin,tvold,pold,zold,pint,tv,zlev(nuvzmax),hmixdummy
+  real :: altmin,tvold,pold,zold,pint,tv,zlev(nuvzmax),hmixdummy,akzdummy
   real :: uuh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: vvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real :: pvh(0:nxmax-1,0:nymax-1,nuvzmax)
   real,parameter :: const=r_air/ga
-
-  !! DJM - using these as meaningless arguments to the obukhov function call
-  !!   For the GFS version, gfs_dummy_arg(nwzmax) is used in place of the
-  !!   akm(nwzmax) and bkm(nwzmax) used in the call to ECMWF version
-  !!   For the ECMWF version, ecmwf_dummy_arg is used in place of the
-  !!   akz(llev) used in the call to the GFS version.
-  REAL :: ecmwf_dummy_arg, gfs_dummy_arg(nwzmax)
 
   !write(*,*) 'in calcpar writting snowheight'
   !***********************************
@@ -137,36 +124,6 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
   ! 2) Calculation of inverse Obukhov length scale
   !***********************************************
 
-!!   ..... Documentation by Don Morton, 13 Oct 2017 .....
-!
-!
-!    This subroutine is a result of merging an ECMWF and a GFS version.
-!    In the case of the call to the obukhov() function, originally the  
-!    call for ECMWF looked like:
-!
-!      ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-!              tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm)
-!
-!
-!    and the call for GFS looked like:
-!
-!      ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-!              tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akz(llev))
-!
-!    Harustek had also merged the ECMWF and GFS obukhov functions, and the
-!    new "merged" parameter list looked something like
-!
-!       ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-!           tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,
-!           akz(llev),metdata_format)
-!
-!    For the ECMWF call, the akz(llev) argument was problematic, and the
-!    logic behind the argument lists was confusing and not documented.  I've
-!    tried to resolve this by creating two new variables, gfs_dummy_arg and
-!    ecmwf_dummy_arg, and using those where appropriate in the call to the
-!    obukhov function
-!
-
       if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
         ! NCEP version: find first level above ground
         llev = 0
@@ -179,13 +136,11 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
 
         ! calculate inverse Obukhov length scale with tth(llev)
         ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-&           tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n), &
-&           gfs_dummy_arg, gfs_dummy_arg, akz(llev), metdata_format)
+             tth(ix,jy,llev,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akz(llev),metdata_format)
       else
         llev=0
         ol=obukhov(ps(ix,jy,1,n),tt2(ix,jy,1,n),td2(ix,jy,1,n), &
-            tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm, &
-&           ecmwf_dummy_arg, metdata_format)
+            tth(ix,jy,2,n),ustar(ix,jy,1,n),sshf(ix,jy,1,n),akm,bkm,akzdummy,metdata_format)
       end if
 
       if (ol.ne.0.) then
@@ -207,8 +162,8 @@ subroutine calcpar(n,uuh,vvh,pvh,metdata_format)
 
       if (metdata_format.eq.GRIBFILE_CENTRE_NCEP) then
         ! NCEP version hmix has been read in in readwind.f, is therefore not calculated here
-        call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
-             ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
+      call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &
+           ulev,vlev,nuvz,akz,bkz,sshf(ix,jy,1,n),tt2(ix,jy,1,n), &
              td2(ix,jy,1,n),hmixdummy,wstar(ix,jy,1,n),hmixplus,metdata_format)
       else
         call richardson(ps(ix,jy,1,n),ustar(ix,jy,1,n),ttlev,qvlev, &

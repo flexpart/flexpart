@@ -531,7 +531,7 @@ subroutine timemanager(metdata_format)
                   griduncn(:,:,:,:,:,:,:)=0.
                 end if
 
-              else  ! :TODO: check for zeroing in the netcdf module
+              else
                 call concoutput_surf_nest(itime,outnum)
               end if
             else
