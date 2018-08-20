@@ -1,0 +1,30 @@
+GRIB1| Level| flexpart | flexpart | flexpart               |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type | Name     | Units    | Description            |Discp|Catgy|Param|Level|
+-----+------+----------+----------+------------------------+-----------------------+
+ 130 | 109  | TT       | K        | Temperature            |  0  |  0  |  0  | 105 |
+ 131 | 109  | UU       | m s-1    | U                      |  0  |  2  |  2  | 105 |
+ 132 | 109  | VV       | m s-1    | V                      |  0  |  2  |  3  | 105 |
+ 133 | 109  | QV       | kg kg-1  | Specific humidity      |  0  |  1  |  0  | 105 |
+ 134 | 1    | PS       | Pa       | Surface pressure       |  0  |  3  |  0  |  1  |
+ 135 | 109  | ETADOT   | Pa s-1   | Vertical velocity      |  0  |  2  |  32 | 105 |
+ 141 | 1    | SD       | m        | Snow depth             |  0  |  1  |  11 |  1  |
+ 151 | 1    | MSL      | Pa       | Sea-level Pressure     |  0  |  3  |  0  | 101 |
+ 164 | 1    | TCC      | (0-1)    | Total cloud cover      | 192 | 128 | 164 |  1  | 
+ 165 | 1    | U10      | m s-1    | 10m U                  |  0  |  2  |  2  | 103 | 
+ 166 | 1    | V10      | m s-1    | 10m V                  |  0  |  2  |  3  | 103 | 
+ 167 | 1    | T2       | K        | 2m Temperature         |  0  |  0  |  0  | 103 | 
+ 168 | 1    | TD2      | K        | 2m Dewpoint            |  0  |  0  |  6  | 103 | 
+ 142 | 1    | LSPREC   | m        | Large scale precip     | 192 | 128 | 142 |  1  | 
+ 143 | 1    | CONVPREC | m        | Convective precip      |  0  |  1  | 10  |  1  | 
+ 146 | 1    | SHF      | J m-2    | Sensible heat flux     |  0  |  0  | 11  |  1  | 
+ 176 | 1    | SR       | J m-2    | Solar radiation        |  0  |  4  |  9  |  1  | 
+ 180 | 1    | EWSS     | N m-2 s  | EW turb surf stress    |  0  |  2  | 38  |  1  | 
+ 181 | 1    | NSSS     | N m-2 s  | NS turb surf stress    |  0  |  2  | 37  |  1  | 
+ 129 | 1    | ORO      | m2 s2??? | Surface geopotential   |  0  |  3  |  4  |  1  |
+ 160 | 1    | EXCESSORO| none     | Std dev of orography   | 192 | 128 | 160 |  1  |
+ 172 | 1    | LSM      | 0/1 Flag | Land/Sea flag          |  2  |  0  |  0  |  1  |
+ 246 | 109  | CLWC     | kg/kg    | Cloud Liquid Water     |  0  | 1  |  83  | 105 |
+ 247 | 109  | CIWC     | kg/kg    | Cloud Ice Water        |  0  | 1  |  84  | 105 |
+ 201031| 109  | QC      | kg/kg    | Cloud Total Water      | 192  | 201  | 31  | 105 |
+-----+------+----------+----------+------------------------+-----------------------+
+

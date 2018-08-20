@@ -506,7 +506,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
       !!
       DO j=0,nyn(l)-1
         DO i=0,nxn(l)-1
-            convprecn(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)
+! ESO: Awaiting CTBTO clarification, conversion factor=1000 added for now
+            convprecn(i,j,1,n,l) =  zsec4(nxn(l)*(nyn(l)-j-1)+i+1)/1000.
         END DO
       END DO
       DO j=0,nyn(l)-1
