@@ -207,9 +207,9 @@ subroutine getfields(itime,nstop,metdata_format)
     end do
 60  indmin=indj
 
-   if (WETBKDEP) then
-        call writeprecip(itime,memind(1))
-   endif
+    if (WETBKDEP) then
+      call writeprecip(itime,memind(1))
+    endif
 
   endif
 

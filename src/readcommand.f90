@@ -237,8 +237,8 @@ subroutine readcommand
     read(unitcommand,*) nested_output
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) linit_cond
-    if (old) call skplin(3,unitcommand)
-    read(unitcommand,*) linversionout      !added by RT
+    !if (old) call skplin(3,unitcommand)
+    !read(unitcommand,*) linversionout      !added by RT
     if (old) call skplin(3,unitcommand)
     read(unitcommand,*) surf_only
     ! Removed for backwards compatibility.

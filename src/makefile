@@ -139,7 +139,7 @@ OBJECTS_SERIAL = \
 	concoutput_surf.o	concoutput_surf_nest.o	\
 	concoutput_inversion_nest.o 	\
 	concoutput_inversion.o \
-	getfields.o
+	getfields.o readwind_ecmwf.o
 
 ## For MPI version 
 OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
