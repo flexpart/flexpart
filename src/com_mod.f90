@@ -120,6 +120,9 @@ module com_mod
   integer :: lnetcdfout
   ! lnetcdfout   1 for netcdf grid output, 0 if not. Set in COMMAND (namelist input)
 
+  integer :: linversionout
+  ! linversionout 1 for one grid_time output file for each release containing all timesteps
+
   integer :: nageclass,lage(maxageclass)
 
   ! nageclass               number of ageclasses for the age spectra calculation
@@ -360,7 +363,9 @@ module com_mod
   real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !liquid   [kg/kg]
   real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !ice      [kg/kg]
   real :: clw(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0  !combined [m3/m3]
-
+! RLT add pressure and dry air density
+  real :: prs(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: rho_dry(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: pv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: rho(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
@@ -382,6 +387,7 @@ module com_mod
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
   ! uupol,vvpol [m/s]    wind components in polar stereographic projection
   ! tt [K]               temperature data
+  ! prs                  air pressure
   ! qv                   specific humidity data
   ! pv (pvu)             potential vorticity
   ! rho [kg/m3]          air density

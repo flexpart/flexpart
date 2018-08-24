@@ -221,6 +221,11 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   endif
   ixp=ix+1
   jyp=jy+1
+  ! fix (Espen 02.05.2017)
+  if(jyp>=nymax) then
+    write(*,*) 'WARNING: advance.f90 jyp>nymax'
+    jyp=jyp-1
+  endif
 
 
  ! Determine the lower left corner and its distance to the current position

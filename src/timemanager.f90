@@ -407,7 +407,16 @@ subroutine timemanager(metdata_format)
               call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
 #endif
             else
-              call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              if (linversionout.eq.1) then
+                call concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                if (verbosity.eq.1) then
+                  print*,'called concoutput_inversion'
+                  call system_clock(count_clock)
+                  write(*,*) 'system clock',count_clock - count_clock0 
+                endif
+              else
+                call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              endif
               if (verbosity.eq.1) then
                 print*,'called concoutput_surf '
                 call system_clock(count_clock)
@@ -420,8 +429,12 @@ subroutine timemanager(metdata_format)
             if (lnetcdfout.eq.0) then
               if (surf_only.ne.1) then
                 call concoutput_nest(itime,outnum)
-              else 
-                call concoutput_surf_nest(itime,outnum)
+              else
+                if(linversionout.eq.1) then
+                  call concoutput_inversion_nest(itime,outnum)
+                else 
+                  call concoutput_surf_nest(itime,outnum)
+                endif
               endif
             else
 #ifdef USE_NCF
@@ -729,7 +742,13 @@ subroutine timemanager(metdata_format)
 
   if (ipout.eq.2) call partoutput(itime)     ! dump particle positions
 
-  if (linit_cond.ge.1) call initial_cond_output(itime)   ! dump initial cond. field
+  if (linit_cond.ge.1) then
+    if(linversionout.eq.1) then
+      call initial_cond_output_inversion(itime)   ! dump initial cond. field
+    else
+      call initial_cond_output(itime)   ! dump initial cond. fielf
+    endif
+  endif
 
   !close(104)
 
