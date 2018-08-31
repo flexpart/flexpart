@@ -45,6 +45,7 @@ SHELL = /bin/bash
 #  VERSION and CHANGES
 #    v1.0 as found in git branch dev on flexpart.eu, 2018-06-08
 #    v1.1 PS, make the file more useful for non-NILU users
+#    v1.2 PS, bugfix netcdf_output_mod dependency (thanks to C. Talianu)
 # 
 ################################################################################
 
@@ -63,22 +64,22 @@ FLEXPART-SERIAL = FLEXPART
 
 ifneq ($(gcc), 4.9)
 # make sure that all paths correspond to your system
-	F90	  = gfortran
-	MPIF90    = mpifort
+	F90	 = gfortran
+	MPIF90   = mpifort
 
-	INCPATH1  = /usr/include	
-	INCPATH2  = /usr/include
-	LIBPATH1  = /usr/lib
+	INCPATH1 = /usr/include	
+	INCPATH2 = /usr/include
+	LIBPATH1 = /usr/lib
 else 
 # NILU: Compiled libraries under user ~flexpart, gfortran v4.9
 	ROOT_DIR = /homevip/flexpart/
 	ROOT_DIR = /homevip/flexpart/
 
-	F90	  = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
-	MPIF90    = ${ROOT_DIR}/bin/mpifort
+	F90	 = ${ROOT_DIR}/gcc-4.9.1/bin/gfortran
+	MPIF90   = ${ROOT_DIR}/bin/mpifort
 
-	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
-	INCPATH2  = ${ROOT_DIR}/include
+	INCPATH1 = ${ROOT_DIR}/gcc-4.9.1/include	
+	INCPATH2 = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
 endif
 
@@ -89,7 +90,6 @@ ifeq ($(ncf), yes)
 else
 	NCOPT = -UUSE_NCF
 endif
-
 
 
 #add path to gributils to default searchpath of make
@@ -306,10 +306,17 @@ distance2.o: par_mod.o
 drydepokernel.o: com_mod.o par_mod.o unc_mod.o
 drydepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 erf.o: par_mod.o
-FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o check_gribfile_mod.o
-FLEXPART.o: check_gribfile_mod.o random_mod.o conv_mod.o com_mod.o par_mod.o point_mod.o 
-FLEXPART_MPI.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o point_mod.o \
-	random_mod.o netcdf_output_mod.o check_gribfile_mod.o
+ifeq ($(ncf), yes)
+  FLEXPART.o:     com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o \
+    netcdf_output_mod.o check_gribfile_mod.o
+  FLEXPART_MPI.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o \
+    netcdf_output_mod.o check_gribfile_mod.o mpi_mod.o
+else
+  FLEXPART.o:     com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o \
+    check_gribfile_mod.o
+  FLEXPART_MPI.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o \
+    check_gribfile_mod.o mpi_mod.o
+endif
 fluxoutput.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
 get_settling.o: com_mod.o par_mod.o
 getfields.o: com_mod.o par_mod.o check_gribfile_mod.o
@@ -405,10 +412,17 @@ richardson.o: par_mod.o check_gribfile_mod.o
 scalev.o: par_mod.o
 shift_field.o: par_mod.o
 shift_field_0.o: par_mod.o
-timemanager.o: com_mod.o flux_mod.o netcdf_output_mod.o oh_mod.o outg_mod.o \
-	par_mod.o point_mod.o unc_mod.o xmass_mod.o
-timemanager_mpi.o: com_mod.o flux_mod.o mpi_mod.o oh_mod.o outg_mod.o \
-	par_mod.o point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o	
+ifeq ($(ncf), yes)
+  timemanager.o:     par_mod.o com_mod.o flux_mod.o oh_mod.o outg_mod.o \
+	  point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o
+  timemanager_mpi.o: par_mod.o com_mod.o flux_mod.o oh_mod.o outg_mod.o \
+	  point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o mpi_mod.o 
+else
+  timemanager.o:     par_mod.o com_mod.o flux_mod.o oh_mod.o outg_mod.o \
+	  point_mod.o unc_mod.o xmass_mod.o
+  timemanager_mpi.o: par_mod.o com_mod.o flux_mod.o oh_mod.o outg_mod.o \
+	  point_mod.o unc_mod.o xmass_mod.o mpi_mod.o 
+endif
 unc_mod.o: par_mod.o
 verttransform_ecmwf.o: cmapf_mod.o com_mod.o par_mod.o 
 verttransform_gfs.o: cmapf_mod.o com_mod.o par_mod.o
