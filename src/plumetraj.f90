@@ -32,6 +32,9 @@ subroutine plumetraj(itime)
   !                                                                            *
   !     24 January 2002                                                        *
   !                                                                            *
+  !     2018-09-10, Petra Seibert: increase output width for time in sec       *
+  !       small improvements in code layout, name big loops                    *
+  !                                                                            *
   ! Variables:                                                                 *
   ! fclust          fraction of particles belonging to each cluster            *
   ! hmixcenter      mean mixing height for all particles                       *
@@ -76,10 +79,10 @@ subroutine plumetraj(itime)
   dtt=1./(dt1+dt2)
 
 
-  ! Loop about all release points
-  !******************************
+  ! Loop over all release points
+  !*****************************
 
-  do j=1,numpoint
+  point_loop: do j=1,numpoint
     if (abs(ireleasestart(j)-itime).gt.lage(nageclass)) goto 10
     topocenter=0.
     hmixcenter=0.
@@ -92,7 +95,7 @@ subroutine plumetraj(itime)
     zrmsdist=0.
 
     n=0
-    do i=1,numpart
+    particle_loop: do i=1,numpart
       if (itra1(i).ne.itime) goto 20
       if (npoint(i).ne.j) goto 20
       n=n+1
@@ -124,9 +127,9 @@ subroutine plumetraj(itime)
   !***********
 
       topo=p1*oro(ix ,jy) &
-           + p2*oro(ixp,jy) &
-           + p3*oro(ix ,jyp) &
-           + p4*oro(ixp,jyp)
+         + p2*oro(ixp,jy) &
+         + p3*oro(ix ,jyp) &
+         + p4*oro(ixp,jyp)
       topocenter=topocenter+topo
 
   ! Potential vorticity
@@ -150,9 +153,9 @@ subroutine plumetraj(itime)
         do m=1,2
           indexh=memind(m)
           pv1(m)=p1*pv(ix ,jy ,ind,indexh) &
-               +p2*pv(ixp,jy ,ind,indexh) &
-               +p3*pv(ix ,jyp,ind,indexh) &
-               +p4*pv(ixp,jyp,ind,indexh)
+                +p2*pv(ixp,jy ,ind,indexh) &
+                +p3*pv(ix ,jyp,ind,indexh) &
+                +p4*pv(ixp,jyp,ind,indexh)
         end do
         pvprof(ind-indz+1)=(pv1(1)*dt2+pv1(2)*dt1)*dtt
       end do
@@ -172,14 +175,14 @@ subroutine plumetraj(itime)
         indexh=memind(m)
 
         tr(m)=p1*tropopause(ix ,jy ,1,indexh) &
-             + p2*tropopause(ixp,jy ,1,indexh) &
-             + p3*tropopause(ix ,jyp,1,indexh) &
-             + p4*tropopause(ixp,jyp,1,indexh)
+            + p2*tropopause(ixp,jy ,1,indexh) &
+            + p3*tropopause(ix ,jyp,1,indexh) &
+            + p4*tropopause(ixp,jyp,1,indexh)
 
         hm(m)=p1*hmix(ix ,jy ,1,indexh) &
-             + p2*hmix(ixp,jy ,1,indexh) &
-             + p3*hmix(ix ,jyp,1,indexh) &
-             + p4*hmix(ixp,jyp,1,indexh)
+            + p2*hmix(ixp,jy ,1,indexh) &
+            + p3*hmix(ix ,jyp,1,indexh) &
+            + p4*hmix(ixp,jyp,1,indexh)
       end do
 
       hmixi=(hm(1)*dt2+hm(2)*dt1)*dtt
@@ -190,9 +193,8 @@ subroutine plumetraj(itime)
       zl(n)=zl(n)+topo        ! convert to height asl
       hmixcenter=hmixcenter+hmixi
 
-
 20    continue
-    end do
+    end do particle_loop
 
 
   ! Make statistics for all plumes with n>0 particles
@@ -233,19 +235,16 @@ subroutine plumetraj(itime)
   ! Write out results in trajectory data file
   !******************************************
 
-      write(unitouttraj,'(i5,i8,2f9.4,4f8.1,f8.2,4f8.1,3f6.1,&
-           &5(2f8.3,f7.0,f6.1,f8.1))')&
-           &j,itime-(ireleasestart(j)+ireleaseend(j))/2, &
+      write (unitouttraj,901) j,itime-(ireleasestart(j)+ireleaseend(j))/2, &
            xcenter,ycenter,zcenter,topocenter,hmixcenter,tropocenter, &
-           pvcenter,rmsdist,rms,zrmsdist,zrms,hmixfract,pvfract, &
-           tropofract, &
-           (xclust(k),yclust(k),zclust(k),fclust(k),rmsclust(k), &
-           k=1,ncluster)
+           pvcenter,rmsdist,rms,zrmsdist,zrms,hmixfract,pvfract,tropofract, &
+           (xclust(k),yclust(k),zclust(k),fclust(k),rmsclust(k), k=1,ncluster)
+901   format(i5,i10,2f9.4,4f8.1,f8.2,4f8.1,3f6.1,5(2f8.3,f7.0,f6.1,f8.1))    
     endif
 
 
 10  continue
-  end do
+  end do point_loop
 
 
 end subroutine plumetraj
