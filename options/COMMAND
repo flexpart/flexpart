@@ -1,4 +1,4 @@
-&COMMAND
+&nml_command,
  LDIRECT=          1,
  IBDATE=   20170102,
  IBTIME=     060000,
