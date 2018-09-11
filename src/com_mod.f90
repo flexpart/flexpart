@@ -25,7 +25,7 @@ module com_mod
   character :: path(numpath+2*maxnests)*120
   integer :: length(numpath+2*maxnests)
   character(len=256) :: pathfile, flexversion, flexversion_major, arg1, arg2
-  character(len=256) :: ohfields_path
+  character(len=256) :: path_ohfields
   
   ! path                    path names needed for trajectory model
   ! length                  length of path names needed for trajectory model
@@ -33,7 +33,7 @@ module com_mod
   ! flexversion             version of flexpart (descriptive long string)
   ! flexversion_major       version of flexpart (major version number)
   ! arg                     input arguments from launch at command line
-  ! ohfields_path           path to binary files for OH fields
+  ! path_ohfields           path to binary files for OH fields
 
   !********************************************************
   ! Variables defining the general model run specifications
@@ -72,7 +72,7 @@ module com_mod
   integer :: mquasilag,nested_output,ind_source,ind_receptor
   integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond,surf_only
   logical :: turbswitch
-  integer :: cblflag !added by mc for cbl
+  integer :: iflagcbl !added by mc for cbl
 
   ! ctl      factor, by which time step must be smaller than Lagrangian time scale
   ! ifine    reduction factor for time step used for vertical wind
@@ -103,7 +103,7 @@ module com_mod
   ! turbswitch              determines how the Markov chain is formulated
 
   ! ind_rel and ind_samp  are used within the code to change between mass and mass-mix (see readcommand.f)
-  ! cblflag !: 1 activate cbl skewed pdf routines with bi-gaussina pdf whan OL<0 added by mc
+  ! iflagcbl !: 1 activate cbl skewed pdf routines with bi-gaussina pdf whan OL<0 added by mc
 
 
   integer :: mintime,itsplit

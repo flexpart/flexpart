@@ -157,7 +157,7 @@ subroutine initialize(itime,ldt,up,vp,wp, &
     wp=rannumb(nrand+2)
     if (.not.turbswitch) then     ! modified by mc
       wp=wp*sigw
-    else if (cblflag.eq.1) then   ! modified by mc
+    else if (iflagcbl.eq.1) then   ! modified by mc
       if(-h/ol.gt.5) then
 !if (ol.lt.0.) then
 !if (ol.gt.0.) then !by mc : only for test correct is lt.0

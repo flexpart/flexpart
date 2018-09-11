@@ -420,7 +420,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
           if (dtftlw.lt..5) then
   !*************************************************************
   !************** CBL options added by mc see routine cblf90 ***
-            if (cblflag.eq.1) then  !modified by mc
+            if (iflagcbl.eq.1) then  !modified by mc
               if (-h/ol.gt.5) then  !modified by mc
               !if (ol.lt.0.) then   !modified by mc  
               !if (ol.gt.0.) then   !modified by mc : for test
@@ -514,7 +514,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
         endif
 
       end do
-      if (cblflag.ne.1) nrand=nrand+i
+      if (iflagcbl.ne.1) nrand=nrand+i
 
   ! Determine time step for next integration
   !*****************************************

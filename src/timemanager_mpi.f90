@@ -875,7 +875,7 @@ subroutine timemanager(id_centre)
 
 ! Output to keep track of the numerical instabilities in CBL simulation
 ! and if they are compromising the final result (or not):
-    if (cblflag.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
+    if (iflagcbl.eq.1) print *,j,itime,'nan_synctime',nan_count,'nan_tl',total_nan_intl  
 
 
   end do ! itime=0,ideltas,lsynctime

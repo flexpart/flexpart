@@ -28,8 +28,12 @@ subroutine readageclasses
   !                                                                            *
   !     Author: A. Stohl                                                       *
   !     20 March 2000                                                          *
+  !
   !     HSO, 1 July 2014                                                       *
   !     Added optional namelist input                                          *
+  !                                                                            *
+  !     PS, 6/2015-9/2018 some variable names changed as in readreleases.f90   *
+  !       catch nageclass>maxage properly                                      *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -46,11 +50,11 @@ subroutine readageclasses
 
   integer :: i
 
-  ! namelist help variables
-  integer :: readerror
+  ! namelist aux variables
+  integer :: ios
 
   ! namelist declaration
-  namelist /ageclass/ &
+  namelist /nml_ageclass/ &
     nageclass, &
     lage
 
@@ -70,39 +74,33 @@ subroutine readageclasses
   ! open the AGECLASSSES file and read user options
   !************************************************
 
-  open(unitageclasses,file=path(1)(1:length(1))//'AGECLASSES',form='formatted',status='old',err=999)
+  open(unitageclasses,file=path(1)(1:length(1))//'AGECLASSES', &
+    form='formatted',status='old',err=999)
 
   ! try to read in as a namelist
-  read(unitageclasses,ageclass,iostat=readerror)
+  read(unitageclasses, nml_ageclass, iostat=ios)
   close(unitageclasses)
 
-  if ((nageclass.lt.0).or.(readerror.ne.0)) then
-    open(unitageclasses,file=path(1)(1:length(1))//'AGECLASSES',status='old',err=999)
-    do i=1,13
-      read(unitageclasses,*)
-    end do
-    read(unitageclasses,*) nageclass
-    read(unitageclasses,*) lage(1)
-    do i=2,nageclass
-      read(unitageclasses,*) lage(i)
+  if (ios .ne. 0) then ! failed to read nml, assume simple text
+    open(unitageclasses,file=path(1)(1:length(1))// &
+      'AGECLASSES',status='old',err=999)
+    call skplin(13,unitageclasses)
+    read(unitageclasses,*) nageclass ! number of classes
+    if (nageclass.gt.maxageclass) goto 1001
+    do i=1,nageclass
+      read(unitageclasses,*) lage(i) ! max age per classes
     end do
     close(unitageclasses)
   endif
+
+  if (nageclass.lt.1) goto 1002
 
   ! write ageclasses file in namelist format to output directory if requested
   if (nmlout.and.lroot) then
-    open(unitageclasses,file=path(2)(1:length(2))//'AGECLASSES.namelist',err=1000)
-    write(unitageclasses,nml=ageclass)
+    open(unitageclasses,file=path(2)(1:length(2))//'AGECLASSES.namelist', &
+      err=1000)
+    write(unitageclasses,nml=nml_ageclass)
     close(unitageclasses)
-  endif
-
-  if (nageclass.gt.maxageclass) then
-    write(*,*) ' #### FLEXPART MODEL ERROR! NUMBER OF AGE     #### '
-    write(*,*) ' #### CLASSES GREATER THAN MAXIMUM ALLOWED.   #### '
-    write(*,*) ' #### CHANGE SETTINGS IN FILE AGECLASSES OR   #### '
-    write(*,*) ' #### RECOMPILE WITH LARGER MAXAGECLASS IN    #### '
-    write(*,*) ' #### FILE PAR_MOD.                        #### '
-    stop
   endif
 
   if (lage(1).le.0) then
@@ -125,7 +123,7 @@ subroutine readageclasses
 
 999   write(*,*) ' #### FLEXPART MODEL ERROR! FILE "AGECLASSES" #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(1)(1:length(1))
+  write(*,'(a)') trim(path(1))
   stop
 
 1000  write(*,*) ' #### FLEXPART MODEL ERROR! FILE "AGECLASSES" #### '
@@ -133,5 +131,18 @@ subroutine readageclasses
   write(*,'(a)') path(2)(1:length(2))
   stop
 
+1001 continue
+    write(*,*) ' #### FLEXPART MODEL ERROR! NUMBER OF AGE     #### '
+    write(*,*) ' #### CLASSES GREATER THAN MAXIMUM ALLOWED.   #### '
+    write(*,*) ' #### CHANGE SETTINGS IN FILE AGECLASSES OR   #### '
+    write(*,*) ' #### RECOMPILE WITH LARGER MAXAGECLASS IN    #### '
+    write(*,*) ' #### FILE PAR_MOD.                           #### '
+    stop
+
+1002 continue
+    write(*,*) ' #### FLEXPART MODEL ERROR! NUMBER OF AGE     #### '
+    write(*,*) ' #### CLASSES < 1                             #### '
+    write(*,*) ' #### CHANGE SETTINGS IN FILE AGECLASSES      #### '
+    stop
 
 end subroutine readageclasses

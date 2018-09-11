@@ -28,8 +28,9 @@ subroutine readoutgrid
   !     Author: A. Stohl                                                       *
   !                                                                            *
   !     4 June 1996                                                            *
-  !     HSO, 1 July 2014
-  !     Added optional namelist input
+  !     HSO, 1 July 2014: Add optional namelist input                          *
+  !     PS, 6/2015-9/2018: read regular input with free format                 *
+  !       simplify code and rename some variables                              *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -50,64 +51,66 @@ subroutine readoutgrid
 
   implicit none
 
-  integer :: i,j,stat
-  real :: outhelp,xr,xr1,yr,yr1
+  integer :: i,kz,istat
+  real :: xr,xr1,yr,yr1
   real,parameter :: eps=1.e-4
 
   ! namelist variables
   integer, parameter :: maxoutlev=500
-  integer :: readerror
-  real,allocatable, dimension (:) :: outheights
+  integer :: ios
+  real,allocatable, dimension (:) :: outheights,outaux
+  logical :: lnml
 
   ! declare namelist
-  namelist /outgrid/ &
+  namelist /nml_outgrid/ &
     outlon0,outlat0, &
     numxgrid,numygrid, &
     dxout,dyout, &
-    outheights
+    outheight
 
-  ! allocate large array for reading input
-  allocate(outheights(maxoutlev),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate outheights'
-
-  ! helps identifying failed namelist input
-  dxout=-1.0
-  outheights=-1.0
+! allocate outheights for nml read with max dimension
+  allocate(outheights(maxoutlev),outaux(maxoutlev),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate outheights'
 
   ! Open the OUTGRID file and read output grid specifications
   !**********************************************************
 
-  open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID',status='old',form='formatted',err=999)
+  outheight(:) = -999. ! initialise for later finding #valid levels
+  open(unitoutgrid,file=trim(path(1))//'OUTGRID',status='old',&
+    form='formatted',err=999)
 
   ! try namelist input
-  read(unitoutgrid,outgrid,iostat=readerror)
+  read(unitoutgrid,nml_outgrid,iostat=ios)
   close(unitoutgrid)
 
-  if ((dxout.le.0).or.(readerror.ne.0)) then
+  if (ios .eq. 0) then ! namelist works
 
-    readerror=1
+    lnml = .true.
 
-    open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID',status='old',err=999)
+  else ! read as regular text
 
+    lnml = .false.
+
+    open(unitoutgrid,file=trim(path(1))//'OUTGRID',status='old',err=999)
     call skplin(5,unitoutgrid)
 
-    ! 1.  Read horizontal grid specifications
+   ! Read horizontal grid specifications
     !****************************************
 
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f11.4)') outlon0
+    read(unitoutgrid,*) outlon0
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f11.4)') outlat0
+    read(unitoutgrid,*) outlat0
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,i5)') numxgrid
+    read(unitoutgrid,*) numxgrid
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,i5)') numygrid
+    read(unitoutgrid,*) numygrid
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f12.5)') dxout
+    read(unitoutgrid,*) dxout
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f12.5)') dyout
+    read(unitoutgrid,*) dyout
 
-  endif
+  endif ! read OUTGRID file
 
   ! Check validity of output grid (shall be within model domain)
   !*************************************************************
@@ -123,121 +126,91 @@ subroutine readoutgrid
     write(*,*) ' #### FLEXPART MODEL ERROR! PART OF OUTPUT    ####'
     write(*,*) ' #### GRID IS OUTSIDE MODEL DOMAIN. CHANGE    ####'
     write(*,*) ' #### FILE OUTGRID IN DIRECTORY               ####'
-    write(*,'(a)') path(1)(1:length(1))
+    write(*,'(a)') trim(path(1))
     stop
   endif
 
-  ! 2. Count Vertical levels of output grid
-  !****************************************
+! Read (if .not. lmnl) and count vertical levels of output grid 
+!**************************************************************
 
-  if (readerror.ne.0) then
-    j=0
-100 j=j+1
-    do i=1,3
-      read(unitoutgrid,*,end=99)
-    end do
-    read(unitoutgrid,'(4x,f7.1)',end=99) outhelp
-    if (outhelp.eq.0.) goto 99
-    goto 100
-99  numzgrid=j-1
-  else
-    do i=1,maxoutlev
-      if (outheights(i).lt.0) exit
-    end do
-    numzgrid=i-1
-  end if
+  do kz = 1,maxoutlev
+    if (lnml) then ! we have read them already
+      if (outheight(kz) .lt. 0.) exit ! 1st nondefined level
+    else
+      call skplin(3,unitoutgrid)
+      read(unitoutgrid,*,end=10) outheight(kz)
+    endif
+  end do
+10 continue  
 
-  allocate(outheight(numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate outheight'
-  allocate(outheighthalf(numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate outheighthalf'
+  numzgrid = kz - 1 ! number of outgrid levels
 
-  ! 2. Vertical levels of output grid
-  !**********************************
+! allocate the required length only, shuffle data  
+  outaux = outheight ! shuffle
 
-  if (readerror.ne.0) then
-
-    rewind(unitoutgrid)
-    call skplin(29,unitoutgrid)
-
-    do j=1,numzgrid
-      do i=1,3
-        read(unitoutgrid,*)
-      end do
-      read(unitoutgrid,'(4x,f7.1)') outhelp
-      outheight(j)=outhelp
-      outheights(j)=outhelp
-    end do
-    close(unitoutgrid)
-
-  else
-
-    do j=1,numzgrid
-      outheight(j)=outheights(j)
-    end do
-
+  deallocate(outheights)
+  allocate(outheight(numzgrid),outheighthalf(numzgrid),stat=istat)
+  if (istat .ne. 0) then
+    write(*,*) 'ERROR: could not allocate outheight and outheighthalf'
+    stop 'readoutgrid error'
   endif
 
-  ! write outgrid file in namelist format to output directory if requested
-  if (nmlout.and.lroot) then
-    ! reallocate outheights with actually required dimension for namelist writing
-    deallocate(outheights)
-    allocate(outheights(numzgrid),stat=stat)
-    if (stat.ne.0) write(*,*)'ERROR: could not allocate outheights'
+  outheight=outaux(1:numzgrid) ! shuffle back
+  deallocate (outaux) 
 
-    do j=1,numzgrid
-      outheights(j)=outheight(j)
-    end do
-
-    open(unitoutgrid,file=path(2)(1:length(2))//'OUTGRID.namelist',err=1000)
-    write(unitoutgrid,nml=outgrid)
+! write outgrid file in namelist format to output directory if requested
+  if (nmlout) then
+    open(unitoutgrid,file=trim(path(2))//'OUTGRID.namelist',err=1000)
+    write(unitoutgrid,nml=nml_outgrid)
     close(unitoutgrid)
   endif
 
   ! Check whether vertical levels are specified in ascending order
   !***************************************************************
 
-  do j=2,numzgrid
-    if (outheight(j).le.outheight(j-1)) then
-    write(*,*) ' #### FLEXPART MODEL ERROR! YOUR SPECIFICATION#### '
-    write(*,*) ' #### OF OUTPUT LEVELS IS CORRUPT AT LEVEL    #### '
-    write(*,*) ' #### ',j,'                              #### '
-    write(*,*) ' #### PLEASE MAKE CHANGES IN FILE OUTGRID.    #### '
-    endif
+  do kz=2,numzgrid
+    if (outheight(kz) .le. outheight(kz-1)) goto 998
   end do
 
   ! Determine the half levels, i.e. middle levels of the output grid
   !*****************************************************************
 
-  outheighthalf(1)=outheight(1)/2.
-  do j=2,numzgrid
-    outheighthalf(j)=(outheight(j-1)+outheight(j))/2.
+  outheighthalf(1) = 0.5*outheight(1)
+  do kz = 2,numzgrid
+    outheighthalf(kz) = 0.5*(outheight(kz-1)+outheight(kz))
   end do
 
   xoutshift=xlon0-outlon0
   youtshift=ylat0-outlat0
 
-  allocate(oroout(0:numxgrid-1,0:numygrid-1),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate oroout'
-  allocate(area(0:numxgrid-1,0:numygrid-1),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate area'
-  allocate(volume(0:numxgrid-1,0:numygrid-1,numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate volume'
-  allocate(areaeast(0:numxgrid-1,0:numygrid-1,numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate areaeast'
-  allocate(areanorth(0:numxgrid-1,0:numygrid-1,numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate areanorth'
+  allocate(oroout(0:numxgrid-1,0:numygrid-1),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate oroout'
+  allocate(area(0:numxgrid-1,0:numygrid-1),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate area'
+  allocate(volume(0:numxgrid-1,0:numygrid-1,numzgrid),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate volume'
+  allocate(areaeast(0:numxgrid-1,0:numygrid-1,numzgrid),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate areaeast'
+  allocate(areanorth(0:numxgrid-1,0:numygrid-1,numzgrid),stat=istat)
+  if (istat .ne. 0) write(*,*)'ERROR: could not allocate areanorth'
+  
   return
 
+998 continue
+  write(*,*) ' #### FLEXPART MODEL ERROR! YOUR SPECIFICATION#### '
+  write(*,*) ' #### OF OUTPUT LEVELS NOT INCREASING AT LEVEL#### '
+  write(*,*) ' #### ',kz,'                                  #### '
+  write(*,*) ' #### PLEASE MAKE CHANGES IN FILE OUTGRID.    #### '
+  STOP 'readoutgrid error'
 
 999 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(1)(1:length(1))
+  write(*,'(a)') trim(path(1))
   stop
 
 1000 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(2)(1:length(2))
+  write(*,'(a)') trim(path(2))
   stop
 
 end subroutine readoutgrid

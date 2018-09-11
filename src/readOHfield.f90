@@ -59,12 +59,12 @@ subroutine readOHfield
   real, parameter :: scalehgt=7000. ! scale height in metres
 
 
-  open(unitOH,file=trim(ohfields_path) &
+  open(unitOH,file=trim(path_ohfields) &
        //'OH_FIELDS/OH_variables.bin',status='old', &
        form='UNFORMATTED', iostat=ierr, convert='little_endian')
 
   if(ierr.ne.0) then
-    write(*,*) 'Cannot read binary OH fields in ',trim(ohfields_path)//'OH_FIELDS/OH_variables.bin'
+    write(*,*) 'Cannot read binary OH fields in ',trim(path_ohfields)//'OH_FIELDS/OH_variables.bin'
     stop
   endif
 

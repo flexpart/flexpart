@@ -28,6 +28,9 @@ subroutine readoutgrid_nest
   !     Author: A. Stohl                                                       *
   !                                                                            *
   !     4 June 1996                                                            *
+  !     HSO, 1 July 2014: Add optional namelist input                          *
+  !     PS, 6/2015-9/2018: read regular input with free format                 *
+  !       and rename some variables                                            *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -52,13 +55,11 @@ subroutine readoutgrid_nest
   real :: xr,xr1,yr,yr1
   real,parameter :: eps=1.e-4
 
-  integer :: readerror
+  integer :: ios
 
-  ! declare namelist
-  namelist /outgridn/ &
-    outlon0n,outlat0n, &
-    numxgridn,numygridn, &
-    dxoutn,dyoutn
+! declare namelist
+  namelist /nml_outgridn/ &
+    outlon0n,outlat0n,numxgridn,numygridn,dxoutn,dyoutn
 
   ! helps identifying failed namelist input
   dxoutn=-1.0
@@ -66,49 +67,52 @@ subroutine readoutgrid_nest
   ! Open the OUTGRID file and read output grid specifications
   !**********************************************************
 
-  open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',form='formatted',status='old',err=999)
+  open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',form='formatted',&
+    status='old',err=999)
 
   ! try namelist input
-  read(unitoutgrid,outgridn,iostat=readerror)
+  read(unitoutgrid,nml_outgridn,iostat=ios)
   close(unitoutgrid)
 
-  if ((dxoutn.le.0).or.(readerror.ne.0)) then
+  if (dxoutn.le.0 .or.ios.ne.0) then
 
-    open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',status='old',err=999)
+    open(unitoutgrid,file=path(1)(1:length(1))//'OUTGRID_NEST',status='old',&
+      err=999)
     call skplin(5,unitoutgrid)
 
-    ! 1.  Read horizontal grid specifications
-    !****************************************
+  ! Read horizontal grid specifications
+  ! ***********************************
 
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f11.4)') outlon0n
+    read(unitoutgrid,*) outlon0n
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f11.4)') outlat0n
+    read(unitoutgrid,*) outlat0n
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,i5)') numxgridn
+    read(unitoutgrid,*) numxgridn
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,i5)') numygridn
+    read(unitoutgrid,*) numygridn
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f12.5)') dxoutn
+    read(unitoutgrid,*) dxoutn
     call skplin(3,unitoutgrid)
-    read(unitoutgrid,'(4x,f12.5)') dyoutn
+    read(unitoutgrid,*) dyoutn
 
     close(unitoutgrid)
   endif
 
   ! write outgrid_nest file in namelist format to output directory if requested
   if (nmlout.and.lroot) then
-    open(unitoutgrid,file=path(2)(1:length(2))//'OUTGRID_NEST.namelist',err=1000)
-    write(unitoutgrid,nml=outgridn)
+    open(unitoutgrid,file=path(2)(1:length(2))//'OUTGRID_NEST.namelist',&
+      err=1000)
+    write(unitoutgrid,nml=nml_outgridn)
     close(unitoutgrid)
   endif
 
-  allocate(orooutn(0:numxgridn-1,0:numygridn-1),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate orooutn'
-  allocate(arean(0:numxgridn-1,0:numygridn-1),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate arean'
-  allocate(volumen(0:numxgridn-1,0:numygridn-1,numzgrid),stat=stat)
-  if (stat.ne.0) write(*,*)'ERROR: could not allocate volumen'
+  allocate(orooutn(0:numxgridn-1,0:numygridn-1),stat=ios)
+  if (ios.ne.0) write(*,*)'ERROR: could not allocate orooutn'
+  allocate(arean(0:numxgridn-1,0:numygridn-1),stat=ios)
+  if (ios.ne.0) write(*,*)'ERROR: could not allocate arean'
+  allocate(volumen(0:numxgridn-1,0:numygridn-1,numzgrid),stat=ios)
+  if (ios.ne.0) write(*,*)'ERROR: could not allocate volumen'
 
   ! Check validity of output grid (shall be within model domain)
   !*************************************************************
@@ -117,12 +121,12 @@ subroutine readoutgrid_nest
   yr=outlat0n+real(numygridn)*dyoutn
   xr1=xlon0+real(nxmin1)*dx
   yr1=ylat0+real(nymin1)*dy
-  if ((outlon0n+eps.lt.xlon0).or.(outlat0n+eps.lt.ylat0) &
-       .or.(xr.gt.xr1+eps).or.(yr.gt.yr1+eps)) then
+  if (outlon0n+eps.lt.xlon0 .or. outlat0n+eps.lt.ylat0 &
+    .or. xr.gt.xr1+eps .or. yr.gt.yr1+eps) then
     write(*,*) ' #### FLEXPART MODEL ERROR! PART OF OUTPUT    ####'
     write(*,*) ' #### NEST IS OUTSIDE MODEL DOMAIN. CHANGE    ####'
     write(*,*) ' #### FILE OUTGRID IN DIRECTORY               ####'
-    write(*,'(a)') path(1)(1:length(1))
+    write(*,'(a)') trim(path(1))
     stop
   endif
 
@@ -132,12 +136,12 @@ subroutine readoutgrid_nest
 
 999 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(1)(1:length(1))
+  write(*,'(a)') trim(path(1))
   stop
 
 1000 write(*,*) ' #### FLEXPART MODEL ERROR! FILE "OUTGRID"    #### '
   write(*,*) ' #### CANNOT BE OPENED IN THE DIRECTORY       #### '
-  write(*,'(a)') path(2)(1:length(2))
+  write(*,'(a)') trim(path(2))
   stop
 
 end subroutine readoutgrid_nest

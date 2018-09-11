@@ -1,20 +1,20 @@
 &RELEASES_CTRL
  NSPEC=          1,
- SPECNUM_REL=        24,
+ NUMSPEC_REL=        24,
  /
 &RELEASE
  IDATE1=   20170102,
  ITIME1=     090000,
  IDATE2=   20170102,
  ITIME2=     090000,
- LON1=    0.000    ,
- LON2=    0.000    ,
- LAT1=   0.000    ,
- LAT2=   0.000    ,
+ RLON1=    0.000    ,
+ RLON2=    0.000    ,
+ RLAT1=   0.000    ,
+ RLAT2=   0.000    ,
  Z1=    50.000       ,
  Z2=    50.000       ,
- ZKIND=     1,
- MASS=  1.0000E8    ,
- PARTS=   10000 
+ IKINDZ=     1,
+ RMASS=  1.0000E8    ,
+ NPARTS=   10000 
  COMMENT="TEST1",
  /

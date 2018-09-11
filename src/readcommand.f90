@@ -32,6 +32,7 @@ subroutine readcommand
   !     HSO, 1 July 2014: Added optional namelist input                        *
   !     Unknown, unknown: various                                              *
   !     Petra Seibert, 2018-06-08: improve error msgs                          *
+  !     PS 6/2015: Minor changes in variable names and layout                  *
   !                                                                            *
   !*****************************************************************************
   !                                                                            *
@@ -83,97 +84,97 @@ subroutine readcommand
   real(kind=dp) :: juldate
   character(len=50) :: line
   logical :: old
-  integer :: readerror
+  integer :: ios, icmdstat
 
-  namelist /command/ &
-  ldirect, &
-  ibdate,ibtime, &
-  iedate,ietime, &
-  loutstep, &
-  loutaver, &
-  loutsample, &
-  itsplit, &
-  lsynctime, &
-  ctl, &
-  ifine, &
-  iout, &
-  ipout, &
-  lsubgrid, &
-  lconvection, &
-  lagespectra, &
-  ipin, &
-  ioutputforeachrelease, &
-  iflux, &
-  mdomainfill, &
-  ind_source, &
-  ind_receptor, &
-  mquasilag, &
-  nested_output, &
-  linit_cond, &
-  lnetcdfout, &
-  surf_only, &
-  cblflag, &
-  ohfields_path
+  namelist /nml_command/ &
+    ldirect, &
+    ibdate,ibtime, &
+    iedate,ietime, &
+    loutstep, &
+    loutaver, &
+    loutsample, &
+    itsplit, &
+    lsynctime, &
+    ctl, &
+    ifine, &
+    iout, &
+    ipout, &
+    lsubgrid, &
+    lconvection, &
+    lagespectra, &
+    ipin, &
+    ioutputforeachrelease, &
+    iflux, &
+    mdomainfill, &
+    ind_source, &
+    ind_receptor, &
+    mquasilag, &
+    nested_output, &
+    linit_cond, &
+    lnetcdfout, &
+    surf_only, &
+    iflagcbl, &
+    path_ohfields
 
-  ! Presetting namelist command
-  ldirect=0
-  ibdate=20000101
-  ibtime=0
-  iedate=20000102
-  ietime=0
-  loutstep=10800
-  loutaver=10800
-  loutsample=900
-  itsplit=999999999
-  lsynctime=900
-  ctl=-5.0
-  ifine=4
-  iout=3
-  ipout=0
-  lsubgrid=1
-  lconvection=1
-  lagespectra=0
-  ipin=1
-  ioutputforeachrelease=1
-  iflux=1
-  mdomainfill=0
-  ind_source=1
-  ind_receptor=1
-  mquasilag=0
-  nested_output=0
-  linit_cond=0
-  lnetcdfout=0
-  surf_only=0 
-  cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
-  ohfields_path="../../flexin/"
+! Set default values for namelist
+    ldirect=0
+    ibdate=20000101
+    ibtime=0
+    iedate=20000102
+    ietime=0
+    loutstep=10800
+    loutaver=10800
+    loutsample=900
+    itsplit=999999999
+    lsynctime=900
+    ctl=-5.0
+    ifine=4
+    iout=3
+    ipout=0
+    lsubgrid=1
+    lconvection=1
+    lagespectra=0
+    ipin=1
+    ioutputforeachrelease=1
+    iflux=1
+    mdomainfill=0
+    ind_source=1
+    ind_receptor=1
+    mquasilag=0
+    nested_output=0
+    linit_cond=0
+    lnetcdfout=0
+    surf_only=0 
+    iflagcbl=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
+    path_ohfields="../../flexin/"
 
   !Af set release-switch
-  WETBKDEP=.false.
-  DRYBKDEP=.false.
-
+    wetbkdep=.false.
+    drybkdep=.false.
+ 
   ! Open the command file and read user options
   ! Namelist input first: try to read as namelist file
   !**************************************************************************
   open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', &
     form='formatted',err=999)
 
-  ! try namelist input (default)
-  read(unitcommand,command,iostat=readerror)
+! try namelist input
+  read(unitcommand, nml_command, iostat=ios)
   close(unitcommand)
 
   ! distinguish namelist from fixed text input
-  if ((readerror.ne.0).or.(ldirect.eq.0)) then ! parse as text file format
+
+  if (ios .ne. 0) then ! simple text file format
  
     open(unitcommand,file=path(1)(1:length(1))//'COMMAND',status='old', err=999)
 
-    ! Check the format of the COMMAND file (either in free format,
-    ! or using formatted mask)
+    ! Check the format of the COMMAND file 
+    ! (either in free format or using formatted mask)
     ! Use of formatted mask is assumed if line 10 contains the word 'DIRECTION'
     !**************************************************************************
 
     call skplin(9,unitcommand)
-    read (unitcommand,901) line
-  901   format (a)
+    read (unitcommand,900) line
     if (index(line,'LDIRECT') .eq. 0) then
       old = .false.
       if (lroot) write(*,*) 'COMMAND in old short format, &
@@ -242,7 +243,7 @@ subroutine readcommand
     read(unitcommand,*) surf_only
     ! Removed for backwards compatibility.
     ! if (old) call skplin(3,unitcommand)  !added by mc
-    ! read(unitcommand,*) cblflag          !added by mc
+    ! read(unitcommand,*) iflagcbl          !added by mc
 
     close(unitcommand)
 
@@ -251,7 +252,7 @@ subroutine readcommand
   ! write command file in namelist format to output directory if requested
   if (nmlout.and.lroot) then
     open(unitcommand,file=path(2)(1:length(2))//'COMMAND.namelist',err=998)
-    write(unitcommand,nml=command)
+    write(unitcommand,nml=nml_command)
     close(unitcommand)
   endif
 
@@ -259,22 +260,22 @@ subroutine readcommand
 
   ! Determine how Markov chain is formulated (for w or for w/sigw)
   !***************************************************************
-  if (cblflag.eq.1) then !---- added by mc to properly set parameters for CBL simulations 
+  if (iflagcbl.eq.1) then !added by mc to set parameters for CBL simulations 
     turbswitch=.true.
-    if (lsynctime>maxtl) lsynctime=maxtl  !maxtl defined in com_mod.f90
+    if (lsynctime.gt.maxtl) lsynctime=maxtl  !maxtl defined in com_mod.f90
     if (ctl.lt.5) then
-      print *,'WARNING: CBL flag active the ratio of TLu/dt has been set to 5'
+      print*,'WARNING: CBL flag active; ctl (TLu/dt) has been set to 5'
       ctl=5.
-    end if
-    if (ifine*ctl.lt.50) then
-      ifine=int(50./ctl)+1
-
-      print *,'WARNING: CBL flag active the ratio of TLW/dt was < 50, ifine has been re-set to',ifine
-!pause
     endif
-    print *,'WARNING: CBL flag active the ratio of TLW/dt is ',ctl*ifine
-    print *,'WARNING: CBL flag active lsynctime is ',lsynctime
+    if (ifine*ctl.lt.50.) then
+      ifine=int(50./ctl)+1
+      print *,'WARNING: CBL flag active; ctl (TLW/dt) was < 50,'// &
+        ' ifine has been re-set to', ifine
+    endif
+    print*,'WARNING: CBL flag active; reduced ctl is ',ctl*ifine
+    print*,'WARNING: CBL flag active; lsynctime is ',lsynctime
   else                    !added by mc
+  ! note PS: shouldn't we print some msg as above also in the ntext case?
     if (ctl.ge.0.1) then
       turbswitch=.true.
     else
@@ -285,27 +286,27 @@ subroutine readcommand
   fine=1./real(ifine)
   ctl=1./ctl
 
-  ! Set the switches required for the various options for input/output units
-  !*************************************************************************
-  !AF Set the switches IND_REL and IND_SAMP for the release and sampling
-  !Af switches for the releasefile:
-  !Af IND_REL =  1 : xmass * rho
-  !Af IND_REL =  0 : xmass * 1
+! Set the switches required for the various options for input/output units
+!*************************************************************************
+!AF Set the switches IND_REL and IND_SAMP for the release and sampling
+!Af switches for the releasefile:
+!Af IND_REL =  1 : xmass * rho
+!Af IND_REL =  0 : xmass * 1
 
-  !Af switches for the conccalcfile:
-  !AF IND_SAMP =  0 : xmass * 1
-  !Af IND_SAMP = -1 : xmass / rho
+!Af switches for the conccalcfile:
+!AF IND_SAMP =  0 : xmass * 1
+!Af IND_SAMP = -1 : xmass / rho
 
-  !AF IND_SOURCE switches between different units for concentrations at the source
-  !Af   NOTE that in backward simulations the release of computational particles
-  !Af   takes place at the "receptor" and the sampling of p[articles at the "source".
-  !Af          1 = mass units
-  !Af          2 = mass mixing ratio units
-  !Af IND_RECEPTOR switches between different units for concentrations at the receptor
-  !Af          1 = mass units
-  !Af          2 = mass mixing ratio units
-  !            3 = wet deposition in outputfield
-  !            4 = dry deposition in outputfield
+!AF IND_SOURCE switches between different units for concentrations at the source
+!Af   NOTE that in backward simulations the release of computational particles
+!Af   takes place at the "receptor" and the sampling of p[articles at the "source".
+!Af          1 = mass units
+!Af          2 = mass mixing ratio units
+!Af IND_RECEPTOR switches between different units for concentrations at the receptor
+!Af          1 = mass units
+!Af          2 = mass mixing ratio units
+!            3 = wet deposition in outputfield
+!            4 = dry deposition in outputfield
 
   if ( ldirect .eq. 1 ) then  ! FWD-Run
   !Af set release-switch
@@ -327,6 +328,8 @@ subroutine readcommand
      else ! mass mix
         ind_samp = 0
      endif
+! note PS: why do we suddenly switch to CASE syntax??
+! not helpful.
      select case (ind_receptor)
      case (1)  !  1 .. concentration at receptor
         ind_rel = 1
@@ -336,10 +339,10 @@ subroutine readcommand
         ind_rel = 3
         if (lroot) then
           write(*,*) ' #### FLEXPART WET DEPOSITION BACKWARD MODE    #### '
-          write(*,*) ' #### Releaseheight is forced to 0 - 20km      #### '
+          write(*,*) ' #### Release height is forced to 0 - 20 km    #### '
           write(*,*) ' #### Release is performed above ground lev    #### '
         end if
-         WETBKDEP=.true.
+         wetbkdep=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      case (4)  ! 4 .. dry deposition in outputfield
          ind_rel = 4
@@ -348,7 +351,7 @@ subroutine readcommand
            write(*,*) ' #### Releaseheight is forced to 0 - 2*href    #### '
            write(*,*) ' #### Release is performed above ground lev    #### '
          end if
-         DRYBKDEP=.true.
+         drybkdep=.true.
          allocate(xscav_frac1(maxpart,maxspec))
      end select
   endif
@@ -398,14 +401,15 @@ subroutine readcommand
     mintime=lsynctime
   endif
 
-! Check for netcdf output switch
-!*******************************
+!  check for netcdf output switch (use for non-namelist input only!)
   if (iout.ge.8) then
      lnetcdfout = 1
      iout = iout - 8
 #ifndef USE_NCF
-     write(*,*) 'ERROR: netcdf output not activated during compile time but used in COMMAND file!'
-     write(*,*) 'Please recompile with netcdf library (`make [...] ncf=yes`) or use standard output format.'
+     write(*,*) 'ERROR: netcdf output not activated during compile '// &
+       'time but used in COMMAND file!'
+     write(*,*) 'Please recompile with netcdf library (`make [...] ncf=yes`)'//&
+       ' or use standard output format.'
      stop
 #endif
   endif
@@ -413,7 +417,7 @@ subroutine readcommand
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
-  if ((iout.lt.1).or.(iout.gt.6)) then
+  if (iout.lt.1 .or. iout.gt.6) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
     write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4 OR 5 FOR        #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
@@ -422,8 +426,8 @@ subroutine readcommand
   endif
 
   !AF check consistency between units and volume mixing ratio
-  if ( ((iout.eq.2).or.(iout.eq.3)).and. &
-       (ind_source.gt.1 .or.ind_receptor.gt.1) ) then
+  if ( (iout.eq.2       .or. iout.eq.3) .and. &
+       (ind_source.gt.1 .or. ind_receptor.gt.1) ) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
     write(*,*) ' #### VOLUME MIXING RATIO ONLY SUPPORTED      #### '
     write(*,*) ' #### FOR MASS UNITS (at the moment)          #### '
@@ -478,8 +482,8 @@ subroutine readcommand
 
 
   ! For domain-filling trajectories, a plume centroid trajectory makes no sense,
-  ! For backward runs, only residence time output (iout=1) or plume trajectories (iout=4),
-  ! or both (iout=5) makes sense; other output options are "forbidden"
+  ! For backward runs, only residence time output (iout=1) or plume trajectories
+  ! (iout=4), or both (iout=5) makes sense; other output options are "forbidden"
   !*****************************************************************************
 
   if (ldirect.lt.0) then
@@ -648,8 +652,11 @@ subroutine readcommand
   write(*,900)   ' #### CANNOT WRITE TO '// &
     path(2)(1:length(2))//'COMMAND.namelist'
   stop 'stopped in readcommand'
+
 999 write(*,900) ' #### FLEXPART MODEL ERROR! FILE "COMMAND"'
   write(*,900)   ' #### CANNOT OPEN '//path(1)(1:length(1))//'COMMAND'
   stop 'stopped in readcommand'
-900 format (a)
+
+900 format(a)
+
 end subroutine readcommand
