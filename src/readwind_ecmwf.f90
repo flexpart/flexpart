@@ -124,13 +124,13 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
   !  "Vtable"
   CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
   CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
-  TYPE(Vtable) :: my_vtable    ! unallocated
+  TYPE(Vtable), save :: my_vtable    ! unallocated
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
   !!  DJM
   INTEGER current_grib_level   ! this was isec1(8) in previous versions
-
+  logical :: linit=.true.
 
 
 
@@ -146,10 +146,13 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
 
 
 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !!!!  Vtable code
-  PRINT *, 'Loading Vtable: ', VTABLE_PATH
-  call vtable_load_by_name(VTABLE_PATH, my_vtable)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!  Vtable code
+  if (linit) then
+     PRINT *, 'Loading Vtable: ', VTABLE_PATH
+     call vtable_load_by_name(VTABLE_PATH, my_vtable)
+     linit=.false.
+  end if
   !! Debugging tool
 !!  PRINT *, 'Dump of Vtable...'
   ! call vtable_dump_records(my_vtable)
