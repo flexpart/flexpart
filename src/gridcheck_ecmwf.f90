@@ -119,14 +119,16 @@ subroutine gridcheck_ecmwf
   !
   !  Path to Vtable - current implementation assumes it's in cwd, named
   !  "Vtable"
-  CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
-  CHARACTER(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
-  TYPE(Vtable) :: my_vtable    ! unallocated
+  ! ESO: Changed to use default Vtable file in options directory
+  ! CHARACTER(LEN=255), PARAMETER :: VTABLE_PATH = "Vtable"
+  character(LEN=255) :: VTABLE_PATH
+  character(LEN=15) :: fpname      ! stores FLEXPART name for curr grib mesg.
+  type(Vtable) :: my_vtable    ! unallocated
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
   !!  DJM
-  INTEGER current_grib_level   ! this was isec1(8) in previous versions
+  integer current_grib_level   ! this was isec1(8) in previous versions
 
   iumax=0
   iwmax=0
@@ -140,6 +142,7 @@ subroutine gridcheck_ecmwf
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !!!!  Vtable code 
+  VTABLE_PATH = path(1)(1:length(1))//'Vtables/Vtable.ecmwf'
   PRINT *, 'Loading Vtable: ', VTABLE_PATH
   call vtable_load_by_name(VTABLE_PATH, my_vtable)
   !! Debugging tool
