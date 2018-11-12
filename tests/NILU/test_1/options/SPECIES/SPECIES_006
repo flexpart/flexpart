@@ -1,7 +1,0 @@
-&SPECIES_PARAMS
- PSPECIES="HNO2            ",
- PRELDIFF=  1.6    ,
- PHENRY=  100000.000    ,
- PF0= 0.1    ,
- PWEIGHTMOLAR=  47.0000000    ,
- /

@@ -1,7 +1,0 @@
-&SPECIES_PARAMS
- PSPECIES="PAN             ",
- PRELDIFF=  2.6    ,
- PHENRY=  3.6    ,
- PF0= 0.1    ,
- PWEIGHTMOLAR=  121.000000    ,
- /
