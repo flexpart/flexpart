@@ -5,7 +5,7 @@ To generate an overview table compile the specoverview.f90 program
 gfortran specoverview.f90 -o specoverview
 ./specoverview
 
-UPDATE FOR FLEXPART VERSION 10.3:
+UPDATE FOR FLEXPART VERSION 10.0 DEV:
 ---------------------------------------------------------------------------------------------------------------------------
 Please note that the format of the SPECIES files has changed from the previous version (9.2) of FLEXPART and it is important
 to update all SPECIES files accordingly. The use of SPECIES files from older FLEXPART versions may lead to run-time
@@ -40,7 +40,7 @@ DRY DEPOSITION
 - Gases: 
 	D is the diffusivity of water vapor and 
 	D_i is the diffusivity of the species, 
-	H is the effective Henry's constant, 
+	H is the effective Henry’s constant, 
 	f0 varies between 0 and 1 and gives the reactivity of a species relative to that of ozone. For non-reactive species f0 is 0, for slightly reactive it is 0.1 and for highly reactive it is 1. 
 	Dry deposition of gases is switched off by negative D. 
 - Particles:
