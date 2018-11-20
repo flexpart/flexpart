@@ -1,8 +1,0 @@
-&SPECIES_PARAMS
- PSPECIES="NH3             ",
- PWETA_GAS=  9.9E-05,
- PWETB_GAS= 0.62    ,
- PRELDIFF=  1.1    ,
- PHENRY=  2.0E+14,
- PWEIGHTMOLAR=  17.0000000    ,
- /

@@ -4,3 +4,5 @@ FP_ecmwf_gfortran*
 class_gribfile.mod
 .DS_Store
 output
+FLEXPART
+FLEXPART_MPI

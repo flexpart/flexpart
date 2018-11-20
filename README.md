@@ -20,12 +20,19 @@
 
 ```
 > cd src
+
+change the appropriate paths to libraries in the makefile
+
 > make 
 ```
 
 * Deployment instructions 
 
-   FLEXPART is a standalone executable   
+   FLEXPART is a standalone executable  
+   The necessary ECMWF wind fields can be obtained testing flex_ecmwf
+   The AVAILABLE file works with the default ERA 5 retrieved winds
+   In the winds are available in flex_ecmwf/work it should suffice to execute 
+   ./src/FLEXPART in the main directory  
 
 ### Contribution guidelines ###
 

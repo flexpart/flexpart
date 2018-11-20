@@ -11,7 +11,5 @@
 *time a particle is carried in the simulation. *
 *                                              *
 ************************************************
-&AGECLASS
- NAGECLASS=          1,
- LAGE=    1728000,
- /
+1          Integer        Number of age classes 
+1728000

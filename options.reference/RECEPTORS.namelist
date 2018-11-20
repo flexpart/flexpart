@@ -1,0 +1,30 @@
+&RECEPTORS
+ RECEPTOR="F15             ",
+ LON=  21.1333008    ,
+ LAT=  38.0833015    ,
+ /
+&RECEPTORS
+ RECEPTOR="NL01            ",
+ LON=  5.78329992    ,
+ LAT=  50.9166985    ,
+ /
+&RECEPTORS
+ RECEPTOR="B05             ",
+ LON=  4.34999990    ,
+ LAT=  50.7999992    ,
+ /
+&RECEPTORS
+ RECEPTOR="D27             ",
+ LON=  11.1332998    ,
+ LAT=  52.9667015    ,
+ /
+&RECEPTORS
+ RECEPTOR="D08             ",
+ LON=  8.69999981    ,
+ LAT=  53.8666992    ,
+ /
+&RECEPTORS
+ RECEPTOR="DK05            ",
+ LON=  8.13329983    ,
+ LAT=  56.0000000    ,
+ /

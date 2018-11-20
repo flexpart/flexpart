@@ -3,14 +3,14 @@
  SPECNUM_REL=        24,
  /
 &RELEASE
- IDATE1=   20120101,
+ IDATE1=   20170102,
  ITIME1=     090000,
- IDATE2=   20120101,
+ IDATE2=   20170102,
  ITIME2=     090000,
  LON1=    0.000    ,
  LON2=    0.000    ,
- LAT1=   20.00,
- LAT2=   20.00,
+ LAT1=   0.000    ,
+ LAT2=   0.000    ,
  Z1=    50.000       ,
  Z2=    50.000       ,
  ZKIND=     1,

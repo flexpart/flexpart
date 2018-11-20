@@ -1,9 +1,0 @@
-&SPECIES_PARAMS
- PSPECIES="I2-131          ",
- PDECAY=  691200.000    ,
- PWETA_GAS=  8.0E-05,
- PWETB_GAS= 0.62    ,
- PRELDIFF=  2.70    ,
- PHENRY=  100000.000    ,
- PF0= 0.1    ,
- /

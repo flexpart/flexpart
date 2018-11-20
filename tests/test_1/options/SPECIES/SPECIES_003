@@ -1,8 +1,0 @@
-&SPECIES_PARAMS
- PSPECIES="NO              ",
- PWETA_GAS=  8.0E-06,
- PWETB_GAS= 0.62    ,
- PRELDIFF=  1.2    ,
- PHENRY=  3.0E-03,
- PWEIGHTMOLAR=  30.0000000    ,
- /
