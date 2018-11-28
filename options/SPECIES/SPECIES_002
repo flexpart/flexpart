@@ -1,5 +1,5 @@
 &SPECIES_PARAMS
- PSPECIES="Ozone",            ! Tracer name
+ PSPECIES="O3",               ! Tracer name
  PDECAY=-9.9,                 ! Species half life
  PWETA_GAS=-0.9E-9,           ! Below-cloud scavenging (gases) - A (weta_gas)
  PWETB_GAS=-9.9,              ! Below-cloud scavenging (gases) - B (wetb_gas)
