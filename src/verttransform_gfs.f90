@@ -74,7 +74,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   integer :: ix,jy,kz,iz,n,kmin,kl,klp,ix1,jy1,ixp,jyp,ixm,jym
   integer :: rain_cloud_above,kz_inv
   real :: f_qvsat,pressure
-  real :: rh,lsp,convp
+  real :: rh,lsp,cloudh_min,convp,prec
   real :: rhoh(nuvzmax),pinmconv(nzmax)
   real :: ew,pint,tv,tvold,pold,dz1,dz2,dz,ui,vi
   real :: xlon,ylat,xlonr,dzdx,dzdy
@@ -223,6 +223,10 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       vv(ix,jy,1,n)=vvh(ix,jy,llev)
       tt(ix,jy,1,n)=tth(ix,jy,llev,n)
       qv(ix,jy,1,n)=qvh(ix,jy,llev,n)
+! IP & SEC, 201812 add clouds
+      if (readclouds) then
+         clwc(ix,jy,1,n)=clwch(ix,jy,llev,n)
+      endif 
       pv(ix,jy,1,n)=pvh(ix,jy,llev)
       rho(ix,jy,1,n)=rhoh(llev)
       pplev(ix,jy,1,n)=akz(llev)
@@ -230,6 +234,10 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       vv(ix,jy,nz,n)=vvh(ix,jy,nuvz)
       tt(ix,jy,nz,n)=tth(ix,jy,nuvz,n)
       qv(ix,jy,nz,n)=qvh(ix,jy,nuvz,n)
+! IP & SEC, 201812 add clouds
+      if (readclouds) then
+         clwc(ix,jy,nz,n)=clwch(ix,jy,nuvz,n)
+      endif
       pv(ix,jy,nz,n)=pvh(ix,jy,nuvz)
       rho(ix,jy,nz,n)=rhoh(nuvz)
       pplev(ix,jy,nz,n)=akz(nuvz)
@@ -241,6 +249,10 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
             vv(ix,jy,iz,n)=vv(ix,jy,nz,n)
             tt(ix,jy,iz,n)=tt(ix,jy,nz,n)
             qv(ix,jy,iz,n)=qv(ix,jy,nz,n)
+! IP & SEC, 201812 add clouds
+            if (readclouds) then
+               clwc(ix,jy,iz,n)=clwc(ix,jy,nz,n)
+            endif
             pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
             rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
             pplev(ix,jy,iz,n)=pplev(ix,jy,nz,n)
@@ -257,6 +269,11 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
             +tth(ix,jy,kz,n)*dz1)/dz
             qv(ix,jy,iz,n)=(qvh(ix,jy,kz-1,n)*dz2 &
             +qvh(ix,jy,kz,n)*dz1)/dz
+! IP & SEC, 201812 add clouds
+            if (readclouds) then
+               clwc(ix,jy,iz,n)=(clwch(ix,jy,kz-1,n)*dz2 &
+               +clwch(ix,jy,kz,n)*dz1)/dz
+            endif
             pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
             rho(ix,jy,iz,n)=(rhoh(kz-1)*dz2+rhoh(kz)*dz1)/dz
             pplev(ix,jy,iz,n)=(akz(kz-1)*dz2+akz(kz)*dz1)/dz
@@ -495,6 +512,67 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
   endif
 
 
+
+!***********************************************************************************
+! IP & SEC, 201812 GFS clouds read
+  if (readclouds) then
+! The method is loops all grids vertically and constructs the 3D matrix for clouds
+! Cloud top and cloud bottom gid cells are assigned as well as the total column
+! cloud water. For precipitating grids, the type and whether it is in or below
+! cloud scavenging are assigned with numbers 2-5 (following the old metod).
+! Distinction is done for lsp and convp though they are treated the same in regards
+! to scavenging. Also clouds that are not precipitating are defined which may be
+! to include future cloud processing by non-precipitating-clouds.
+!***********************************************************************************
+    write(*,*) 'Global NCEP fields: using cloud water'
+    clw(:,:,:,n)=0.0
+    ctwc(:,:,n)=0.0
+    clouds(:,:,:,n)=0
+! If water/ice are read separately into clwc and ciwc, store sum in clwc
+    do jy=0,nymin1
+      do ix=0,nxmin1
+        lsp=lsprec(ix,jy,1,n)
+        convp=convprec(ix,jy,1,n)
+        prec=lsp+convp
+! Find clouds in the vertical
+        do kz=1, nz-1 !go from top to bottom
+          if (clwc(ix,jy,kz,n).gt.0) then
+! assuming rho is in kg/m3 and hz in m gives: kg/kg * kg/m3 *m3/kg /m = m2/m3
+            clw(ix,jy,kz,n)=(clwc(ix,jy,kz,n)*rho(ix,jy,kz,n))*(height(kz+1)-height(kz))
+            ctwc(ix,jy,n) = ctwc(ix,jy,n)+clw(ix,jy,kz,n)
+            cloudh_min=min(height(kz+1),height(kz))
+          endif
+        end do
+
+! If Precipitation. Define removal type in the vertical
+        if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
+
+          do kz=nz,1,-1 !go Bottom up!
+            if (clw(ix,jy,kz,n).gt. 0) then ! is in cloud
+              cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+height(kz)-height(kz-1)
+              clouds(ix,jy,kz,n)=1                               ! is a cloud
+              if (lsp.ge.convp) then
+                clouds(ix,jy,kz,n)=3                            ! lsp in-cloud
+              else
+                clouds(ix,jy,kz,n)=2                             ! convp in-cloud
+              endif                                              ! convective or large scale
+            elseif((clw(ix,jy,kz,n).le.0) .and. (cloudh_min.ge.height(kz))) then ! is below cloud
+              if (lsp.ge.convp) then
+                clouds(ix,jy,kz,n)=5                             ! lsp dominated washout
+              else
+                clouds(ix,jy,kz,n)=4                             ! convp dominated washout
+              endif                                              ! convective or large scale
+            endif
+
+            if (height(kz).ge. 19000) then                        ! set a max height for removal
+              clouds(ix,jy,kz,n)=0
+            endif !clw>0
+          end do !nz
+        endif ! precipitation
+      end do
+    end do
+  else
+  write(*,*) 'Global NCEP fields: using cloud water from Parameterization'
   !   write (*,*) 'initializing clouds, n:',n,nymin1,nxmin1,nz
   !   create a cloud and rainout/washout field, clouds occur where rh>80%
   !   total cloudheight is stored at level 0
@@ -533,6 +611,7 @@ subroutine verttransform_gfs(n,uuh,vvh,wwh,pvh)
       end do
     end do
   end do
+  endif  ! IP & SEC 201812, GFS clouds read
 
 
 end subroutine verttransform_gfs
