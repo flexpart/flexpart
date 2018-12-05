@@ -297,7 +297,11 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
             cl=ctwc(ix,jy,n)*(grfraction(1)/cc)
           else                                  !parameterize cloudwater m2/m3
 !ZHG updated parameterization of cloud water to better reproduce the values coming from ECMWF
-            cl=1.6E-6*prec(1)**0.36
+! sec test
+!           cl=1E6*1E-7*prec(1)**0.3 !Sec GFS new
+            cl=1E6*2E-7*prec(1)**0.36 !Sec ECMWF new
+!           cl=2E-7*prec(1)**0.36 !Andreas
+!           cl=1.6E-6*prec(1)**0.36 !Henrik
           endif
 
 !ZHG: Calculate the partition between liquid and water phase water. 
@@ -317,6 +321,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !********
           if (dquer(ks).gt.0.) then
             S_i= frac_act/cl
+!           write(*,*) 'Si: ',S_i
 
 ! GAS
 !****
@@ -333,7 +338,9 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
           if ((readclouds.and.ngrid.eq.0).or.(readclouds_this_nest.and.ngrid.gt.0)) then
             wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)
           else
-            wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)/clouds_h
+!SEC wetscav fix
+             wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)
+!            wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)/clouds_h
           endif
         endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud

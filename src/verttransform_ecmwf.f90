@@ -107,10 +107,11 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   !ZHG 2015 temporary variables for testing
   ! real :: rcw(0:nxmax-1,0:nymax-1)
   ! real :: rpc(0:nxmax-1,0:nymax-1)
-  ! character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
+  character(len=60) :: zhgpath='/xnilu_wrk/users/sec/kleinprojekte/hertlfit/'
+  character(len=60) :: fnameH,fnameI,fnameJ
   ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
-  ! CHARACTER(LEN=3)  :: aspec
-  ! integer :: virr=0
+  CHARACTER(LEN=3)  :: aspec
+  integer :: virr=0
   !real :: tot_cloud_h
   !real :: dbg_height(nzmax) 
 !ZHG
@@ -731,8 +732,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
      ! WRITE OUT SOME TEST VARIABLES
      !********* TEST ************'**
 !teller(:)=0
-!virr=virr+1
-!WRITE(aspec, '(i3.3)'), virr
+virr=virr+1
+WRITE(aspec, '(i3.3)'), virr
 
 !if (readclouds) then
 !fnameH=trim(zhgpath)//trim(aspec)//'Vertical_placement.txt'
@@ -769,29 +770,34 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !fnameE=trim(zhgpath)//trim(aspec)//'old_cloudV.txt'
 !fnameF=trim(zhgpath)//trim(aspec)//'lsp.txt'
 !fnameG=trim(zhgpath)//trim(aspec)//'convp.txt'
+if (1.eq.2) then
+fnameH=trim(zhgpath)//trim(aspec)//'tcwc.txt'
+fnameI=trim(zhgpath)//trim(aspec)//'prec.txt'
+fnameJ=trim(zhgpath)//trim(aspec)//'cloudsh.txt'
+write(*,*) 'Writing data to file: ',fnameH
 !if (readclouds) then
 !OPEN(UNIT=111, FILE=fnameA,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=112, FILE=fnameB,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=113, FILE=fnameC,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=114, FILE=fnameD,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !else
-!OPEN(UNIT=115, FILE=fnameE,FORM='FORMATTED',STATUS = 'UNKNOWN')
-!OPEN(UNIT=116, FILE=fnameF,FORM='FORMATTED',STATUS = 'UNKNOWN')
-!OPEN(UNIT=117, FILE=fnameG,FORM='FORMATTED',STATUS = 'UNKNOWN')
+OPEN(UNIT=115, FILE=fnameH,FORM='FORMATTED',STATUS = 'UNKNOWN')
+OPEN(UNIT=116, FILE=fnameI,FORM='FORMATTED',STATUS = 'UNKNOWN')
+OPEN(UNIT=117, FILE=fnameJ,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !endif
 !
-!do ix=0,nxmin1
+do ix=0,nxmin1
 !if (readclouds) then
 !write(111,*) (icloud_stats(ix,jy,1,n),jy=0,nymin1)
 !write(112,*) (icloud_stats(ix,jy,2,n),jy=0,nymin1)
 !write(113,*) (icloud_stats(ix,jy,3,n),jy=0,nymin1)
 !write(114,*) (icloud_stats(ix,jy,4,n),jy=0,nymin1)
 !else
-!write(115,*) (cloudsh(ix,jy,n),jy=0,nymin1)    !integer
-!write(116,*) (lsprec(ix,jy,1,n),jy=0,nymin1)   !7.83691406E-02 
-!write(117,*) (convprec(ix,jy,1,n),jy=0,nymin1) !5.38330078E-02
+write(115,*) (ctwc(ix,jy,n),jy=0,nymin1)  
+write(116,*) (lsprec(ix,jy,1,n)+convprec(ix,jy,1,n),jy=0,nymin1)  
+write(117,*) (cloudsh(ix,jy,n),jy=0,nymin1) 
 !endif
-!end do
+end do
 !
 !if (readclouds) then
 !CLOSE(111)
@@ -799,9 +805,10 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !CLOSE(113)
 !CLOSE(114)
 !else
-!CLOSE(115)
-!CLOSE(116)
-!CLOSE(117)
+CLOSE(115)
+CLOSE(116)
+CLOSE(117)
+endif
 !endif
 !
 !END ********* TEST *************** END
