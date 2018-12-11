@@ -1,20 +1,20 @@
 &COMMAND
- LDIRECT=            	1,
- IBDATE=   20120101,
- IBTIME=           060000,
- IEDATE=   20120101,
- IETIME=           120000,
- LOUTSTEP=           3600,
- LOUTAVER=           3600,
- LOUTSAMPLE=          900,
- ITSPLIT=        99999999,
- LSYNCTIME=           900,
- CTL=          -5.0000000,
- IFINE=          	4,
- IOUT=1,
- IPOUT=          	0,
- LSUBGRID=          	0,
- LCONVECTION=          	0,
+ LDIRECT=            	1, ! Simulation direction in time; 1 (forward) or -1 (backward)
+ IBDATE=  	 20120101, ! Start date of the simulation; YYYYMMDD: YYYY=year, MM=month, DD=day  
+ IBTIME=           060000, ! Start time of the simulation; HHMISS: HH=hours, MI=min, SS=sec; UTC
+ IEDATE=         20120101, ! End date of the simulation  ; same format as IBDATE 
+ IETIME=           120000, ! End  time of the simulation ; same format as IBTIME
+ LOUTSTEP=           3600, ! Interval of model output; average concentrations calculated every LOUTSTEP (s)  
+ LOUTAVER=           3600, ! Concentration averaging interval (s)
+ LOUTSAMPLE=          900, ! Numerical sampling rate of output (s), higher stat. accuracy with shorter intervals
+ ITSPLIT=        99999999, ! Time constant for particle splitting (s) 
+ LSYNCTIME=           900, ! All processes are synchronized to this time interval (s)
+ CTL=          -5.0000000, ! Times step smaller than Lag. time scale, LSYNCTIME if CTL<0, but can be shorter  
+ IFINE=          	4, ! Reduction for time step in vertical transport, used only if CTL>1 
+ IOUT=			1, ! Output type: 1]mass 2]pptv 3]1&2 4]plume 5]1&4, +8 for NetCDF output     
+ IPOUT=          	0, ! Particle position output: 0]no 1]every output 2]only at end   
+ LSUBGRID=          	0, ! Increase of ABL heights due to sub-grid scale orographic variations [0]off 1]on 
+ LCONVECTION=          	0, ! 
  LAGESPECTRA=          	0,
  IPIN=          	0,
  IOUTPUTFOREACHRELEASE= 0,
