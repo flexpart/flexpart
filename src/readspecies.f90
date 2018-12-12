@@ -66,16 +66,16 @@ subroutine readspecies(id_spec,pos_spec)
 
   character(len=16) :: pspecies
   real :: pdecay, pweta_gas, pwetb_gas, preldiff, phenry, pf0, pdensity, pdquer
-  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pkao
+  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst
   real :: pcrain_aero, pcsnow_aero, pccn_aero, pin_aero
-  integer :: readerror, pspec_ass
+  integer :: readerror
 
 ! declare namelist
   namelist /species_params/ &
        pspecies, pdecay, pweta_gas, pwetb_gas, &
        pcrain_aero, pcsnow_aero, pccn_aero, pin_aero, &
        preldiff, phenry, pf0, pdensity, pdquer, &
-       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
+       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst
 
   pspecies="" ! read failure indicator value
   pdecay=-999.9
@@ -95,8 +95,6 @@ subroutine readspecies(id_spec,pos_spec)
   pohcconst=-9.99
   pohdconst=-9.9E-09
   pohnconst=2.0
-  pspec_ass=-9
-  pkao=-99.99
   pweightmolar=-999.9
 
 ! Open the SPECIES file and read species names and properties
@@ -163,10 +161,6 @@ subroutine readspecies(id_spec,pos_spec)
 !  write(*,*) ohdconst(pos_spec)
     read(unitspecies,'(f8.2)',end=22) ohnconst(pos_spec)
 !  write(*,*) ohnconst(pos_spec)
-    read(unitspecies,'(i18)',end=22) spec_ass(pos_spec)
-!  write(*,*) spec_ass(pos_spec)
-    read(unitspecies,'(f18.2)',end=22) kao(pos_spec)
-!       write(*,*) kao(pos_spec)
 
     pspecies=species(pos_spec)
     pdecay=decay(pos_spec)
@@ -187,8 +181,6 @@ subroutine readspecies(id_spec,pos_spec)
     pohcconst=ohcconst(pos_spec)
     pohdconst=ohdconst(pos_spec)
     pohnconst=ohnconst(pos_spec)
-    pspec_ass=spec_ass(pos_spec)
-    pkao=kao(pos_spec)
 
   else
 
@@ -211,9 +203,6 @@ subroutine readspecies(id_spec,pos_spec)
     ohcconst(pos_spec)=pohcconst
     ohdconst(pos_spec)=pohdconst
     ohnconst(pos_spec)=pohnconst
-    spec_ass(pos_spec)=pspec_ass
-    kao(pos_spec)=pkao
-
   endif
 
   i=pos_spec
@@ -302,21 +291,6 @@ subroutine readspecies(id_spec,pos_spec)
     end if
   end if
 
-  if (spec_ass(pos_spec).gt.0) then
-    spec_found=.FALSE.
-    do j=1,pos_spec-1
-      if (spec_ass(pos_spec).eq.specnum(j)) then
-        spec_ass(pos_spec)=j
-        spec_found=.TRUE.
-        ASSSPEC=.TRUE.
-      endif
-    end do
-    if (spec_found.eqv..false.) then
-      goto 997
-    endif
-  endif
-
-  if (dsigma(i).eq.1.) dsigma(i)=1.0001   ! avoid floating exception
   if (dsigma(i).eq.0.) dsigma(i)=1.0001   ! avoid floating exception
 
   if ((reldiff(i).gt.0.).and.(density(i).gt.0.)) then

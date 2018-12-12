@@ -150,12 +150,9 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
     do il=2,nz
       if (height(il).gt.ztra1(jpart)) then
         hz=il-1
-!        goto 26
         exit
       endif
     end do
-!26  continue
-
 
     if (ngrid.eq.0) then
       clouds_v=clouds(ix,jy,hz,n)
@@ -202,25 +199,18 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
     endif
 
 
-!ZHG oct 2014 : Calculated for 1) both 2) lsp 3) convp 
+!ZHG oct 2014 : Calculated for 1) both 2) lsp 3) convp - 2 and 3 not used removed by SE
 ! Tentatively differentiate the grfraction for lsp and convp for treating differently the two forms
 ! for now they are treated the same
     grfraction(1)=max(0.05,cc*(lsp*lfr(i)+convp*cfr(j))/(lsp+convp))
-    grfraction(2)=max(0.05,cc*(lfr(i)))
-    grfraction(3)=max(0.05,cc*(cfr(j)))
-
 
 ! 2) Computation of precipitation rate in sub-grid cell
 !******************************************************
     prec(1)=(lsp+convp)/grfraction(1)
-    prec(2)=(lsp)/grfraction(2)
-    prec(3)=(convp)/grfraction(3)
-
 
 ! 3) Computation of scavenging coefficients for all species
 !    Computation of wet deposition
 !**********************************************************
-
 
       if (ngrid.gt.0) then
         act_temp=ttn(ix,jy,hz,n,ngrid)
@@ -236,7 +226,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 ! For gas: if positive below-cloud parameters (A or B), and dquer<=0
 !******************************************************************
         if ((dquer(ks).le.0.).and.(weta_gas(ks).gt.0..or.wetb_gas(ks).gt.0.)) then
-          !        if (weta(ks).gt.0. .or. wetb(ks).gt.0.) then 
           blc_count(ks)=blc_count(ks)+1
           wetscav=weta_gas(ks)*prec(1)**wetb_gas(ks)
 
@@ -270,8 +259,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 
           endif
           
-!             write(*,*) 'bl-cloud, act_temp=',act_temp, ',prec=',prec(1),',wetscav=', wetscav, ', jpart=',jpart
-
         endif ! gas or particle
 !      endif ! positive below-cloud scavenging parameters given in Species file
       endif !end BELOW
@@ -284,7 +271,6 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 ! given in species file, or if gas and positive Henry's constant
         if ((ccn_aero(ks).gt.0. .or. in_aero(ks).gt.0.).or.(henry(ks).gt.0.and.dquer(ks).le.0)) then 
           inc_count(ks)=inc_count(ks)+1
-!          write(*,*) 'Incloud: ',inc_count
 ! if negative coefficients (turned off) set to zero for use in equation
           if (ccn_aero(ks).lt.0.) ccn_aero(ks)=0.
           if (in_aero(ks).lt.0.) in_aero(ks)=0.
@@ -299,7 +285,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !ZHG updated parameterization of cloud water to better reproduce the values coming from ECMWF
 ! sec test
 !           cl=1E6*1E-7*prec(1)**0.3 !Sec GFS new
-            cl=1E6*2E-7*prec(1)**0.36 !Sec ECMWF new
+            cl=1E6*2E-7*prec(1)**0.36 !Sec ECMWF new, is also suitable for GFS
 !           cl=2E-7*prec(1)**0.36 !Andreas
 !           cl=1.6E-6*prec(1)**0.36 !Henrik
           endif
@@ -321,27 +307,16 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !********
           if (dquer(ks).gt.0.) then
             S_i= frac_act/cl
-!           write(*,*) 'Si: ',S_i
-
 ! GAS
 !****
           else
-
             cle=(1-cl)/(henry(ks)*(r_air/3500.)*act_temp)+cl
-!REPLACE to switch old/ new scheme 
-          ! S_i=frac_act/cle
             S_i=1/cle
           endif ! gas or particle
 
 ! scavenging coefficient based on Hertel et al 1995 - using the S_i for either gas or aerosol
-!OLD 
-          if ((readclouds.and.ngrid.eq.0).or.(readclouds_this_nest.and.ngrid.gt.0)) then
+!SEC wetscav fix, the cloud height is no longer needed, it gives wrong results
             wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)
-          else
-!SEC wetscav fix
-             wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)
-!            wetscav=incloud_ratio*S_i*(prec(1)/3.6E6)/clouds_h
-          endif
         endif ! positive in-cloud scavenging parameters given in Species file
       endif !incloud
 

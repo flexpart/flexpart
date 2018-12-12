@@ -66,8 +66,7 @@ module netcdf_output_mod
                        drydep,wetdep,decay,weta_gas,wetb_gas, numbnests, &
                        ccn_aero,in_aero, & ! wetc_in,wetd_in, &
                        reldiff,henry,f0,density,dquer,dsigma,dryvel,&
-!                       weightmolar,ohreact,spec_ass,kao,vsetaver,&
-                       weightmolar,ohcconst,ohdconst,spec_ass,kao,vsetaver,&
+                       weightmolar,ohcconst,ohdconst,vsetaver,&
                        ! for concoutput_netcdf and concoutput_nest_netcdf
                        nxmin1,nymin1,nz,oro,oron,rho,rhon,&
                        memind,xresoln,yresoln,xrn, xln, yrn,yln,nxn,nyn,&
@@ -511,9 +510,7 @@ subroutine writeheader_netcdf(lnest)
 !        call nf90_err(nf90_put_att(ncid, sID, 'ohreact', ohreact(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohcconst', ohcconst(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohdconst', ohdconst(i)))
-        call nf90_err(nf90_put_att(ncid, sID, 'kao', kao(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'vsetaver', vsetaver(i)))
-        call nf90_err(nf90_put_att(ncid, sID, 'spec_ass', spec_ass(i)))
 
         if (lnest) then
            specIDn(i) = sID
@@ -534,9 +531,7 @@ subroutine writeheader_netcdf(lnest)
 !        call nf90_err(nf90_put_att(ncid, sID, 'ohreact', ohreact(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohcconst', ohcconst(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohdconst', ohdconst(i)))
-        call nf90_err(nf90_put_att(ncid, sID, 'kao', kao(i))) 
         call nf90_err(nf90_put_att(ncid, sID, 'vsetaver', vsetaver(i)))
-        call nf90_err(nf90_put_att(ncid, sID, 'spec_ass', spec_ass(i)))
 
         if (lnest) then
            specIDnppt(i) = sID
