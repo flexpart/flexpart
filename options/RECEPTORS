@@ -1,10 +1,10 @@
 &RECEPTORS
- RECEPTOR="receptor 1      ",
- LON=   0.0000000    ,
- LAT=   0.0000000    ,
+ RECEPTOR="receptor 1",
+ LON     =   0.0000000,
+ LAT     =   0.0000000,
  /
 &RECEPTORS
- RECEPTOR="receptor 2      ",
- LON=  1.00000000    ,
- LAT=  0.00000000    ,
+ RECEPTOR="receptor 2",
+ LON     =  1.00000000,
+ LAT     =  0.00000000,
  /
