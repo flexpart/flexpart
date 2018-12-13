@@ -22,8 +22,8 @@
  LSUBGRID=              0, ! Increase of ABL heights due to sub-grid scale orographic variations;[0]off 1]on 
  LCONVECTION=          	0, ! Switch for convection parameterization;[0]off 1]on    
  LAGESPECTRA=          	0, ! Switch for calculation of age spectra (needs AGECLASSES);[0]off 1]on  
- IPIN=                  0, ! Warm start from particle dump (needs previous partposit_end file); [0]no 1]yes  
- IOUTPUTFOREACHRELEASE= 0, ! Separate output fields for each location in the RELEASE file; [0]no 1]yes 
+ IPIN=                  0, ! Warm start from particle dump (needs previous partposit_end file); 0]no [1]yes  
+ IOUTPUTFOREACHRELEASE= 1, ! Separate output fields for each location in the RELEASE file; [0]no 1]yes 
  IFLUX=                 0, ! Output of mass fluxes through output grid box boundaries
  MDOMAINFILL=          	0, ! Switch for domain-filling, if limited-area particles generated at boundary
  IND_SOURCE=            1, ! Unit to be used at the ource   ;  [1]mass 2]mass mixing ratio 
