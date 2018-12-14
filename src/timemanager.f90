@@ -448,7 +448,7 @@ subroutine timemanager(metdata_format)
         !CGZ-lifetime: output species lifetime
 
         !write(*,46) float(itime)/3600,itime,numpart
-45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
+45      format(i13,' Seconds simulated: ',i13, ' Particles:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
         loutnext=loutnext+loutstep
