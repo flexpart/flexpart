@@ -136,6 +136,10 @@ program flexpart
   endif
            
   if (verbosity.gt.0) then
+    print*, 'nxmax=',nxmax
+    print*, 'nymax=',nymax
+    print*, 'nzmax=',nzmax
+    print*,'nxshift=',nxshift 
     write(*,*) 'call readpaths'
   endif 
   call readpaths(pathfile)
