@@ -29,7 +29,7 @@
  IND_SOURCE=            1, ! Unit to be used at the ource   ;  [1]mass 2]mass mixing ratio 
  IND_RECEPTOR=          1, ! Unit to be used at the receptor;  [1]mass 2]mass mixing ratio 
  MQUASILAG=             0, ! Quasi-Lagrangian mode to track individual numbered particles 
- NESTED_OUTPUT=         1, ! Output also for a nested domain 
+ NESTED_OUTPUT=         0, ! Output also for a nested domain 
  LINIT_COND=            0, ! Output sensitivity to initial conditions (backwards mode only)  
  SURF_ONLY=             0, ! Output only for the lowest model layer, used w/ LINIT_COND=1 or 2
  CBLFLAG=               0, ! Skewed, not Gaussian turbulence in the convective ABL, need large CTL and IFINE
