@@ -1,34 +1,18 @@
-***************************************************************************************************************
-*                                                                                                             *
-*                                                                                                             *
-*                                                                                                             *
-*   Input file for the Lagrangian particle dispersion model FLEXPART                                          *
-*                        Please select your options                                                           *
-*                                                                                                             *
-*                                                                                                             *
-*                                                                                                             *
-***************************************************************************************************************
+*************************************************************************
+*                                                                       *
+*                                                                       *
+*                                                                       *
+*   Input file for the Lagrangian particle dispersion model FLEXPART    *
+*                        Please select your options                     *
+*                                                                       *
+*                                                                       *
+*                                                                       *
+*************************************************************************
 &RELEASES_CTRL
- NSPEC      =           1, ! Total number of species
- SPECNUM_REL=          24, ! Species numbers in directory SPECIES
+ NSPEC      =           1,
+ SPECNUM_REL=          24,
  /
-&RELEASE                   ! For each release 
- IDATE1  =       20120101, ! Release start date, YYYYMMDD: YYYY=year, MM=month, DD=day
- ITIME1  =         090000, ! Release start time in UTC HHMISS: HH hours, MI=minutes, SS=seconds
- IDATE2  =       20120101, ! Release end date, same as IDATE1
- ITIME2  =         090000, ! Release end time, same as ITIME1
- LON1    =          0.000, ! Left longitude of release box -180 < LON1 <180
- LON2    =          0.000, ! Right longitude of release box, same as LON1
- LAT1    =         20.000, ! Lower latitude of release box, -90 < LAT1 < 90
- LAT2    =         20.000, ! Upper latitude of release box same format as LAT1 
- Z1      =         50.000, ! Lower height of release box meters/hPa above reference level
- Z2      =         50.000, ! Upper height of release box meters/hPa above reference level
- ZKIND   =              1, ! Reference level 1=above ground, 2=above sea level, 3 for pressure in hPa
- MASS    =       1.0000E8, ! Total mass emitted, only relevant for fwd simulations
- PARTS   =          10000, ! Total number of particles to be released
- COMMENT =    "RELEASE 1", ! Comment, written in the outputfile
- /
- &RELEASE
+&RELEASE
  IDATE1  =       20120101,
  ITIME1  =         090000,
  IDATE2  =       20120101,
@@ -37,10 +21,10 @@
  LON2    =          0.000,
  LAT1    =         20.000,
  LAT2    =         20.000,
- Z1      =        100.000,
- Z2      =        100.000,
+ Z1      =         50.000,
+ Z2      =         50.000,
  ZKIND   =              1,
  MASS    =       1.0000E8,
  PARTS   =          10000, 
- COMMENT =    "RELEASE 2",
+ COMMENT =    "RELEASE 1",
  /
