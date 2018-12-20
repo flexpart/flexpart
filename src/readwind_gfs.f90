@@ -1,4 +1,4 @@
-!**********************************************************************
+
 ! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
 ! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
 ! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
@@ -107,6 +107,7 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   !HSO  for grib api error messages
   character(len=24) :: gribErrorMsg = 'Error reading grib file'
   character(len=20) :: gribFunction = 'readwind_gfs'
+  character(len=20) :: shortname
 
 
   hflswitch=.false.
@@ -119,7 +120,7 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   ! OPENING OF DATA FILE (GRIB CODE)
 
   !HSO
-5   call grib_open_file(ifile,path(3)(1:length(3)) &
+  call grib_open_file(ifile,path(3)(1:length(3)) &
          //trim(wfname(indj)),'r',iret)
   if (iret.ne.GRIB_SUCCESS) then
     goto 888   ! ERROR DETECTED
@@ -161,6 +162,8 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   else ! GRIB Edition 2
 
   !read the grib2 identifiers
+  call grib_get_string(igrib,'shortName',shortname,iret)
+
   call grib_get_int(igrib,'discipline',discipl,iret)
 !  call grib_check(iret,gribFunction,gribErrorMsg)
   call grib_get_int(igrib,'parameterCategory',parCat,iret)
@@ -172,7 +175,8 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   call grib_get_int(igrib,'scaledValueOfFirstFixedSurface', &
        valSurf,iret)
 !  call grib_check(iret,gribFunction,gribErrorMsg)
-
+  
+!  write(*,*) 'Field: ',ifield,parCat,parNum,typSurf,shortname
   !convert to grib1 identifiers
   isec1(6)=-1
   isec1(7)=-1
@@ -213,6 +217,10 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
     isec1(6)=34          ! indicatorOfParameter
     isec1(7)=105         ! indicatorOfTypeOfLevel
     isec1(8)=10
+  elseif ((parCat.eq.1).and.(parNum.eq.22).and.(typSurf.eq.100)) then ! CLWMR Cloud Mixing Ratio [kg/kg]:
+    isec1(6)=153         ! indicatorOfParameter
+    isec1(7)=100         ! indicatorOfTypeOfLevel
+    isec1(8)=valSurf/100 ! level, convert to hPa
   elseif ((parCat.eq.3).and.(parNum.eq.1).and.(typSurf.eq.101)) then ! SLP
     isec1(6)=2           ! indicatorOfParameter
     isec1(7)=102         ! indicatorOfTypeOfLevel
@@ -547,6 +555,13 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
           vlev1(i-i181,j)=help
         endif
       endif
+! SEC & IP 12/2018 read GFS clouds
+      if(isec1(6).eq.153) then  !! CLWCR  Cloud liquid water content [kg/kg]
+        clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+        readclouds=.true.
+        sumclouds=.true.
+      endif
+
 
     end do
   end do
@@ -674,6 +689,8 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
     call shift_field(uuh,nxfield,ny,nuvzmax,nuvz,1,1)
     call shift_field(vvh,nxfield,ny,nuvzmax,nuvz,1,1)
     call shift_field(wwh,nxfield,ny,nwzmax,nwz,1,1)
+! IP & SEC adding GFS Clouds 20181205
+    call shift_field(clwch,nxfield,ny,nuvzmax,nuvz,2,n)
   endif
 
   do i=0,nxmin1
