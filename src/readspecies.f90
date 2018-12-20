@@ -66,16 +66,18 @@ subroutine readspecies(id_spec,pos_spec)
 
   character(len=16) :: pspecies
   real :: pdecay, pweta_gas, pwetb_gas, preldiff, phenry, pf0, pdensity, pdquer
-  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pkao
+  real :: pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst
   real :: pcrain_aero, pcsnow_aero, pccn_aero, pin_aero
-  integer :: readerror, pspec_ass
+  real :: parea_dow(7), parea_hour(24), ppoint_dow(7), ppoint_hour(24)
+  integer :: readerror
 
 ! declare namelist
   namelist /species_params/ &
        pspecies, pdecay, pweta_gas, pwetb_gas, &
        pcrain_aero, pcsnow_aero, pccn_aero, pin_aero, &
        preldiff, phenry, pf0, pdensity, pdquer, &
-       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, pspec_ass, pkao
+       pdsigma, pdryvel, pweightmolar, pohcconst, pohdconst, pohnconst, &
+       parea_dow, parea_hour, ppoint_dow, ppoint_hour
 
   pspecies="" ! read failure indicator value
   pdecay=-999.9
@@ -95,10 +97,18 @@ subroutine readspecies(id_spec,pos_spec)
   pohcconst=-9.99
   pohdconst=-9.9E-09
   pohnconst=2.0
-  pspec_ass=-9
-  pkao=-99.99
   pweightmolar=-999.9
 
+  do j=1,24           ! initialize everything to no variation
+    area_hour(pos_spec,j)=1.
+    point_hour(pos_spec,j)=1.
+  end do
+  do j=1,7
+    area_dow(pos_spec,j)=1.
+    point_dow(pos_spec,j)=1.
+  end do
+
+  if (readerror.ne.0) then ! text format input
 ! Open the SPECIES file and read species names and properties
 !************************************************************
   specnum(pos_spec)=id_spec
@@ -163,10 +173,18 @@ subroutine readspecies(id_spec,pos_spec)
 !  write(*,*) ohdconst(pos_spec)
     read(unitspecies,'(f8.2)',end=22) ohnconst(pos_spec)
 !  write(*,*) ohnconst(pos_spec)
-    read(unitspecies,'(i18)',end=22) spec_ass(pos_spec)
-!  write(*,*) spec_ass(pos_spec)
-    read(unitspecies,'(f18.2)',end=22) kao(pos_spec)
-!       write(*,*) kao(pos_spec)
+
+! Read in daily and day-of-week variation of emissions, if available
+!*******************************************************************
+
+    read(unitspecies,*,end=22)
+    do j=1,24     ! 24 hours, starting with 0-1 local time
+      read(unitspecies,*) ihour,area_hour(pos_spec,j),point_hour(pos_spec,j)
+    end do
+    read(unitspecies,*)
+    do j=1,7      ! 7 days of the week, starting with Monday
+      read(unitspecies,*) idow,area_dow(pos_spec,j),point_dow(pos_spec,j)
+    end do
 
     pspecies=species(pos_spec)
     pdecay=decay(pos_spec)
@@ -187,10 +205,18 @@ subroutine readspecies(id_spec,pos_spec)
     pohcconst=ohcconst(pos_spec)
     pohdconst=ohdconst(pos_spec)
     pohnconst=ohnconst(pos_spec)
-    pspec_ass=spec_ass(pos_spec)
-    pkao=kao(pos_spec)
 
-  else
+
+    do j=1,24     ! 24 hours, starting with 0-1 local time
+      parea_hour(j)=area_hour(pos_spec,j)
+      ppoint_hour(j)=point_hour(pos_spec,j)
+    end do
+    do j=1,7      ! 7 days of the week, starting with Monday
+      parea_dow(j)=area_dow(pos_spec,j)
+      ppoint_dow(j)=point_dow(pos_spec,j)
+    end do
+
+  else ! namelist available
 
     species(pos_spec)=pspecies
     decay(pos_spec)=pdecay
@@ -211,8 +237,15 @@ subroutine readspecies(id_spec,pos_spec)
     ohcconst(pos_spec)=pohcconst
     ohdconst(pos_spec)=pohdconst
     ohnconst(pos_spec)=pohnconst
-    spec_ass(pos_spec)=pspec_ass
-    kao(pos_spec)=pkao
+
+    do j=1,24     ! 24 hours, starting with 0-1 local time
+      area_hour(pos_spec,j)=parea_hour(j)
+      point_hour(pos_spec,j)=ppoint_hour(j)
+    end do
+    do j=1,7      ! 7 days of the week, starting with Monday
+      area_dow(pos_spec,j)=parea_dow(j)
+      point_dow(pos_spec,j)=ppoint_dow(j)
+    end do
 
   endif
 
@@ -302,21 +335,6 @@ subroutine readspecies(id_spec,pos_spec)
     end if
   end if
 
-  if (spec_ass(pos_spec).gt.0) then
-    spec_found=.FALSE.
-    do j=1,pos_spec-1
-      if (spec_ass(pos_spec).eq.specnum(j)) then
-        spec_ass(pos_spec)=j
-        spec_found=.TRUE.
-        ASSSPEC=.TRUE.
-      endif
-    end do
-    if (spec_found.eqv..false.) then
-      goto 997
-    endif
-  endif
-
-  if (dsigma(i).eq.1.) dsigma(i)=1.0001   ! avoid floating exception
   if (dsigma(i).eq.0.) dsigma(i)=1.0001   ! avoid floating exception
 
   if ((reldiff(i).gt.0.).and.(density(i).gt.0.)) then
@@ -328,30 +346,6 @@ subroutine readspecies(id_spec,pos_spec)
   endif
 20 continue
 
-
-! Read in daily and day-of-week variation of emissions, if available
-!*******************************************************************
-! HSO: This is not yet implemented as namelist parameters
-
-  do j=1,24           ! initialize everything to no variation
-    area_hour(i,j)=1.
-    point_hour(i,j)=1.
-  end do
-  do j=1,7
-    area_dow(i,j)=1.
-    point_dow(i,j)=1.
-  end do
-
-  if (readerror.ne.0) then ! text format input
-
-    read(unitspecies,*,end=22)
-    do j=1,24     ! 24 hours, starting with 0-1 local time
-      read(unitspecies,*) ihour,area_hour(i,j),point_hour(i,j)
-    end do
-    read(unitspecies,*)
-    do j=1,7      ! 7 days of the week, starting with Monday
-      read(unitspecies,*) idow,area_dow(i,j),point_dow(i,j)
-    end do
 
   endif
 

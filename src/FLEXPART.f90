@@ -454,16 +454,21 @@ program flexpart
 
   call timemanager(metdata_format)
 
+  if (verbosity.gt.0) then
 ! NIK 16.02.2005 
-  do i=1,nspec
-    write(*,*) '**********************************************'
-    write(*,*) 'Scavenging statistics for species ', species(i), ':'
-    write(*,*) 'Total number of occurences of below-cloud scavenging', &
-         & tot_blc_count(i)
-    write(*,*) 'Total number of occurences of in-cloud    scavenging', &
-         & tot_inc_count(i)
-    write(*,*) '**********************************************'
-  end do
+    do i=1,nspec
+      if (tot_inc_count(i).gt.0) then
+         write(*,*) '**********************************************'
+         write(*,*) 'Scavenging statistics for species ', species(i), ':'
+         write(*,*) 'Total number of occurences of below-cloud scavenging', &
+           & tot_blc_count(i)
+         write(*,*) 'Total number of occurences of in-cloud    scavenging', &
+           & tot_inc_count(i)
+         write(*,*) '**********************************************'
+      endif
+    end do
+    write (*,*) 'timemanager> call wetdepo'
+  endif
   
   write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&
        &XPART MODEL RUN!'
