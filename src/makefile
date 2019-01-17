@@ -87,7 +87,7 @@ VPATH = gributils/
 
 
 ## OPTIMIZATION LEVEL
-O_LEV = 2 # [0,1,2,3,g,s,fast]
+O_LEV = 0 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
