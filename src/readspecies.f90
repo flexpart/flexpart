@@ -100,10 +100,14 @@ subroutine readspecies(id_spec,pos_spec)
   pweightmolar=-999.9
 
   do j=1,24           ! initialize everything to no variation
+    parea_hour(j)=1.
+    ppoint_hour(j)=1.
     area_hour(pos_spec,j)=1.
     point_hour(pos_spec,j)=1.
   end do
   do j=1,7
+    parea_dow(j)=1.
+    ppoint_dow(j)=1.
     area_dow(pos_spec,j)=1.
     point_dow(pos_spec,j)=1.
   end do
