@@ -112,7 +112,6 @@ subroutine readspecies(id_spec,pos_spec)
     point_dow(pos_spec,j)=1.
   end do
 
-  if (readerror.ne.0) then ! text format input
 ! Open the SPECIES file and read species names and properties
 !************************************************************
   specnum(pos_spec)=id_spec
@@ -350,8 +349,6 @@ subroutine readspecies(id_spec,pos_spec)
   endif
 20 continue
 
-
-  endif
 
 22 close(unitspecies)
 
