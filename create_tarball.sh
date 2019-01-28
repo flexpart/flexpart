@@ -1,16 +1,24 @@
 #!/bin/bash
 
 #define version number
-version=10.3beta5
+
+githash=$(git rev-parse --short --verify HEAD)
+
+
+version=10.3beta5_$githash
 
 # define tarball name
 targetdir=../flexpart_distribution/
 tarball_tmp=${targetdir}flexpart_v$version 
+#tarball=${targetdir}flexpart_v$version.tar 
+tarball=${tarball_tmp}.tar 
 
 # clean old package
 if [ -d $tarball_tmp ]; then
-  echo $tarball_tmp exists: move to $tarball_tmp.bk   
-  mv $tarball_tmp ${tarball_tmp}.bk 
+  echo $tarball_tmp exists: move to $tarball_tmp.bk and exit  
+  mkdir $tarball_tmp.bk 
+  mv $tarball_tmp ${tarball_tmp}.bk/ 
+  mv $tarball ${tarball_tmp}.bk/ 
   exit 
 fi
 
@@ -174,7 +182,10 @@ mkdir $tarball_tmp/tests/ctbto
 # cp -r tests/NILU/test_1 $tarball_tmp/tests/
 # cp -r tests/default_cases $tarball_tmp/tests/
 
+tar cvf  $tarball  $tarball_tmp  
 
+echo  $tarball complete
+echo exported untarred files in $tarball_tmp 
 exit
 #return
 ###############################################################
