@@ -87,6 +87,15 @@ mkdir $tarball_tmp/preprocess/flex_extract
 #cp -r flex_ecmwf_src/* $tarball_tmp/preprocess/flex_extract/
 ## cp -r flex_extract/work/EA* $tarball_tmp/preprocess/flex_extract/work   
 
+echo include flex_extract v7.0.4 b7c1c04a204c91e53759ef590504bf52dfaece64
+flex_extract=../flex_extract_v7.0.4/
+cp $flex_extract/README.md $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/docs $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/grib_templates $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/python $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/src $tarball_tmp/preprocess/flex_extract
+
+
 
 
 
