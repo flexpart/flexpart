@@ -557,9 +557,21 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
       endif
 ! SEC & IP 12/2018 read GFS clouds
       if(isec1(6).eq.153) then  !! CLWCR  Cloud liquid water content [kg/kg]
-        clwch(i,j,nlev_ec-k+2,n)=zsec4(nxfield*(ny-j-1)+i+1)
+         if((i.eq.0).and.(j.eq.0)) then
+            do ii=1,nuvz
+              if ((isec1(8)*100.0).eq.akz(ii)) numpu=ii
+            end do
+        endif
+        help=zsec4(nxfield*(ny-j-1)+i+1)
+        if(i.le.i180) then
+          clwch(i179+i,j,numpu,n)=help
+        else
+          clwch(i-i181,j,numpu,n)=help
+        endif
         readclouds=.true.
         sumclouds=.true.
+!        readclouds=.false.
+!       sumclouds=.false.
       endif
 
 

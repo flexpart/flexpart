@@ -653,7 +653,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! If Precipitation. Define removal type in the vertical
         if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
 
-          do kz=nz,1,-1 !go Bottom up!
+          do kz=nz,2,-1 !go Bottom up!
             if (clw(ix,jy,kz,n).gt. 0) then ! is in cloud
               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+height(kz)-height(kz-1) 
               clouds(ix,jy,kz,n)=1                               ! is a cloud
