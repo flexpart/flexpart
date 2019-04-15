@@ -122,6 +122,7 @@ subroutine timemanager(metdata_format)
   real :: xold,yold,zold,xmassfract
   real :: grfraction(3)
   real, parameter :: e_inv = 1.0/exp(1.0)
+  logical :: lexist
 
   !double precision xm(maxspec,maxpointspec_act),
   !    +                 xm_depw(maxspec,maxpointspec_act),
@@ -185,7 +186,10 @@ subroutine timemanager(metdata_format)
          call wetdepo(itime,lsynctime,loutnext)
     endif
 
-    if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) &
+    if (NH3LOSS) &
+         call read_hourly_NH3field(itime)
+
+    if ((OHREA .or. NH3LOSS) .and. itime .ne. 0 .and. numpart .gt. 0) &
          call ohreaction(itime,lsynctime,loutnext)
 
     if (ASSSPEC .and. itime .ne. 0 .and. numpart .gt. 0) then
@@ -360,6 +364,11 @@ subroutine timemanager(metdata_format)
   ! Check whether concentrations are to be calculated
   !**************************************************
 
+!  print*, 'itime:',itime
+!  print*, 'loutstart:',loutstart
+!  print*, 'loutend:',loutend
+!  print*, 'loutnext:',loutnext
+
     if ((ldirect*itime.ge.ldirect*loutstart).and. &
          (ldirect*itime.le.ldirect*loutend)) then ! add to grid
       if (mod(itime-loutstart,loutsample).eq.0) then
@@ -407,7 +416,16 @@ subroutine timemanager(metdata_format)
               call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
 #endif
             else
-              call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              if (linversionout.eq.1) then
+                call concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                if (verbosity.eq.1) then
+                  print*,'called concoutput_inversion'
+                  call system_clock(count_clock)
+                  write(*,*) 'system clock',count_clock - count_clock0 
+                endif
+              else
+                call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              endif
               if (verbosity.eq.1) then
                 print*,'called concoutput_surf '
                 call system_clock(count_clock)
@@ -420,8 +438,12 @@ subroutine timemanager(metdata_format)
             if (lnetcdfout.eq.0) then
               if (surf_only.ne.1) then
                 call concoutput_nest(itime,outnum)
-              else 
-                call concoutput_surf_nest(itime,outnum)
+              else
+                if(linversionout.eq.1) then
+                  call concoutput_inversion_nest(itime,outnum)
+                else 
+                  call concoutput_surf_nest(itime,outnum)
+                endif
               endif
             else
 #ifdef USE_NCF
@@ -448,7 +470,7 @@ subroutine timemanager(metdata_format)
         !CGZ-lifetime: output species lifetime
 
         !write(*,46) float(itime)/3600,itime,numpart
-45      format(i13,' Seconds simulated: ',i13, ' Particles:    Uncertainty: ',3f7.3)
+45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
         loutnext=loutnext+loutstep
@@ -729,7 +751,13 @@ subroutine timemanager(metdata_format)
 
   if (ipout.eq.2) call partoutput(itime)     ! dump particle positions
 
-  if (linit_cond.ge.1) call initial_cond_output(itime)   ! dump initial cond. field
+  if (linit_cond.ge.1) then
+    if(linversionout.eq.1) then
+      call initial_cond_output_inversion(itime)   ! dump initial cond. field
+    else
+      call initial_cond_output(itime)   ! dump initial cond. fielf
+    endif
+  endif
 
   !close(104)
 
@@ -741,6 +769,9 @@ subroutine timemanager(metdata_format)
   endif
   if (OHREA) then
       deallocate(OH_field,OH_hourly,lonOH,latOH,altOH)
+  endif
+  if (NH3LOSS) then
+      deallocate(NH3LOSS_field,lonNH3,latNH3,altNH3)
   endif
   if (ldirect.gt.0) then
   deallocate(drygridunc,wetgridunc)

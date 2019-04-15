@@ -192,7 +192,7 @@ subroutine timemanager(metdata_format)
       if (mp_measure_time) call mpif_mtime('wetdepo',1)
     end if
 
-    if (OHREA .and. itime .ne. 0 .and. numpart .gt. 0) then
+    if ((OHREA .or. NH3LOSS) .and. itime .ne. 0 .and. numpart .gt. 0) then
 ! readwind process skips this step
       if (.not.(lmpreader.and.lmp_use_reader)) then
         call ohreaction(itime,lsynctime,loutnext)
@@ -313,6 +313,9 @@ subroutine timemanager(metdata_format)
       call gethourlyOH(itime)
     endif
 
+     if (NH3LOSS) then
+         call read_hourly_NH3field(itime)
+     endif
 
 ! Release particles
 !******************
@@ -914,6 +917,12 @@ subroutine timemanager(metdata_format)
   if (OHREA) then
     deallocate(OH_field,OH_hourly,lonOH,latOH,altOH)
   endif
+  if (NH3LOSS) then
+       deallocate(NH3LOSS_field,lonNH3,latNH3,altNH3)
+   endif
+
+
+
   if (ldirect.gt.0) then
     deallocate(drygridunc,wetgridunc)
   endif

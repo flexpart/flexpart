@@ -35,4 +35,9 @@ module oh_mod
   real, dimension(360) :: lonjr
   real, dimension(180) :: latjr
 
+  integer :: nxNH3,nyNH3,nzNH3,ntNH3
+  real, allocatable, dimension(:) :: lonNH3,latNH3,altNH3
+  double precision, allocatable, dimension(:) :: timeNH3
+  real, allocatable, dimension (:,:,:) :: NH3LOSS_field
+
 end module oh_mod

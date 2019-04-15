@@ -69,6 +69,9 @@ subroutine concoutput_surf_nest(itime,outnum)
   integer :: sp_count_i,sp_count_r
   real :: sp_fact
   real :: outnum,densityoutrecept(maxreceptor),xl,yl
+! RLT
+  real :: densitydryrecept(maxreceptor)
+  real :: factor_dryrecept(maxreceptor)
 
   !real densityoutgrid(0:numxgrid-1,0:numygrid-1,numzgrid),
   !    +grid(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec,maxpointspec_act,
@@ -95,7 +98,7 @@ subroutine concoutput_surf_nest(itime,outnum)
   logical :: sp_zer
   character :: adate*8,atime*6
   character(len=3) :: anspec
-
+  logical :: lexist
 
   ! Determine current calendar date, needed for the file name
   !**********************************************************
@@ -158,18 +161,27 @@ subroutine concoutput_surf_nest(itime,outnum)
         jjy=max(min(nint(yl),nymin1),0)
         densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,2)*dz1+ &
              rho(iix,jjy,kzz-1,2)*dz2)/dz
+! RLT
+        densitydrygrid(ix,jy,kz)=(rho_dry(iix,jjy,kzz,2)*dz1+ &
+             rho_dry(iix,jjy,kzz-1,2)*dz2)/dz
       end do
     end do
   end do
 
-    do i=1,numreceptor
-      xl=xreceptor(i)
-      yl=yreceptor(i)
-      iix=max(min(nint(xl),nxmin1),0)
-      jjy=max(min(nint(yl),nymin1),0)
-      densityoutrecept(i)=rho(iix,jjy,1,2)
-    end do
+  do i=1,numreceptor
+    xl=xreceptor(i)
+    yl=yreceptor(i)
+    iix=max(min(nint(xl),nxmin1),0)
+    jjy=max(min(nint(yl),nymin1),0)
+    densityoutrecept(i)=rho(iix,jjy,1,2)
+! RLT
+    densitydryrecept(i)=rho_dry(iix,jjy,1,2)
+  end do
 
+! RLT
+! conversion factor for output relative to dry air
+  factor_drygrid=densityoutgrid/densitydrygrid
+  factor_dryrecept=densityoutrecept/densitydryrecept
 
   ! Output is different for forward and backward simulations
     do kz=1,numzgrid
@@ -316,8 +328,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
   ! Dry deposition
          sp_count_i=0
@@ -353,8 +365,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
 
 
 
@@ -398,8 +410,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
          else
 
   ! write full vertical resolution
@@ -439,8 +451,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgrid) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgrid) sp_count_r
          write(unitoutgrid) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgrid) sp_count_r
-         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgrid) sp_count_r
+!         write(unitoutgrid) (sparse_dump_u(i),i=1,sp_count_r)
          endif ! surf_only
 
 
@@ -486,8 +498,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Dry deposition
@@ -525,8 +537,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
 
 
   ! Mixing ratios
@@ -569,8 +581,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
          else
 
   ! write full vertical resolution
@@ -610,8 +622,8 @@ subroutine concoutput_surf_nest(itime,outnum)
          write(unitoutgridppt) (sparse_dump_i(i),i=1,sp_count_i)
          write(unitoutgridppt) sp_count_r
          write(unitoutgridppt) (sparse_dump_r(i),i=1,sp_count_r)
-         write(unitoutgridppt) sp_count_r
-         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
+!         write(unitoutgridppt) sp_count_r
+!         write(unitoutgridppt) (sparse_dump_u(i),i=1,sp_count_r)
          endif ! surf_only
 
       endif ! output for ppt
@@ -623,6 +635,48 @@ subroutine concoutput_surf_nest(itime,outnum)
     close(unitoutgrid)
 
   end do
+
+! RLT Aug 2017
+! Write out conversion factor for dry air
+  inquire(file=path(2)(1:length(2))//'factor_drygrid_nest',exist=lexist)
+  if (lexist) then
+    ! open and append
+    open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid_nest',form='unformatted',&
+            status='old',action='write',access='append')
+  else
+    ! create new
+    open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid_nest',form='unformatted',&
+            status='new',action='write')
+  endif
+  sp_count_i=0
+  sp_count_r=0
+  sp_fact=-1.
+  sp_zer=.true.
+  do kz=1,1
+    do jy=0,numygridn-1
+      do ix=0,numxgridn-1
+        if (factor_drygrid(ix,jy,kz).gt.(1.+smallnum).or.factor_drygrid(ix,jy,kz).lt.(1.-smallnum)) then
+          if (sp_zer.eqv..true.) then ! first value not equal to one
+            sp_count_i=sp_count_i+1
+            sparse_dump_i(sp_count_i)= &
+                  ix+jy*numxgridn+kz*numxgridn*numygridn
+            sp_zer=.false.
+            sp_fact=sp_fact*(-1.)
+          endif
+          sp_count_r=sp_count_r+1
+          sparse_dump_r(sp_count_r)= &
+               sp_fact*factor_drygrid(ix,jy,kz)
+        else ! factor is one
+          sp_zer=.true.
+        endif
+      end do
+    end do
+  end do
+  write(unitoutfactor) sp_count_i
+  write(unitoutfactor) (sparse_dump_i(i),i=1,sp_count_i)
+  write(unitoutfactor) sp_count_r
+  write(unitoutfactor) (sparse_dump_r(i),i=1,sp_count_r)
+  close(unitoutfactor)
 
 
 

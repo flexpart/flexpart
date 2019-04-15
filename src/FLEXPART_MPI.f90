@@ -376,6 +376,7 @@ program flexpart
     call readOHfield
   endif
 
+
   ! Write basic information on the simulation to a file "header"
   ! and open files that are to be kept open throughout the simulation
   !******************************************************************

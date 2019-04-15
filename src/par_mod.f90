@@ -79,6 +79,9 @@ module par_mod
 
   real,parameter :: pi=3.14159265, r_earth=6.371e6, r_air=287.05, ga=9.81
   real,parameter :: cpa=1004.6, kappa=0.286, pi180=pi/180., vonkarman=0.4
+  ! additional constants RLT Aug-2017
+  real,parameter :: rgas=8.31447 
+  real,parameter :: r_water=461.495
 
   ! pi                      number "pi"
   ! pi180                   pi/180.
@@ -88,6 +91,8 @@ module par_mod
   ! cpa                     specific heat for dry air
   ! kappa                   exponent of formula for potential temperature
   ! vonkarman               von Karman constant
+  ! rgas                    universal gas constant [J/mol/K]
+  ! r_water                 specific gas constant for water vapor [J/kg/K]
 
   real,parameter :: karman=0.40, href=15., convke=2.0
   real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
@@ -146,15 +151,13 @@ module par_mod
   !*********************************************
   
   ! ECMWF
-! integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=359 ! 1.0 degree 92 level
-!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0 ! 1.0 degree 138 level
-!   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359 ! 1.0 degree 138 level
+  integer,parameter :: nxmax=361,nymax=181,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=359 ! 1.0 degree 92 level
+! integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0 ! 1.0 degree 138 level
 ! integer,parameter :: nxmax=721,nymax=361,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=359  ! 0.5 degree 138 level
 !  integer,parameter :: nxmax=181,nymax=91,nuvzmax=92,nwzmax=92,nzmax=92,nxshift=0  ! CERA 2.0 degree 92 level
 
 ! GFS
-   integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138
-   integer :: nxshift=0
+!  integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138,nxshift=0
 
 
   !*********************************************
@@ -219,7 +222,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=100000
+  integer,parameter :: maxpart=10000000
   integer,parameter :: maxspec=1
 
   real,parameter :: minmass=0.0001
@@ -250,6 +253,7 @@ module par_mod
   ! dimension of the OH field
   !**************************************************************************
   integer,parameter :: maxxOH=72, maxyOH=46, maxzOH=7
+  integer,parameter :: maxxNH3LOSS=360, maxyNH3LOSS=180, maxzNH3LOSS=39
 
   !**************************************************************************
   ! Maximum number of particles to be released in a single atmospheric column
@@ -285,10 +289,12 @@ module par_mod
   integer,parameter :: unitoutgrid=97, unitoutgridppt=99, unitoutinfo=1
   integer,parameter :: unitspecies=1, unitoutrecept=91, unitoutreceptppt=92
   integer,parameter :: unitlsm=1, unitsurfdata=1, unitland=1, unitwesely=1
-  integer,parameter :: unitOH=1
+  integer,parameter :: unitOH=1, unitNH3loss=1
   integer,parameter :: unitdates=94, unitheader=90,unitheader_txt=100, unitshortpart=95, unitprecip=101
   integer,parameter :: unitboundcond=89
   integer,parameter :: unittmp=101
+! RLT
+  integer,parameter :: unitoutfactor=102
 
 !******************************************************
 ! integer code for missing values, used in wet scavenging (PS, 2012)

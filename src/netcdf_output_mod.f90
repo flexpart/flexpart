@@ -66,7 +66,9 @@ module netcdf_output_mod
                        drydep,wetdep,decay,weta_gas,wetb_gas, numbnests, &
                        ccn_aero,in_aero, & ! wetc_in,wetd_in, &
                        reldiff,henry,f0,density,dquer,dsigma,dryvel,&
-                       weightmolar,ohcconst,ohdconst,vsetaver,&
+!                       weightmolar,ohreact,spec_ass,kao,vsetaver,&
+                       weightmolar,ohcconst,ohdconst,spec_ass,kao,vsetaver,&
+                       use_NH3_loss, &
                        ! for concoutput_netcdf and concoutput_nest_netcdf
                        nxmin1,nymin1,nz,oro,oron,rho,rhon,&
                        memind,xresoln,yresoln,xrn, xln, yrn,yln,nxn,nyn,&
@@ -112,8 +114,6 @@ module netcdf_output_mod
   logical, parameter :: write_vol = .false.
   logical, parameter :: write_area = .false.
 
-  ! coordinate transformation from internal to world coord
-  real :: xp1,yp1,xp2,yp2
 contains
 
 !****************************************************************
@@ -512,7 +512,10 @@ subroutine writeheader_netcdf(lnest)
 !        call nf90_err(nf90_put_att(ncid, sID, 'ohreact', ohreact(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohcconst', ohcconst(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohdconst', ohdconst(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'kao', kao(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'vsetaver', vsetaver(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'spec_ass', spec_ass(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'NH3_loss', use_NH3_loss(i)))
 
         if (lnest) then
            specIDn(i) = sID
@@ -533,7 +536,10 @@ subroutine writeheader_netcdf(lnest)
 !        call nf90_err(nf90_put_att(ncid, sID, 'ohreact', ohreact(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohcconst', ohcconst(i)))
         call nf90_err(nf90_put_att(ncid, sID, 'ohdconst', ohdconst(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'kao', kao(i))) 
         call nf90_err(nf90_put_att(ncid, sID, 'vsetaver', vsetaver(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'spec_ass', spec_ass(i)))
+        call nf90_err(nf90_put_att(ncid, sID, 'NH3_loss', use_NH3_loss(i)))
 
         if (lnest) then
            specIDnppt(i) = sID
@@ -669,14 +675,10 @@ subroutine writeheader_netcdf(lnest)
        call nf90_err(nf90_put_var(ncid, relstartID, ireleasestart(i), (/i/)))
        call nf90_err(nf90_put_var(ncid, relendID, ireleaseend(i), (/i/)))
        call nf90_err(nf90_put_var(ncid, relkindzID, kindz(i), (/i/)))
-       xp1=xpoint1(i)*dx+xlon0
-       yp1=ypoint1(i)*dy+ylat0
-       xp2=xpoint2(i)*dx+xlon0
-       yp2=ypoint2(i)*dy+ylat0
-       call nf90_err(nf90_put_var(ncid, rellng1ID, xp1, (/i/)))
-       call nf90_err(nf90_put_var(ncid, rellng2ID, xp2, (/i/)))
-       call nf90_err(nf90_put_var(ncid, rellat1ID, yp1, (/i/)))
-       call nf90_err(nf90_put_var(ncid, rellat2ID, yp2, (/i/)))
+       call nf90_err(nf90_put_var(ncid, rellng1ID, xpoint1(i), (/i/)))
+       call nf90_err(nf90_put_var(ncid, rellng2ID, xpoint2(i), (/i/)))
+       call nf90_err(nf90_put_var(ncid, rellat1ID, ypoint1(i), (/i/)))
+       call nf90_err(nf90_put_var(ncid, rellat2ID, ypoint2(i), (/i/)))
        call nf90_err(nf90_put_var(ncid, relzz1ID, zpoint1(i), (/i/)))
        call nf90_err(nf90_put_var(ncid, relzz2ID, zpoint2(i), (/i/)))
        call nf90_err(nf90_put_var(ncid, relpartID, npart(i), (/i/)))

@@ -81,6 +81,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: rhoh,uvzlev,wzlev
   real,dimension(0:nxmax-1,0:nymax-1,nzmax) :: pinmconv
+  ! RLT added pressure
+  real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: prsh
   real,dimension(0:nxmax-1,0:nymax-1) ::  tvold,pold,pint,tv
   real,dimension(0:nymax-1) :: cosf
 
@@ -107,11 +109,10 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   !ZHG 2015 temporary variables for testing
   ! real :: rcw(0:nxmax-1,0:nymax-1)
   ! real :: rpc(0:nxmax-1,0:nymax-1)
-  character(len=60) :: zhgpath='/xnilu_wrk/users/sec/kleinprojekte/hertlfit/'
-  character(len=60) :: fnameH,fnameI,fnameJ
+  ! character(len=60) :: zhgpath='/xnilu_wrk/flex_wrk/zhg/'
   ! character(len=60) :: fnameA,fnameB,fnameC,fnameD,fnameE,fnameF,fnameG,fnameH
-  CHARACTER(LEN=3)  :: aspec
-  integer :: virr=0
+  ! CHARACTER(LEN=3)  :: aspec
+  ! integer :: virr=0
   !real :: tot_cloud_h
   !real :: dbg_height(nzmax) 
 !ZHG
@@ -218,17 +219,19 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! Loop over the whole grid
 !*************************
 
-
   do jy=0,nymin1
     do ix=0,nxmin1
       tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
            ps(ix,jy,1,n))
+
     enddo
   enddo
   pold=ps(:,:,1,n)
   uvzlev(:,:,1)=0.
   wzlev(:,:,1)=0.
   rhoh(:,:,1)=pold/(r_air*tvold)
+  ! RLT add pressure
+  prsh(:,:,1)=ps(:,:,1,n)
 
 
 ! Compute heights of eta levels
@@ -236,6 +239,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   do kz=2,nuvz
     pint=akz(kz)+bkz(kz)*ps(:,:,1,n)
+    ! RLT add pressure
+    prsh(:,:,kz)=pint
     tv=tth(:,:,kz,n)*(1.+0.608*qvh(:,:,kz,n))
     rhoh(:,:,kz)=pint(:,:)/(r_air*tv)
 
@@ -287,6 +292,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg 
   pv(:,:,1,n)=pvh(:,:,1)
   rho(:,:,1,n)=rhoh(:,:,1)
+! RLT add pressure
+  prs(:,:,1,n)=prsh(:,:,1)
 
   uu(:,:,nz,n)=uuh(:,:,nuvz)
   vv(:,:,nz,n)=vvh(:,:,nuvz)
@@ -300,7 +307,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
   pv(:,:,nz,n)=pvh(:,:,nuvz)
   rho(:,:,nz,n)=rhoh(:,:,nuvz)
-
+! RLT
+  prs(:,:,nz,n)=prsh(:,:,nuvz)
 
   kmin=2
   idx=kmin
@@ -320,6 +328,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
           pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
           rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
+! RLT
+          prs(ix,jy,iz,n)=prs(ix,jy,nz,n)
         else
           innuvz: do kz=idx(ix,jy),nuvz
             if (idx(ix,jy) .le. kz .and. (height(iz).gt.uvzlev(ix,jy,kz-1)).and. &
@@ -353,6 +363,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
           pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
           rho(ix,jy,iz,n)=(rhoh(ix,jy,kz-1)*dz2+rhoh(ix,jy,kz)*dz1)/dz
+! RLT add pressure
+          prs(ix,jy,iz,n)=(prsh(ix,jy,kz-1)*dz2+prsh(ix,jy,kz)*dz1)/dz
         endif
       enddo
     enddo
@@ -605,7 +617,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
     end do
   endif
 
-
+  if (WETDEP) then ! clouds are only needed for wetdep
 !***********************************************************************************  
   if (readclouds) then !HG METHOD
 ! The method is loops all grids vertically and constructs the 3D matrix for clouds
@@ -726,14 +738,14 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
       end do
     end do
   endif !readclouds
-
+  endif !wetdep
 
      !********* TEST ***************
      ! WRITE OUT SOME TEST VARIABLES
      !********* TEST ************'**
 !teller(:)=0
-virr=virr+1
-WRITE(aspec, '(i3.3)'), virr
+!virr=virr+1
+!WRITE(aspec, '(i3.3)'), virr
 
 !if (readclouds) then
 !fnameH=trim(zhgpath)//trim(aspec)//'Vertical_placement.txt'
@@ -770,34 +782,29 @@ WRITE(aspec, '(i3.3)'), virr
 !fnameE=trim(zhgpath)//trim(aspec)//'old_cloudV.txt'
 !fnameF=trim(zhgpath)//trim(aspec)//'lsp.txt'
 !fnameG=trim(zhgpath)//trim(aspec)//'convp.txt'
-if (1.eq.2) then
-fnameH=trim(zhgpath)//trim(aspec)//'tcwc.txt'
-fnameI=trim(zhgpath)//trim(aspec)//'prec.txt'
-fnameJ=trim(zhgpath)//trim(aspec)//'cloudsh.txt'
-write(*,*) 'Writing data to file: ',fnameH
 !if (readclouds) then
 !OPEN(UNIT=111, FILE=fnameA,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=112, FILE=fnameB,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=113, FILE=fnameC,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !OPEN(UNIT=114, FILE=fnameD,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !else
-OPEN(UNIT=115, FILE=fnameH,FORM='FORMATTED',STATUS = 'UNKNOWN')
-OPEN(UNIT=116, FILE=fnameI,FORM='FORMATTED',STATUS = 'UNKNOWN')
-OPEN(UNIT=117, FILE=fnameJ,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=115, FILE=fnameE,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=116, FILE=fnameF,FORM='FORMATTED',STATUS = 'UNKNOWN')
+!OPEN(UNIT=117, FILE=fnameG,FORM='FORMATTED',STATUS = 'UNKNOWN')
 !endif
 !
-do ix=0,nxmin1
+!do ix=0,nxmin1
 !if (readclouds) then
 !write(111,*) (icloud_stats(ix,jy,1,n),jy=0,nymin1)
 !write(112,*) (icloud_stats(ix,jy,2,n),jy=0,nymin1)
 !write(113,*) (icloud_stats(ix,jy,3,n),jy=0,nymin1)
 !write(114,*) (icloud_stats(ix,jy,4,n),jy=0,nymin1)
 !else
-write(115,*) (ctwc(ix,jy,n),jy=0,nymin1)  
-write(116,*) (lsprec(ix,jy,1,n)+convprec(ix,jy,1,n),jy=0,nymin1)  
-write(117,*) (cloudsh(ix,jy,n),jy=0,nymin1) 
+!write(115,*) (cloudsh(ix,jy,n),jy=0,nymin1)    !integer
+!write(116,*) (lsprec(ix,jy,1,n),jy=0,nymin1)   !7.83691406E-02 
+!write(117,*) (convprec(ix,jy,1,n),jy=0,nymin1) !5.38330078E-02
 !endif
-end do
+!end do
 !
 !if (readclouds) then
 !CLOSE(111)
@@ -805,10 +812,9 @@ end do
 !CLOSE(113)
 !CLOSE(114)
 !else
-CLOSE(115)
-CLOSE(116)
-CLOSE(117)
-endif
+!CLOSE(115)
+!CLOSE(116)
+!CLOSE(117)
 !endif
 !
 !END ********* TEST *************** END

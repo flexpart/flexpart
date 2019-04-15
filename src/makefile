@@ -60,10 +60,10 @@ ifeq ($(gcc), 4.9)
 	INCPATH1  = ${ROOT_DIR}/gcc-4.9.1/include	
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
-else 
-# Compiled libraries under user ~flexpart, gfortran v5.4
-	ROOT_DIR = /homevip/flexpart/
 
+else
+# Gfortran v5.4
+	ROOT_DIR = /homevip/flexpart/
 	F90	  = /usr/bin/gfortran
 	MPIF90    = /usr/bin/mpifort
 
@@ -87,7 +87,7 @@ VPATH = gributils/
 
 
 ## OPTIMIZATION LEVEL
-O_LEV = 0 # [0,1,2,3,g,s,fast]
+O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
@@ -96,7 +96,7 @@ LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
-DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) $(NCOPT) -fbacktrace   -Wall  -fdump-core $(FUSER)  #  -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
+DBGFLAGS = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV_DBG) -g3 -ggdb3 -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV_DBG) -fbacktrace   -Wall  -fdump-core $(FUSER)    -ffpe-trap=invalid,overflow,denormal,underflow,zero  -Warray-bounds -fcheck=all
 
 LDFLAGS  = $(FFLAGS) -L$(LIBPATH1) -Wl,-rpath,$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
 LDDEBUG  = $(DBGFLAGS) -L$(LIBPATH1) $(LIBS) #-L$(LIBPATH2)
@@ -118,7 +118,7 @@ mpi_mod.o
 OBJECTS_SERIAL = \
 	releaseparticles.o 	partoutput.o \
 	conccalc.o \
-	init_domainfill.o 	concoutput.o  \
+	init_domainfill.o 	concoutput.o \
 	timemanager.o FLEXPART.o	\
 	readpartpositions.o \
 	partoutput_short.o		\
@@ -126,6 +126,8 @@ OBJECTS_SERIAL = \
 	boundcond_domainfill.o	\
 	redist.o		\
 	concoutput_surf.o	concoutput_surf_nest.o	\
+	concoutput_inversion_nest.o 	\
+	concoutput_inversion.o \
 	getfields.o \
         readwind_ecmwf.o
 
@@ -167,6 +169,7 @@ interpol_all.o          readpaths.o \
 getrb.o                 obukhov.o \
 getrc.o                 convmix.o \
 getvdep.o               readspecies.o \
+read_hourly_NH3field.o \
 interpol_misslev.o      richardson.o \
 scalev.o                verttransform_ecmwf.o \
 pbl_profile.o           readOHfield.o \
@@ -195,10 +198,10 @@ shift_field.o             \
 openreceptors.o         \
 readoutgrid_nest.o \
 writeheader_nest.o writeheader_nest_surf.o \
-wetdepokernel_nest.o \
+wetdepokernel_nest.o    \
 drydepokernel_nest.o    zenithangle.o \
 ohreaction.o            getvdep_nests.o \
-initial_cond_calc.o     initial_cond_output.o \
+initial_cond_calc.o     initial_cond_output.o initial_cond_output_inversion.o \
 dynamic_viscosity.o     get_settling.o	\
 initialize_cbl_vel.o	re_initialize_particle.o \
 cbl.o
@@ -270,9 +273,11 @@ com_mod.o: par_mod.o
 conccalc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 conccalc_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o unc_mod.o
 concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
@@ -319,6 +324,7 @@ init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 initial_cond_calc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 initial_cond_output.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
 initialize.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o random_mod.o
 initialize_cbl_vel.o: com_mod.o par_mod.o random_mod.o
 interpol_all.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o
@@ -364,6 +370,7 @@ readdepo.o: com_mod.o par_mod.o
 readlanduse.o: com_mod.o par_mod.o
 #readlanduse_int1.o: com_mod.o par_mod.o
 readOHfield.o: com_mod.o oh_mod.o par_mod.o
+read_hourly_NH3field.o: com_mod.o oh_mod.o par_mod.o
 readoutgrid.o: com_mod.o outg_mod.o par_mod.o
 readoutgrid_nest.o: com_mod.o outg_mod.o par_mod.o
 readpartpositions.o: com_mod.o par_mod.o random_mod.o

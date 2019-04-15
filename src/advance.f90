@@ -221,6 +221,11 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   endif
   ixp=ix+1
   jyp=jy+1
+  ! fix (Espen 02.05.2017)
+  if(jyp>=nymax) then
+    write(*,*) 'WARNING: advance.f90 jyp>nymax'
+    jyp=jyp-1
+  endif
 
 
  ! Determine the lower left corner and its distance to the current position
@@ -244,7 +249,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
 
 ! eso: Temporary fix for particle exactly at north pole
   if (jyp >= nymax) then
-    ! write(*,*) 'WARNING: advance.f90 jyp >= nymax. xt,yt:',xt,yt
+    write(*,*) 'WARNING: advance.f90 jyp >= nymax. xt,yt:',xt,yt
     jyp=jyp-1
   end if
 
@@ -538,9 +543,9 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
           do nsp=1,nspec
             if (xmass(nrelpoint,nsp).gt.eps2) exit
           end do
-          if (nsp.gt.nspec) then
+          if (nsp.gt.nspec+1) then
   ! This should never happen          
-            write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+            write(*,*) 'advance.f90#1: ERROR: could not find releasepoint'
             stop
           end if
           if (density(nsp).gt.0.) then
@@ -708,9 +713,9 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
       do nsp=1,nspec
         if (xmass(nrelpoint,nsp).gt.eps2) exit
       end do
-      if (nsp.gt.nspec) then
+      if (nsp.gt.nspec+1) then
   ! This should never happen          
-        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+        write(*,*) 'advance.f90#2: ERROR: could not find releasepoint'
         stop
       end if
       if (density(nsp).gt.0.) then
@@ -918,9 +923,9 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
       do nsp=1,nspec
         if (xmass(nrelpoint,nsp).gt.eps2) exit
       end do
-      if (nsp.gt.nspec) then
+      if (nsp.gt.nspec+1) then
   ! This should never happen          
-        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
+        write(*,*) 'advance.f90#3: ERROR: could not find releasepoint'
         stop
       end if
       if (density(nsp).gt.0.) then
