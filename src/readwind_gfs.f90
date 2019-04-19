@@ -82,7 +82,7 @@ subroutine readwind_gfs(indj,n,uuh,vvh,wwh)
   integer :: ii,indj,i,j,k,n,levdiff2,ifield,iumax,iwmax
 
   ! NCEP
-  integer :: numpt,numpu,numpv,numpw,numprh
+  integer :: numpt,numpu,numpv,numpw,numprh,numpclwch
   real :: help, temp, ew
   real :: elev
   real :: ulev1(0:nxmax-1,0:nymax-1),vlev1(0:nxmax-1,0:nymax-1)
