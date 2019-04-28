@@ -124,13 +124,15 @@ module mpi_mod
 ! mp_measure_time   Measure cpu/wall time, write out at end of run
 ! mp_time_barrier   Measure MPI barrier time
 ! mp_exact_numpart  Use an extra MPI communication to give the exact number of particles
-!                   to standard output (this does *not* otherwise affect the simulation) 
+!                   to standard output (this does *not* otherwise affect the simulation)
+! mp_rebalance      Attempt to rebalance particle between processes
   logical, parameter :: mp_dbg_mode = .false.
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
   logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
+  logical, parameter :: mp_rebalance=.true.
 
 ! for measuring CPU/Wall time
   real(sp),private :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
@@ -143,8 +145,8 @@ module mpi_mod
   real(sp),private :: tm_tot_beg, tm_tot_end, tm_tot_total=0.
   real(dp),private :: mp_getfields_wtime_beg, mp_getfields_wtime_end, mp_getfields_wtime_total=0.
   real(sp),private :: mp_getfields_time_beg, mp_getfields_time_end, mp_getfields_time_total=0.
-  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
-  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
+!  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
+!  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
   real(dp),private :: mp_io_wtime_beg, mp_io_wtime_end, mp_io_wtime_total=0.
   real(sp),private :: mp_io_time_beg, mp_io_time_end, mp_io_time_total=0.
   real(dp),private :: mp_wetdepo_wtime_beg, mp_wetdepo_wtime_end, mp_wetdepo_wtime_total=0.
@@ -189,8 +191,8 @@ contains
 !   mpi_mode    default 0, set to 2/3 if running MPI version
 !   mp_np       number of running processes, decided at run-time
 !***********************************************************************
-    use par_mod, only: maxpart, numwfmem, dep_prec
-    use com_mod, only: mpi_mode, verbosity
+    use par_mod, only: maxpart, numwfmem, dep_prec, maxreceptor, maxspec
+    use com_mod, only: mpi_mode, verbosity, creceptor0
 
     implicit none
 
@@ -336,7 +338,7 @@ contains
     end if
 
 ! Set maxpart per process
-! eso 08/2016: Increase maxpart per process, in case of unbalanced distribution
+! ESO 08/2016: Increase maxpart per process, in case of unbalanced distribution
     maxpart_mpi=int(mp_maxpart_factor*real(maxpart)/real(mp_partgroup_np))
     if (mp_np == 1) maxpart_mpi = maxpart
 
@@ -364,6 +366,13 @@ contains
       reqs(:)=MPI_REQUEST_NULL
     end if
 
+! Write whether MPI_IN_PLACE is used or not
+#ifdef USE_MPIINPLACE
+    if (lroot) write(*,*) 'Using MPI_IN_PLACE operations'
+#else
+    if (lroot) allocate(creceptor0(maxreceptor,maxspec))
+    if (lroot) write(*,*) 'Not using MPI_IN_PLACE operations'
+#endif
     goto 101
 
 100 write(*,*) '#### mpi_mod::mpif_init> ERROR ####', mp_ierr
@@ -558,7 +567,7 @@ contains
 ! "numpart" is larger than the actual used, so we reduce it if there are
 ! invalid particles at the end of the arrays
 
-601 do i=num_part, 1, -1
+601 do i=numpart, 1, -1
       if (itra1(i).eq.-999999999) then
         numpart=numpart-1
       else
@@ -1960,7 +1969,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
     if (readclouds) then
       j=j+1
-      call MPI_Irecv(ctwc(:,:,mind),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+      call MPI_Irecv(ctwc(:,:,mind),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
            &MPI_COMM_WORLD,reqs(j),mp_ierr)
       if (mp_ierr /= 0) goto 600
     end if
@@ -2325,7 +2334,7 @@ contains
 ! For now assume that data at all steps either have or do not have water 
       if (readclouds) then
         j=j+1
-        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1,mp_sp,id_read,MPI_ANY_TAG,&
+        call MPI_Irecv(ctwcn(:,:,mind,k),d2s1*5,mp_sp,id_read,MPI_ANY_TAG,&
              &MPI_COMM_WORLD,reqs(j),mp_ierr)
         if (mp_ierr /= 0) goto 600
       end if
@@ -2461,11 +2470,27 @@ contains
            & mp_comm_used, mp_ierr)
     end if
 
+  ! Receptor concentrations    
+    if (lroot) then
+      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    else
+      call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+    end if
+
 #else
 
       call MPI_Reduce(gridunc, gridunc0, grid_size3d, mp_sp, MPI_SUM, id_root, &
            & mp_comm_used, mp_ierr)
+      if (mp_ierr /= 0) goto 600
       if (lroot) gridunc = gridunc0
+
+      call MPI_Reduce(creceptor, creceptor0,rcpt_size,mp_sp,MPI_SUM,id_root, &
+           & mp_comm_used,mp_ierr)
+      if (mp_ierr /= 0) goto 600
+      if (lroot) creceptor = creceptor0
 
 #endif
 
@@ -2481,15 +2506,6 @@ contains
       if (mp_ierr /= 0) goto 600
     end if
 
-! Receptor concentrations    
-    if (lroot) then
-      call MPI_Reduce(MPI_IN_PLACE,creceptor,rcpt_size,mp_sp,MPI_SUM,id_root, &
-           & mp_comm_used,mp_ierr)
-      if (mp_ierr /= 0) goto 600
-    else
-      call MPI_Reduce(creceptor,0,rcpt_size,mp_sp,MPI_SUM,id_root, &
-           & mp_comm_used,mp_ierr)
-    end if
 
     if (mp_measure_time) call mpif_mtime('commtime',1)
 
@@ -2699,19 +2715,19 @@ contains
              & mp_vt_time_beg)
       end if
 
-    case ('readwind')
-      if (imode.eq.0) then
-        call cpu_time(mp_readwind_time_beg)
-        mp_readwind_wtime_beg = mpi_wtime()
-      else
-        call cpu_time(mp_readwind_time_end)
-        mp_readwind_wtime_end = mpi_wtime()
-
-        mp_readwind_time_total = mp_readwind_time_total + &
-             &(mp_readwind_time_end - mp_readwind_time_beg)
-        mp_readwind_wtime_total = mp_readwind_wtime_total + &
-             &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
-      end if
+!    case ('readwind')
+!      if (imode.eq.0) then
+!        call cpu_time(mp_readwind_time_beg)
+!        mp_readwind_wtime_beg = mpi_wtime()
+!      else
+!        call cpu_time(mp_readwind_time_end)
+!        mp_readwind_wtime_end = mpi_wtime()
+!
+!        mp_readwind_time_total = mp_readwind_time_total + &
+!             &(mp_readwind_time_end - mp_readwind_time_beg)
+!        mp_readwind_wtime_total = mp_readwind_wtime_total + &
+!             &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
+!      end if
 
     case ('commtime')
       if (imode.eq.0) then
@@ -2787,10 +2803,10 @@ contains
                & mp_getfields_wtime_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR GETFIELDS:',&
                & mp_getfields_time_total
-          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR READWIND:',&
-               & mp_readwind_wtime_total
-          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR READWIND:',&
-               & mp_readwind_time_total
+!          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR READWIND:',&
+!               & mp_readwind_wtime_total
+!          write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR READWIND:',&
+!               & mp_readwind_time_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL WALL TIME FOR FILE IO:',&
                & mp_io_wtime_total
           write(*,FMT='(A60,TR1,F9.2)') 'TOTAL CPU TIME FOR FILE IO:',&

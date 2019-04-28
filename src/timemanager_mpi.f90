@@ -343,7 +343,7 @@ subroutine timemanager(metdata_format)
 
 ! Check if particles should be redistributed among processes
 !***********************************************************
-    call mpif_calculate_part_redist(itime)
+    if (mp_rebalance) call mpif_calculate_part_redist(itime)
 
 
 ! Compute convective mixing for forward runs
@@ -531,7 +531,7 @@ subroutine timemanager(metdata_format)
                   griduncn(:,:,:,:,:,:,:)=0.
                 end if
 
-              else  ! :TODO: check for zeroing in the netcdf module
+              else
                 call concoutput_surf_nest(itime,outnum)
               end if
             else

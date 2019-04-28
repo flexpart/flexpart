@@ -650,6 +650,7 @@ module com_mod
   real :: xreceptor(maxreceptor),yreceptor(maxreceptor)
   real :: receptorarea(maxreceptor)
   real :: creceptor(maxreceptor,maxspec)
+  real, allocatable, dimension(:,:) :: creceptor0
   character(len=16) :: receptorname(maxreceptor)
   integer :: numreceptor
 
