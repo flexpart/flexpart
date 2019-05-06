@@ -72,7 +72,6 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   use par_mod
   use com_mod
   use cmapf_mod, only: cc2gll
-!  use mpi_mod
 
   implicit none
 

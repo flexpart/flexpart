@@ -87,6 +87,7 @@ module mpi_mod
 
 ! Variables for MPI processes in the 'particle' group
   integer, allocatable, dimension(:) :: mp_partgroup_rank
+  integer, allocatable, dimension(:) :: npart_per_process
   integer :: mp_partgroup_comm, mp_partgroup_pid, mp_partgroup_np
 
   integer :: mp_seed=0
@@ -124,15 +125,13 @@ module mpi_mod
 ! mp_measure_time   Measure cpu/wall time, write out at end of run
 ! mp_time_barrier   Measure MPI barrier time
 ! mp_exact_numpart  Use an extra MPI communication to give the exact number of particles
-!                   to standard output (this does *not* otherwise affect the simulation)
-! mp_rebalance      Attempt to rebalance particle between processes
+!                   to standard output (this does not otherwise affect the simulation)
   logical, parameter :: mp_dbg_mode = .false.
   logical, parameter :: mp_dev_mode = .false.
   logical, parameter :: mp_dbg_out = .false.
   logical, parameter :: mp_time_barrier=.true.
   logical, parameter :: mp_measure_time=.false.
   logical, parameter :: mp_exact_numpart=.true.
-  logical, parameter :: mp_rebalance=.true.
 
 ! for measuring CPU/Wall time
   real(sp),private :: mp_comm_time_beg, mp_comm_time_end, mp_comm_time_total=0.
@@ -145,8 +144,8 @@ module mpi_mod
   real(sp),private :: tm_tot_beg, tm_tot_end, tm_tot_total=0.
   real(dp),private :: mp_getfields_wtime_beg, mp_getfields_wtime_end, mp_getfields_wtime_total=0.
   real(sp),private :: mp_getfields_time_beg, mp_getfields_time_end, mp_getfields_time_total=0.
-!  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
-!  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
+  real(dp),private :: mp_readwind_wtime_beg, mp_readwind_wtime_end, mp_readwind_wtime_total=0.
+  real(sp),private :: mp_readwind_time_beg, mp_readwind_time_end, mp_readwind_time_total=0.
   real(dp),private :: mp_io_wtime_beg, mp_io_wtime_end, mp_io_wtime_total=0.
   real(sp),private :: mp_io_time_beg, mp_io_time_end, mp_io_time_total=0.
   real(dp),private :: mp_wetdepo_wtime_beg, mp_wetdepo_wtime_end, mp_wetdepo_wtime_total=0.
@@ -365,6 +364,9 @@ contains
       allocate(reqs(0:1))
       reqs(:)=MPI_REQUEST_NULL
     end if
+
+! Allocate array for number of particles per process    
+    allocate(npart_per_process(0:mp_partgroup_np-1))
 
 ! Write whether MPI_IN_PLACE is used or not
 #ifdef USE_MPIINPLACE
@@ -606,7 +608,7 @@ contains
     real :: pmin,z
     integer :: i,jj,nn, num_part=1,m,imin, num_trans
     logical :: first_iter
-    integer,allocatable,dimension(:) :: numparticles_mpi, idx_arr
+    integer,allocatable,dimension(:) :: idx_arr
     real,allocatable,dimension(:) :: sorted ! TODO: we don't really need this
 
 ! Exit if running with only 1 process
@@ -615,19 +617,21 @@ contains
 
 ! All processes exchange information on number of particles
 !****************************************************************************
-    allocate(numparticles_mpi(0:mp_partgroup_np-1), &
-         &idx_arr(0:mp_partgroup_np-1), sorted(0:mp_partgroup_np-1))
+    allocate( idx_arr(0:mp_partgroup_np-1), sorted(0:mp_partgroup_np-1))
 
-    call MPI_Allgather(numpart, 1, MPI_INTEGER, numparticles_mpi, &
+    call MPI_Allgather(numpart, 1, MPI_INTEGER, npart_per_process, &
          & 1, MPI_INTEGER, mp_comm_used, mp_ierr)
 
 
 ! Sort from lowest to highest
 ! Initial guess: correct order
-    sorted(:) = numparticles_mpi(:)
+    sorted(:) = npart_per_process(:)
     do i=0, mp_partgroup_np-1
       idx_arr(i) = i
     end do
+
+! Do not rebalance particles for ipout=3    
+    if (ipout.eq.3) return
 
 ! For each successive element in index array, see if a lower value exists
     do i=0, mp_partgroup_np-2
@@ -653,13 +657,13 @@ contains
 
     m=mp_partgroup_np-1 ! index for last sorted process (most particles)
     do i=0,mp_partgroup_np/2-1
-      num_trans = numparticles_mpi(idx_arr(m)) - numparticles_mpi(idx_arr(i))
+      num_trans = npart_per_process(idx_arr(m)) - npart_per_process(idx_arr(i))
       if (mp_partid.eq.idx_arr(m).or.mp_partid.eq.idx_arr(i)) then
-        if ( numparticles_mpi(idx_arr(m)).gt.mp_min_redist.and.&
-             & real(num_trans)/real(numparticles_mpi(idx_arr(m))).gt.mp_redist_fract) then
+        if ( npart_per_process(idx_arr(m)).gt.mp_min_redist.and.&
+             & real(num_trans)/real(npart_per_process(idx_arr(m))).gt.mp_redist_fract) then
 ! DBG
-          ! write(*,*) 'mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, numparticles_mpi', &
-          !      &mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, numparticles_mpi
+          ! write(*,*) 'mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, npart_per_process', &
+          !      &mp_partid, idx_arr(m), idx_arr(i), mp_min_redist, num_trans, npart_per_process
 ! DBG
           call mpif_redist_part(itime, idx_arr(m), idx_arr(i), num_trans/2)
         end if
@@ -667,7 +671,7 @@ contains
       m=m-1
     end do
 
-    deallocate(numparticles_mpi, idx_arr, sorted)
+    deallocate(idx_arr, sorted)
 
   end subroutine mpif_calculate_part_redist
 
@@ -2715,19 +2719,19 @@ contains
              & mp_vt_time_beg)
       end if
 
-!    case ('readwind')
-!      if (imode.eq.0) then
-!        call cpu_time(mp_readwind_time_beg)
-!        mp_readwind_wtime_beg = mpi_wtime()
-!      else
-!        call cpu_time(mp_readwind_time_end)
-!        mp_readwind_wtime_end = mpi_wtime()
-!
-!        mp_readwind_time_total = mp_readwind_time_total + &
-!             &(mp_readwind_time_end - mp_readwind_time_beg)
-!        mp_readwind_wtime_total = mp_readwind_wtime_total + &
-!             &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
-!      end if
+   case ('readwind')
+     if (imode.eq.0) then
+       call cpu_time(mp_readwind_time_beg)
+       mp_readwind_wtime_beg = mpi_wtime()
+     else
+       call cpu_time(mp_readwind_time_end)
+       mp_readwind_wtime_end = mpi_wtime()
+
+       mp_readwind_time_total = mp_readwind_time_total + &
+            &(mp_readwind_time_end - mp_readwind_time_beg)
+       mp_readwind_wtime_total = mp_readwind_wtime_total + &
+            &(mp_readwind_wtime_end - mp_readwind_wtime_beg)
+     end if
 
     case ('commtime')
       if (imode.eq.0) then

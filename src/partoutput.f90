@@ -70,7 +70,7 @@ subroutine partoutput(itime)
   ! Open output file and write the output
   !**************************************
 
-  if (ipout.eq.1) then
+  if (ipout.eq.1.or.ipout.eq.3) then
     open(unitpartout,file=path(2)(1:length(2))//'partposit_'//adate// &
          atime,form='unformatted')
   else

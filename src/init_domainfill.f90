@@ -86,6 +86,10 @@ subroutine init_domainfill
     endif
   endif
 
+! Exit here if resuming a run from particle dump
+!***********************************************
+  if (gdomainfill.and.ipin.ne.0) return
+
 ! Do not release particles twice (i.e., not at both in the leftmost and rightmost
 ! grid cell) for a global domain
 !*****************************************************************************
