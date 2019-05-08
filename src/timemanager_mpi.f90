@@ -593,6 +593,7 @@ subroutine timemanager(metdata_format)
 45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) then
+          if (mp_measure_time) call mpif_mtime('iotime',0)
           irec=0
           do ip=0, mp_partgroup_np-1
             if (ip.eq.mp_partid) then
@@ -602,6 +603,7 @@ subroutine timemanager(metdata_format)
             if (ipout.eq.3) irec=irec+npart_per_process(ip)
             call mpif_mpi_barrier
           end do
+          if (mp_measure_time) call mpif_mtime('iotime',1)
         end if
 
         loutnext=loutnext+loutstep

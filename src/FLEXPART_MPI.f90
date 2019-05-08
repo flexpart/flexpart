@@ -412,7 +412,7 @@ program flexpart
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
-  if (mp_measure_time) call mpif_mtime('iotime',0)
+  if (mp_measure_time) call mpif_mtime('iotime',1)
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'
