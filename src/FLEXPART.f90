@@ -67,13 +67,7 @@ program flexpart
   integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
   integer :: detectformat
 
-
-
-  ! Initialize arrays in com_mod
-  !*****************************
-  call com_mod_allocate_part(maxpart)
   
-
   ! Generate a large number of random numbers
   !******************************************
 
@@ -170,6 +164,11 @@ program flexpart
       write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
     endif     
   endif
+
+  ! Initialize arrays in com_mod
+  !*****************************
+  call com_mod_allocate_part(maxpart)
+
 
   ! Read the age classes to be used
   !********************************

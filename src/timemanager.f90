@@ -450,7 +450,10 @@ subroutine timemanager(metdata_format)
         !write(*,46) float(itime)/3600,itime,numpart
 45      format(i13,' Seconds simulated: ',i13, ' Particles:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
-        if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
+        if (ipout.ge.1) then
+          if (mod(itime,ipoutfac*loutstep).eq.0) call partoutput(itime) ! dump particle positions
+          if (ipout.eq.3) call partoutput_average(itime) ! dump particle positions
+        endif
         loutnext=loutnext+loutstep
         loutstart=loutnext-loutaver/2
         loutend=loutnext+loutaver/2
@@ -607,6 +610,12 @@ subroutine timemanager(metdata_format)
              us(j),vs(j),ws(j),nstop,xtra1(j),ytra1(j),ztra1(j),prob, &
              cbt(j))
 !        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
+
+  ! Calculate average position for particle dump output
+  !****************************************************
+
+        if (ipout.eq.3) call partpos_average(itime,j)
+
 
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************

@@ -109,6 +109,10 @@ subroutine init_domainfill
     endif
   endif
 
+! Exit here if resuming a run from particle dump
+!***********************************************
+  if (gdomainfill.and.ipin.ne.0) return
+
 ! Do not release particles twice (i.e., not at both in the leftmost and rightmost
 ! grid cell) for a global domain
 !*****************************************************************************
@@ -212,7 +216,6 @@ subroutine init_domainfill
         pp(nz)=rho(ix,jy,nz,1)*r_air*tt(ix,jy,nz,1)
         colmass(ix,jy)=(pp(1)-pp(nz))/ga*gridarea(jy)
         colmasstotal=colmasstotal+colmass(ix,jy)
-
       end do
     end do
 
@@ -465,7 +468,7 @@ subroutine init_domainfill
 !***************************************************************************
 
 ! eso TODO: only needed for root process
-    if (ipin.eq.1) then
+    if ((ipin.eq.1).and.(.not.gdomainfill)) then
       open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
            form='unformatted')
       read(unitboundcond) numcolumn_we,numcolumn_sn, &
@@ -473,27 +476,33 @@ subroutine init_domainfill
       close(unitboundcond)
     endif
 
-    numpart = numpart/mp_partgroup_np
-    if (mod(numpart,mp_partgroup_np).ne.0) numpart=numpart+1
+    if (ipin.eq.0) then    
+      numpart = numpart/mp_partgroup_np
+      if (mod(numpart,mp_partgroup_np).ne.0) numpart=numpart+1
+    end if
 
-  else ! Allocate dummy arrays for receiving processes 
-    allocate(itra1_tmp(nullsize),npoint_tmp(nullsize),nclass_tmp(nullsize),&
-         & idt_tmp(nullsize),itramem_tmp(nullsize),itrasplit_tmp(nullsize),&
-         & xtra1_tmp(nullsize),ytra1_tmp(nullsize),ztra1_tmp(nullsize),&
-         & xmass1_tmp(nullsize, nullsize))
+  else ! Allocate dummy arrays for receiving processes
+    if (ipin.eq.0) then    
+      allocate(itra1_tmp(nullsize),npoint_tmp(nullsize),nclass_tmp(nullsize),&
+           & idt_tmp(nullsize),itramem_tmp(nullsize),itrasplit_tmp(nullsize),&
+           & xtra1_tmp(nullsize),ytra1_tmp(nullsize),ztra1_tmp(nullsize),&
+           & xmass1_tmp(nullsize, nullsize))
+    end if
     
-  end if ! end if(lroot)  
+  end if ! end if(lroot)
+
 
 
 ! Distribute particles to other processes (numpart is 'per-process', not total)
-  call MPI_Bcast(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
-! eso TODO: xmassperparticle: not necessary to send
-  call MPI_Bcast(xmassperparticle, 1, mp_sp, id_root, mp_comm_used, mp_ierr)
-  call mpif_send_part_properties(numpart)
+! Only if not restarting from previous run
+  if (ipin.eq.0) then
+    call MPI_Bcast(numpart, 1, MPI_INTEGER, id_root, mp_comm_used, mp_ierr)
+    call mpif_send_part_properties(npart(1)/mp_partgroup_np)
 
 ! Deallocate the temporary arrays used for all particles
-  deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,&
+    deallocate(itra1_tmp,npoint_tmp,nclass_tmp,idt_tmp,itramem_tmp,&
          & itrasplit_tmp,xtra1_tmp,ytra1_tmp,ztra1_tmp,xmass1_tmp)
+  end if
 
 
 end subroutine init_domainfill

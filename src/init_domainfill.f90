@@ -86,6 +86,10 @@ subroutine init_domainfill
     endif
   endif
 
+! Exit here if resuming a run from particle dump
+!***********************************************
+  if (gdomainfill.and.ipin.ne.0) return
+
 ! Do not release particles twice (i.e., not at both in the leftmost and rightmost
 ! grid cell) for a global domain
 !*****************************************************************************
@@ -413,7 +417,7 @@ subroutine init_domainfill
 ! This overrides any previous calculations.
 !***************************************************************************
 
-  if (ipin.eq.1) then
+  if ((ipin.eq.1).and.(.not.gdomainfill)) then
     open(unitboundcond,file=path(2)(1:length(2))//'boundcond.bin', &
          form='unformatted')
     read(unitboundcond) numcolumn_we,numcolumn_sn, &

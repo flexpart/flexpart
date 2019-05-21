@@ -49,6 +49,7 @@ subroutine readcommand
   !                      trajectory output, 5 = options 1 and 4                *
   ! ipin                 1 continue simulation with dumped particle data, 0 no *
   ! ipout                0 no particle dump, 1 every output time, 3 only at end*
+  ! ipoutfac             increase particle dump interval by factor (default 1) *
   ! itsplit [s]          time constant for particle splitting                  *
   ! loutaver [s]         concentration output is an average over loutaver      *
   !                      seconds                                               *
@@ -96,6 +97,7 @@ subroutine readcommand
   ifine, &
   iout, &
   ipout, &
+  ipoutfac, &
   lsubgrid, &
   lconvection, &
   lagespectra, &
@@ -128,6 +130,7 @@ subroutine readcommand
   ifine=4
   iout=3
   ipout=0
+  ipoutfac=1
   lsubgrid=1
   lconvection=1
   lagespectra=0
@@ -506,9 +509,9 @@ subroutine readcommand
   ! Check whether a valid options for particle dump has been chosen
   !****************************************************************
 
-  if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2)) then
+  if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2).and.(ipout.ne.3)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IPOUT MUST BE 1, 2 OR 3!                #### '
+    write(*,*) ' #### IPOUT MUST BE 0, 1, 2 OR 3!             #### '
     stop
   endif
 

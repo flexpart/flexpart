@@ -117,6 +117,7 @@ mpi_mod.o
 ## Serial versions (MPI version with same functionality and name '_mpi.f90' exists)
 OBJECTS_SERIAL = \
 	releaseparticles.o 	partoutput.o \
+	partoutput_average.o \
 	conccalc.o \
 	init_domainfill.o 	concoutput.o  \
 	timemanager.o FLEXPART.o	\
@@ -131,7 +132,7 @@ OBJECTS_SERIAL = \
 
 ## For MPI version 
 OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
-	conccalc_mpi.o \
+	partoutput_average_mpi.o conccalc_mpi.o \
 	init_domainfill_mpi.o concoutput_mpi.o 	\
 	timemanager_mpi.o FLEXPART_MPI.o	\
 	readpartpositions_mpi.o		\
@@ -148,7 +149,7 @@ OBJECTS_NCF = netcdf_output_mod.o
 OBJECTS = \
 advance.o		initialize.o		\
 writeheader.o		writeheader_txt.o  	\
-writeprecip.o \
+partpos_average.o	writeprecip.o \
 writeheader_surf.o     	assignland.o\
 part0.o 		gethourlyOH.o\
 caldate.o               partdep.o \
@@ -347,7 +348,10 @@ outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 part0.o: par_mod.o
 partdep.o: par_mod.o
+partpos_average.o: com_mod.o par_mod.o
 partoutput.o: com_mod.o par_mod.o
+partoutput_average.o: com_mod.o par_mod.o
+partoutput_average_mpi.o: com_mod.o par_mod.o mpi_mod.o
 partoutput_mpi.o: com_mod.o mpi_mod.o par_mod.o
 partoutput_short.o: com_mod.o par_mod.o
 partoutput_short_mpi.o: com_mod.o mpi_mod.o par_mod.o
