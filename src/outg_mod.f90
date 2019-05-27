@@ -36,6 +36,8 @@ module outg_mod
   real,allocatable, dimension (:,:,:) :: areaeast
   real,allocatable, dimension (:,:,:) :: areanorth
   real,allocatable, dimension (:,:,:) :: densityoutgrid
+  real,allocatable, dimension (:,:,:) :: densitydrygrid ! added RLT 
+  real,allocatable, dimension (:,:,:) :: factor_drygrid ! added RLT 
   real,allocatable, dimension (:,:,:) :: factor3d
   real,allocatable, dimension (:,:,:) :: grid
   real(sp),allocatable, dimension (:,:) :: wetgrid

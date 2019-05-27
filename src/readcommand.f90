@@ -113,6 +113,7 @@ subroutine readcommand
   lnetcdfout, &
   surf_only, &
   cblflag, &
+  linversionout, &
   ohfields_path
 
   ! Presetting namelist command
@@ -146,6 +147,7 @@ subroutine readcommand
   lnetcdfout=0
   surf_only=0 
   cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
+  linversionout=0
   ohfields_path="../../flexin/"
 
   !Af set release-switch
@@ -413,7 +415,7 @@ subroutine readcommand
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
-  if ((iout.lt.1).or.(iout.gt.6)) then
+  if ((iout.lt.1).or.(iout.gt.5)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
     write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4 OR 5 FOR        #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
@@ -473,6 +475,16 @@ subroutine readcommand
       write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
       write(*,*) '#### FOR DOMAIN FILLING RUNS OUTPUT FOR      ####'
       write(*,*) '#### EACH RELEASE IS FORBIDDEN !             ####'
+      stop
+  endif
+
+  ! Inversion output format only for backward runs
+  !*****************************************************************************
+  
+  if ((linversionout.eq.1).and.(ldirect.eq.1)) then
+      write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
+      write(*,*) '#### INVERSION OUTPUT FORMAT ONLY FOR        ####'
+      write(*,*) '#### BACKWARD RUNS                           ####'
       stop
   endif
 
