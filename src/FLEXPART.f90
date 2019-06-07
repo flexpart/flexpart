@@ -136,7 +136,7 @@ program flexpart
     print*,'nxshift=',nxshift 
     write(*,*) 'call readpaths'
   endif 
-  call readpaths(pathfile)
+  call readpaths
  
   if (verbosity.gt.1) then !show clock info 
      !print*,'length(4)',length(4)
@@ -451,7 +451,9 @@ program flexpart
      print*,'call timemanager'
   endif
 
+  if (verbosity.gt.0) write (*,*) 'timemanager> call wetdepo'
   call timemanager(metdata_format)
+ 
 
   if (verbosity.gt.0) then
 ! NIK 16.02.2005 
@@ -466,7 +468,6 @@ program flexpart
          write(*,*) '**********************************************'
       endif
     end do
-    write (*,*) 'timemanager> call wetdepo'
   endif
   
   write(*,*) 'CONGRATULATIONS: YOU HAVE SUCCESSFULLY COMPLETED A FLE&

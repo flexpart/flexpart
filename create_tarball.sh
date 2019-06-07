@@ -1,16 +1,24 @@
 #!/bin/bash
 
 #define version number
-version=10.3beta5
+
+githash=$(git rev-parse --short --verify HEAD)
+
+
+version=10.3beta5_$githash
 
 # define tarball name
 targetdir=../flexpart_distribution/
 tarball_tmp=${targetdir}flexpart_v$version 
+#tarball=${targetdir}flexpart_v$version.tar 
+tarball=${tarball_tmp}.tar 
 
 # clean old package
 if [ -d $tarball_tmp ]; then
-  echo $tarball_tmp exists: move to $tarball_tmp.bk   
-  mv $tarball_tmp ${tarball_tmp}.bk 
+  echo $tarball_tmp exists: move to $tarball_tmp.bk and exit  
+  mkdir $tarball_tmp.bk 
+  mv $tarball_tmp ${tarball_tmp}.bk/ 
+  mv $tarball ${tarball_tmp}.bk/ 
   exit 
 fi
 
@@ -78,6 +86,15 @@ mkdir $tarball_tmp/preprocess/flex_extract
 #cp -r flex_ecmwf_src/* $tarball_tmp/preprocess/flex_ecmwf/
 #cp -r flex_ecmwf_src/* $tarball_tmp/preprocess/flex_extract/
 ## cp -r flex_extract/work/EA* $tarball_tmp/preprocess/flex_extract/work   
+
+echo include flex_extract v7.0.4 b7c1c04a204c91e53759ef590504bf52dfaece64
+flex_extract=../flex_extract_v7.0.4/
+cp $flex_extract/README.md $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/docs $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/grib_templates $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/python $tarball_tmp/preprocess/flex_extract
+cp -r $flex_extract/src $tarball_tmp/preprocess/flex_extract
+
 
 
 
@@ -174,7 +191,10 @@ mkdir $tarball_tmp/tests/ctbto
 # cp -r tests/NILU/test_1 $tarball_tmp/tests/
 # cp -r tests/default_cases $tarball_tmp/tests/
 
+tar cvf  $tarball  $tarball_tmp  
 
+echo  $tarball complete
+echo exported untarred files in $tarball_tmp 
 exit
 #return
 ###############################################################
