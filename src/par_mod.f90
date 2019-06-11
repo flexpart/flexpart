@@ -222,7 +222,7 @@ module par_mod
   ! Maximum number of particles, species, and similar
   !**************************************************
 
-  integer,parameter :: maxpart=10000000
+  integer,parameter :: maxpart=90000000
   integer,parameter :: maxspec=1
 
   real,parameter :: minmass=0.0001
@@ -277,7 +277,13 @@ module par_mod
   !*****************************************************
 
   integer,parameter :: ncluster=5
+  
+  !*******************************************************
+  ! Max/min relative gain/loss of mass for NH3 reactions (1.0=100%) 
+  !*******************************************************
 
+  real, parameter :: max_nh3_gain = 0.99, max_nh3_loss=0.99
+  
   !************************************
   ! Unit numbers for input/output files
   !************************************

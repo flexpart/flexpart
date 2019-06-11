@@ -51,6 +51,7 @@ subroutine ohreaction(itime,ltsample,loutnext)
   integer :: jpart,itime,ltsample,loutnext,ldeltat,j,k,ix,jy!,ijx,jjy
   integer :: ngrid,interp_time,n,m,h,indz,i!,ia,il
   integer :: jjjjmmdd,hhmmss,OHx,OHy,OHz,NH3x,Nh3y,NH3z
+  logical :: init=.true.
   real, dimension(nzOH) :: alttopOH
   real, dimension(nzNH3) :: alttopNH3
   real :: xlon,ylat 
@@ -60,6 +61,21 @@ subroutine ohreaction(itime,ltsample,loutnext)
   real, parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
   real(kind=dp) :: jul
 
+
+! quick sanity check
+  if (init) then
+    if (max_nh3_loss > 1.0 .or. max_nh3_loss < 0.0) then
+      write (*,*) 'Invalid max_nh3_loss'
+      stop
+    end if
+
+    if (max_nh3_gain <= 0.0) then
+      write (*,*) 'Invalid max_nh3_gain'
+      stop
+    end if
+    init=.false.
+  end if
+  
   ! Compute interval since radioactive decay of deposited mass was computed
   !************************************************************************
 
@@ -228,18 +244,32 @@ subroutine ohreaction(itime,ltsample,loutnext)
               write(*,*) 'NH3field: ',NH3LOSS_field(NH3x,NH3y,NH3z),'xmass: ',xmass1(jpart,1),xmass1(jpart,2), &
                    &'restmass: ',restmass,'lifetime: ',nh3lifetime
             endif
-            if (restmass .gt. smallnum) then
-               xmass1(jpart,k)=restmass
-            else
-               xmass1(jpart,k)=0.
+            ! if (restmass .gt. smallnum) then
+            !    xmass1(jpart,k)=restmass
+            ! else
+            !    xmass1(jpart,k)=0.
+            ! endif
+
+! Threshold for gain/loss            
+            if (restmass .gt. xmass1(jpart,k)) then
+              xmass1(jpart,k)=min(restmass, xmass1(jpart,k)*(1.0 + max_nh3_gain))
+            else if (restmass .lt. xmass1(jpart,k)) then
+              xmass1(jpart,k)=max(restmass, xmass1(jpart,k)*(1.0 - max_nh3_loss))
             endif
-         endif
-      end do
+            
+
+            if (restmass .le. smallnum) then
+              xmass1(jpart,k)=0.
+              itra1(jpart)=-999999999
+            endif
+            
+          endif
+       end do
 
 !     endif  ! nh3loss_average.gt.smallnum 
    endif ! NH3LOSS
 
-  end do  !continue loop over all particles
+ end do  !continue loop over all particles
 
 
 end subroutine ohreaction
