@@ -86,6 +86,10 @@ subroutine getfields(itime,nstop,metdata_format)
   real :: vvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,maxnests)
   real :: pvhn(0:nxmaxn-1,0:nymaxn-1,nuvzmax,maxnests)
   real :: wwhn(0:nxmaxn-1,0:nymaxn-1,nwzmax,maxnests)
+! RLT added partial pressure water vapor 
+  real :: pwater(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  integer :: kz, ix
+  character(len=100) :: rowfmt
 
   integer :: indmin = 1
 
@@ -152,9 +156,9 @@ subroutine getfields(itime,nstop,metdata_format)
     end do
 40  indmin=indj
 
-   if (WETBKDEP) then
-        call writeprecip(itime,memind(1))
-   endif
+    if (WETBKDEP) then
+      call writeprecip(itime,memind(1))
+    endif
 
   else
 
@@ -203,11 +207,34 @@ subroutine getfields(itime,nstop,metdata_format)
     end do
 60  indmin=indj
 
-   if (WETBKDEP) then
-        call writeprecip(itime,memind(1))
-   endif
+    if (WETBKDEP) then
+      call writeprecip(itime,memind(1))
+    endif
 
-  endif
+  end if
+
+  ! RLT calculate dry air density
+  pwater=qv*prs/((r_air/r_water)*(1.-qv)+qv)
+  rho_dry=(prs-pwater)/(r_air*tt)
+
+  ! test density
+!  write(rowfmt,'(A,I6,A)') '(',nymax,'(E11.4,1X))'
+!  if(itime.eq.0) then
+!    open(500,file=path(2)(1:length(2))//'rho_dry.txt',status='replace',action='write')
+!    do kz=1,nzmax
+!      do ix=1,nxmax
+!        write(500,fmt=rowfmt) rho_dry(ix,:,kz,1)
+!      end do
+!    end do
+!    close(500)
+!    open(500,file=path(2)(1:length(2))//'rho.txt',status='replace',action='write')
+!    do kz=1,nzmax
+!      do ix=1,nxmax
+!        write(500,fmt=rowfmt) rho(ix,:,kz,1)
+!      end do
+!    end do
+!    close(500)
+!  endif
 
   lwindinterv=abs(memtime(2)-memtime(1))
 
