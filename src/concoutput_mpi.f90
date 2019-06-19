@@ -363,7 +363,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
 ! Concentration output
 !*********************
-        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5).or.(iout.eq.6)) then
+        if ((iout.eq.1).or.(iout.eq.3).or.(iout.eq.5)) then
 
 ! Wet deposition
           sp_count_i=0

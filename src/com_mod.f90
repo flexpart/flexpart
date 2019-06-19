@@ -18,6 +18,8 @@ module com_mod
 
   implicit none
 
+
+
   !****************************************************************
   ! Variables defining where FLEXPART input/output files are stored
   !****************************************************************
@@ -68,7 +70,7 @@ module com_mod
   ! outstep = real(abs(loutstep))
 
   real :: ctl,fine
-  integer :: ifine,iout,ipout,ipin,iflux,mdomainfill
+  integer :: ifine,iout,ipout,ipin,iflux,mdomainfill,ipoutfac
   integer :: mquasilag,nested_output,ind_source,ind_receptor
   integer :: ind_rel,ind_samp,ioutputforeachrelease,linit_cond,surf_only
   logical :: turbswitch
@@ -81,6 +83,7 @@ module com_mod
   ! iflux    flux calculation options: 1 calculation of fluxes, 2 no fluxes
   ! iout     output options: 1 conc. output (ng/m3), 2 mixing ratio (pptv), 3 both
   ! ipout    particle dump options: 0 no, 1 every output interval, 2 only at end
+  ! ipoutfac increase particle dump interval by factor (default 1)
   ! ipin     read in particle positions from dumped file from a previous run
   ! fine     real(ifine)
   ! mdomainfill 0: normal run
@@ -120,6 +123,9 @@ module com_mod
   integer :: lnetcdfout
   ! lnetcdfout   1 for netcdf grid output, 0 if not. Set in COMMAND (namelist input)
 
+  integer :: linversionout
+  ! linversionout 1 for one grid_time output file for each release containing all timesteps
+
   integer :: nageclass,lage(maxageclass)
 
   ! nageclass               number of ageclasses for the age spectra calculation
@@ -127,7 +133,6 @@ module com_mod
 
 
   logical :: gdomainfill
-
   ! gdomainfill             .T., if domain-filling is global, .F. if not
 
 !ZHG SEP 2015 wheather or not to read clouds from GRIB
@@ -173,7 +178,7 @@ module com_mod
   real :: vset(maxspec,ni),schmi(maxspec,ni),fract(maxspec,ni)
   real :: ri(5,numclass),rac(5,numclass),rcl(maxspec,5,numclass)
   real :: rgs(maxspec,5,numclass),rlu(maxspec,5,numclass)
-  real :: rm(maxspec),dryvel(maxspec)
+  real :: rm(maxspec),dryvel(maxspec),kao(maxspec)
   real :: ohcconst(maxspec),ohdconst(maxspec),ohnconst(maxspec)
 
   real :: area_hour(maxspec,24),point_hour(maxspec,24)
@@ -358,7 +363,9 @@ module com_mod
   real :: clwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !liquid   [kg/kg]
   real :: ciwc(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0 !ice      [kg/kg]
   real :: clw(0:nxmax-1,0:nymax-1,nzmax,numwfmem)=0.0  !combined [m3/m3]
-
+! RLT add pressure and dry air density
+  real :: prs(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
+  real :: rho_dry(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: pv(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: rho(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
   real :: drhodz(0:nxmax-1,0:nymax-1,nzmax,numwfmem)
@@ -380,6 +387,7 @@ module com_mod
   ! uu,vv,ww [m/2]       wind components in x,y and z direction
   ! uupol,vvpol [m/s]    wind components in polar stereographic projection
   ! tt [K]               temperature data
+  ! prs                  air pressure
   ! qv                   specific humidity data
   ! pv (pvu)             potential vorticity
   ! rho [kg/m3]          air density
@@ -650,6 +658,7 @@ module com_mod
   real :: xreceptor(maxreceptor),yreceptor(maxreceptor)
   real :: receptorarea(maxreceptor)
   real :: creceptor(maxreceptor,maxspec)
+  real, allocatable, dimension(:,:) :: creceptor0
   character(len=16) :: receptorname(maxreceptor)
   integer :: numreceptor
 
@@ -672,6 +681,14 @@ module com_mod
   real, allocatable, dimension(:) :: ztra1 
   real, allocatable, dimension(:,:) :: xmass1
   real, allocatable, dimension(:,:) :: xscav_frac1
+
+! Variables used for writing out interval averages for partoutput
+!****************************************************************
+
+  integer, allocatable, dimension(:) :: npart_av
+  real, allocatable, dimension(:) :: part_av_cartx,part_av_carty,part_av_cartz,part_av_z,part_av_topo
+  real, allocatable, dimension(:) :: part_av_pv,part_av_qv,part_av_tt,part_av_rho,part_av_tro,part_av_hmix
+  real, allocatable, dimension(:) :: part_av_uu,part_av_vv,part_av_energy
 
   ! eso: Moved from timemanager
   real, allocatable, dimension(:) :: uap,ucp,uzp,us,vs,ws
@@ -779,13 +796,21 @@ contains
     allocate(itra1(nmpart),npoint(nmpart),nclass(nmpart),&
          & idt(nmpart),itramem(nmpart),itrasplit(nmpart),&
          & xtra1(nmpart),ytra1(nmpart),ztra1(nmpart),&
-         & xmass1(nmpart, maxspec),&
-         & checklifetime(nmpart,maxspec), species_lifetime(maxspec,2))!CGZ-lifetime
+         & xmass1(nmpart, maxspec))  ! ,&
+!         & checklifetime(nmpart,maxspec), species_lifetime(maxspec,2))!CGZ-lifetime
+
+    if (ipout.eq.3) then
+      allocate(npart_av(nmpart),part_av_cartx(nmpart),part_av_carty(nmpart),&
+           & part_av_cartz(nmpart),part_av_z(nmpart),part_av_topo(nmpart))
+      allocate(part_av_pv(nmpart),part_av_qv(nmpart),part_av_tt(nmpart),&
+           & part_av_rho(nmpart),part_av_tro(nmpart),part_av_hmix(nmpart))
+      allocate(part_av_uu(nmpart),part_av_vv(nmpart),part_av_energy(nmpart))
+    end if
 
 
     allocate(uap(nmpart),ucp(nmpart),uzp(nmpart),us(nmpart),&
          & vs(nmpart),ws(nmpart),cbt(nmpart))
-    
+
   end subroutine com_mod_allocate_part
 
 

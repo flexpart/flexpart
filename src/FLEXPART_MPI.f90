@@ -76,12 +76,7 @@ program flexpart
 
   if (mp_measure_time) call mpif_mtime('flexpart',0)
 
-  ! Initialize arrays in com_mod 
-  !*****************************
-
-  if(.not.(lmpreader.and.lmp_use_reader)) call com_mod_allocate_part(maxpart_mpi)
-
-
+  
   ! Generate a large number of random numbers
   !******************************************
 
@@ -150,7 +145,7 @@ program flexpart
   if (verbosity.gt.0) then
     write(*,*) 'call readpaths'
   endif 
-  call readpaths(pathfile)
+  call readpaths
  
   if (verbosity.gt.1) then !show clock info 
      !print*,'length(4)',length(4)
@@ -178,6 +173,11 @@ program flexpart
       write(*,*) 'SYSTEM_CLOCK',(count_clock - count_clock0)/real(count_rate) !, count_rate, count_max
     endif
   endif
+
+  ! Initialize arrays in com_mod 
+  !*****************************
+
+  if(.not.(lmpreader.and.lmp_use_reader)) call com_mod_allocate_part(maxpart_mpi)
 
 
 ! Read the age classes to be used
@@ -412,7 +412,7 @@ program flexpart
     if (nested_output.ne.1.and.surf_only.eq.1) call writeheader_surf
   end if ! (mpif_pid == 0) 
 
-  if (mp_measure_time) call mpif_mtime('iotime',0)
+  if (mp_measure_time) call mpif_mtime('iotime',1)
 
   if (verbosity.gt.0 .and. lroot) then
     print*,'call openreceptors'

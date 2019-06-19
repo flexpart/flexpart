@@ -407,7 +407,16 @@ subroutine timemanager(metdata_format)
               call concoutput_surf_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
 #endif
             else
+              if (linversionout.eq.1) then
+                call concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                if (verbosity.eq.1) then
+                  print*,'called concoutput_inversion'
+                  call system_clock(count_clock)
+                  write(*,*) 'system clock',count_clock - count_clock0 
+                endif
+              else
               call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+              endif
               if (verbosity.eq.1) then
                 print*,'called concoutput_surf '
                 call system_clock(count_clock)
@@ -421,7 +430,11 @@ subroutine timemanager(metdata_format)
               if (surf_only.ne.1) then
                 call concoutput_nest(itime,outnum)
               else 
+                if(linversionout.eq.1) then
+                  call concoutput_inversion_nest(itime,outnum)
+                else 
                 call concoutput_surf_nest(itime,outnum)
+              endif
               endif
             else
 #ifdef USE_NCF
@@ -450,7 +463,10 @@ subroutine timemanager(metdata_format)
         !write(*,46) float(itime)/3600,itime,numpart
 45      format(i13,' Seconds simulated: ',i13, ' Particles:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
-        if (ipout.ge.1) call partoutput(itime)    ! dump particle positions
+        if (ipout.ge.1) then
+          if (mod(itime,ipoutfac*loutstep).eq.0) call partoutput(itime) ! dump particle positions
+          if (ipout.eq.3) call partoutput_average(itime) ! dump particle positions
+        endif
         loutnext=loutnext+loutstep
         loutstart=loutnext-loutaver/2
         loutend=loutnext+loutaver/2
@@ -608,6 +624,12 @@ subroutine timemanager(metdata_format)
              cbt(j))
 !        write (*,*) 'advance: ',prob(1),xmass1(j,1),ztra1(j)
 
+  ! Calculate average position for particle dump output
+  !****************************************************
+
+        if (ipout.eq.3) call partpos_average(itime,j)
+
+
   ! Calculate the gross fluxes across layer interfaces
   !***************************************************
 
@@ -729,7 +751,13 @@ subroutine timemanager(metdata_format)
 
   if (ipout.eq.2) call partoutput(itime)     ! dump particle positions
 
-  if (linit_cond.ge.1) call initial_cond_output(itime)   ! dump initial cond. field
+  if (linit_cond.ge.1) then
+    if(linversionout.eq.1) then
+      call initial_cond_output_inversion(itime)   ! dump initial cond. field
+    else
+      call initial_cond_output(itime)   ! dump initial cond. fielf
+    endif
+  endif
 
   !close(104)
 
