@@ -72,7 +72,6 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   use par_mod
   use com_mod
   use cmapf_mod, only: cc2gll
-!  use mpi_mod
 
   implicit none
 
@@ -81,6 +80,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: rhoh,uvzlev,wzlev
   real,dimension(0:nxmax-1,0:nymax-1,nzmax) :: pinmconv
+  ! RLT added pressure
+  real,dimension(0:nxmax-1,0:nymax-1,nuvzmax) :: prsh
   real,dimension(0:nxmax-1,0:nymax-1) ::  tvold,pold,pint,tv
   real,dimension(0:nymax-1) :: cosf
 
@@ -218,7 +219,6 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! Loop over the whole grid
 !*************************
 
-
   do jy=0,nymin1
     do ix=0,nxmin1
       tvold(ix,jy)=tt2(ix,jy,1,n)*(1.+0.378*ew(td2(ix,jy,1,n))/ &
@@ -229,6 +229,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
   uvzlev(:,:,1)=0.
   wzlev(:,:,1)=0.
   rhoh(:,:,1)=pold/(r_air*tvold)
+  ! RLT add pressure
+  prsh(:,:,1)=ps(:,:,1,n)
 
 
 ! Compute heights of eta levels
@@ -236,6 +238,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 
   do kz=2,nuvz
     pint=akz(kz)+bkz(kz)*ps(:,:,1,n)
+    ! RLT add pressure
+    prsh(:,:,kz)=pint
     tv=tth(:,:,kz,n)*(1.+0.608*qvh(:,:,kz,n))
     rhoh(:,:,kz)=pint(:,:)/(r_air*tv)
 
@@ -287,6 +291,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg 
   pv(:,:,1,n)=pvh(:,:,1)
   rho(:,:,1,n)=rhoh(:,:,1)
+! RLT add pressure
+  prs(:,:,1,n)=prsh(:,:,1)
 
   uu(:,:,nz,n)=uuh(:,:,nuvz)
   vv(:,:,nz,n)=vvh(:,:,nuvz)
@@ -300,7 +306,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
   pv(:,:,nz,n)=pvh(:,:,nuvz)
   rho(:,:,nz,n)=rhoh(:,:,nuvz)
-
+! RLT
+  prs(:,:,nz,n)=prsh(:,:,nuvz)
 
   kmin=2
   idx=kmin
@@ -320,6 +327,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
           pv(ix,jy,iz,n)=pv(ix,jy,nz,n)
           rho(ix,jy,iz,n)=rho(ix,jy,nz,n)
+! RLT
+          prs(ix,jy,iz,n)=prs(ix,jy,nz,n)
         else
           innuvz: do kz=idx(ix,jy),nuvz
             if (idx(ix,jy) .le. kz .and. (height(iz).gt.uvzlev(ix,jy,kz-1)).and. &
@@ -353,6 +362,8 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 !hg
           pv(ix,jy,iz,n)=(pvh(ix,jy,kz-1)*dz2+pvh(ix,jy,kz)*dz1)/dz
           rho(ix,jy,iz,n)=(rhoh(ix,jy,kz-1)*dz2+rhoh(ix,jy,kz)*dz1)/dz
+! RLT add pressure
+          prs(ix,jy,iz,n)=(prsh(ix,jy,kz-1)*dz2+prsh(ix,jy,kz)*dz1)/dz
         endif
       enddo
     enddo
@@ -653,7 +664,7 @@ subroutine verttransform_ecmwf(n,uuh,vvh,wwh,pvh)
 ! If Precipitation. Define removal type in the vertical
         if ((lsp.gt.0.01).or.(convp.gt.0.01)) then ! cloud and precipitation
 
-          do kz=nz,1,-1 !go Bottom up!
+          do kz=nz,2,-1 !go Bottom up!
             if (clw(ix,jy,kz,n).gt. 0) then ! is in cloud
               cloudsh(ix,jy,n)=cloudsh(ix,jy,n)+height(kz)-height(kz-1) 
               clouds(ix,jy,kz,n)=1                               ! is a cloud

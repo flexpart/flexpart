@@ -49,6 +49,7 @@ subroutine readcommand
   !                      trajectory output, 5 = options 1 and 4                *
   ! ipin                 1 continue simulation with dumped particle data, 0 no *
   ! ipout                0 no particle dump, 1 every output time, 3 only at end*
+  ! ipoutfac             increase particle dump interval by factor (default 1) *
   ! itsplit [s]          time constant for particle splitting                  *
   ! loutaver [s]         concentration output is an average over loutaver      *
   !                      seconds                                               *
@@ -96,6 +97,7 @@ subroutine readcommand
   ifine, &
   iout, &
   ipout, &
+  ipoutfac, &
   lsubgrid, &
   lconvection, &
   lagespectra, &
@@ -111,6 +113,7 @@ subroutine readcommand
   lnetcdfout, &
   surf_only, &
   cblflag, &
+  linversionout, &
   ohfields_path
 
   ! Presetting namelist command
@@ -128,6 +131,7 @@ subroutine readcommand
   ifine=4
   iout=3
   ipout=0
+  ipoutfac=1
   lsubgrid=1
   lconvection=1
   lagespectra=0
@@ -143,6 +147,7 @@ subroutine readcommand
   lnetcdfout=0
   surf_only=0 
   cblflag=0 ! if using old-style COMMAND file, set to 1 here to use mc cbl routine
+  linversionout=0
   ohfields_path="../../flexin/"
 
   !Af set release-switch
@@ -410,7 +415,7 @@ subroutine readcommand
   ! Check whether a valid option for gridded model output has been chosen
   !**********************************************************************
 
-  if ((iout.lt.1).or.(iout.gt.6)) then
+  if ((iout.lt.1).or.(iout.gt.5)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
     write(*,*) ' #### IOUT MUST BE 1, 2, 3, 4 OR 5 FOR        #### '
     write(*,*) ' #### STANDARD FLEXPART OUTPUT OR  9 - 13     #### '
@@ -473,6 +478,16 @@ subroutine readcommand
       stop
   endif
 
+  ! Inversion output format only for backward runs
+  !*****************************************************************************
+  
+  if ((linversionout.eq.1).and.(ldirect.eq.1)) then
+      write(*,*) '#### FLEXPART MODEL ERROR! FILE COMMAND:     ####'
+      write(*,*) '#### INVERSION OUTPUT FORMAT ONLY FOR        ####'
+      write(*,*) '#### BACKWARD RUNS                           ####'
+      stop
+  endif
+
 
   ! For domain-filling trajectories, a plume centroid trajectory makes no sense,
   ! For backward runs, only residence time output (iout=1) or plume trajectories (iout=4),
@@ -506,9 +521,9 @@ subroutine readcommand
   ! Check whether a valid options for particle dump has been chosen
   !****************************************************************
 
-  if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2)) then
+  if ((ipout.ne.0).and.(ipout.ne.1).and.(ipout.ne.2).and.(ipout.ne.3)) then
     write(*,*) ' #### FLEXPART MODEL ERROR! FILE COMMAND:     #### '
-    write(*,*) ' #### IPOUT MUST BE 1, 2 OR 3!                #### '
+    write(*,*) ' #### IPOUT MUST BE 0, 1, 2 OR 3!             #### '
     stop
   endif
 

@@ -92,7 +92,7 @@ module netcdf_output_mod
   logical, parameter :: min_size = .false.   ! if set true, redundant fields (topography) are not written to minimize file size
   character(len=255), parameter :: institution = 'NILU'
 
-  integer            :: tpointer
+  integer            :: tpointer=0
   character(len=255) :: ncfname, ncfnamen
 
   ! netcdf dimension and variable IDs for main and nested output grid

@@ -113,7 +113,8 @@ subroutine releaseparticles(itime)
   !*****************************************************************************
       average_timecorrect=0.
       do k=1,nspec
-        if (zpoint1(i).gt.0.5) then      ! point source
+        if(abs(xpoint2(i)-xpoint1(i)).lt.1.E-4.and.abs(ypoint2(i)-ypoint1(i)).lt.1.E-4) then
+!        if (zpoint1(i).gt.0.5) then      ! point source
           timecorrect(k)=point_hour(k,nhour)*point_dow(k,ndayofweek)
         else                             ! area source
           timecorrect(k)=area_hour(k,nhour)*area_dow(k,ndayofweek)

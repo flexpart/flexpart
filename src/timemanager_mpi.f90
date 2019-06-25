@@ -112,7 +112,7 @@ subroutine timemanager(metdata_format)
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0
 ! integer :: ksp
-  integer :: ip
+  integer :: ip,irec
   integer :: loutnext,loutstart,loutend
   integer :: ix,jy,ldeltat,itage,nage,idummy
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
@@ -128,6 +128,7 @@ subroutine timemanager(metdata_format)
 
 ! Measure time spent in timemanager
   if (mp_measure_time) call mpif_mtime('timemanager',0)
+
 
 ! First output for time 0
 !************************
@@ -531,7 +532,7 @@ subroutine timemanager(metdata_format)
                   griduncn(:,:,:,:,:,:,:)=0.
                 end if
 
-              else  ! :TODO: check for zeroing in the netcdf module
+              else
                 call concoutput_surf_nest(itime,outnum)
               end if
             else
@@ -592,10 +593,17 @@ subroutine timemanager(metdata_format)
 45      format(i13,' SECONDS SIMULATED: ',i13, ' PARTICLES:    Uncertainty: ',3f7.3)
 46      format(' Simulated ',f7.1,' hours (',i13,' s), ',i13, ' particles')
         if (ipout.ge.1) then
+          if (mp_measure_time) call mpif_mtime('iotime',0)
+          irec=0
           do ip=0, mp_partgroup_np-1
-            if (ip.eq.mp_partid) call partoutput(itime) ! dump particle positions
+            if (ip.eq.mp_partid) then
+              if (mod(itime,ipoutfac*loutstep).eq.0) call partoutput(itime) ! dump particle positions
+              if (ipout.eq.3) call partoutput_average(itime,irec) ! dump particle positions
+            endif
+            if (ipout.eq.3) irec=irec+npart_per_process(ip)
             call mpif_mpi_barrier
           end do
+          if (mp_measure_time) call mpif_mtime('iotime',1)
         end if
 
         loutnext=loutnext+loutstep
@@ -756,6 +764,11 @@ subroutine timemanager(metdata_format)
 
         if (mp_measure_time) call mpif_mtime('advance',1)
 
+  ! Calculate average position for particle dump output
+  !****************************************************
+
+        if (ipout.eq.3) call partpos_average(itime,j)
+
 
 ! Calculate the gross fluxes across layer interfaces
 !***************************************************
@@ -894,7 +907,7 @@ subroutine timemanager(metdata_format)
 ! MPI process 0 creates the file, the other processes append to it
     do ip=0, mp_partgroup_np-1
       if (ip.eq.mp_partid) then 
-        !if (mp_dbg_mode) write(*,*) 'call partoutput(itime), proc, mp_partid',ip,mp_partid
+        if (mp_dbg_mode) write(*,*) 'call partoutput(itime), proc, mp_partid',ip,mp_partid
         call partoutput(itime)    ! dump particle positions
       end if
       call mpif_mpi_barrier

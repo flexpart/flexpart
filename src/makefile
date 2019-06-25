@@ -117,6 +117,7 @@ mpi_mod.o
 ## Serial versions (MPI version with same functionality and name '_mpi.f90' exists)
 OBJECTS_SERIAL = \
 	releaseparticles.o 	partoutput.o \
+	partoutput_average.o \
 	conccalc.o \
 	init_domainfill.o 	concoutput.o  \
 	timemanager.o FLEXPART.o	\
@@ -126,12 +127,14 @@ OBJECTS_SERIAL = \
 	boundcond_domainfill.o	\
 	redist.o		\
 	concoutput_surf.o	concoutput_surf_nest.o	\
+	concoutput_inversion_nest.o 	\
+	concoutput_inversion.o \
 	getfields.o \
         readwind_ecmwf.o
 
 ## For MPI version 
 OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
-	conccalc_mpi.o \
+	partoutput_average_mpi.o conccalc_mpi.o \
 	init_domainfill_mpi.o concoutput_mpi.o 	\
 	timemanager_mpi.o FLEXPART_MPI.o	\
 	readpartpositions_mpi.o		\
@@ -148,7 +151,7 @@ OBJECTS_NCF = netcdf_output_mod.o
 OBJECTS = \
 advance.o		initialize.o		\
 writeheader.o		writeheader_txt.o  	\
-writeprecip.o \
+partpos_average.o	writeprecip.o \
 writeheader_surf.o     	assignland.o\
 part0.o 		gethourlyOH.o\
 caldate.o               partdep.o \
@@ -198,7 +201,7 @@ writeheader_nest.o writeheader_nest_surf.o \
 wetdepokernel_nest.o \
 drydepokernel_nest.o    zenithangle.o \
 ohreaction.o            getvdep_nests.o \
-initial_cond_calc.o     initial_cond_output.o \
+initial_cond_calc.o     initial_cond_output.o initial_cond_output_inversion.o \
 dynamic_viscosity.o     get_settling.o	\
 initialize_cbl_vel.o	re_initialize_particle.o \
 cbl.o
@@ -270,9 +273,11 @@ com_mod.o: par_mod.o
 conccalc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 conccalc_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o unc_mod.o
 concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
+concoutput_inversion_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
 concoutput_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o mean_mod.o
 concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
@@ -319,6 +324,7 @@ init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 initial_cond_calc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 initial_cond_output.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
 initialize.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o random_mod.o
 initialize_cbl_vel.o: com_mod.o par_mod.o random_mod.o
 interpol_all.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o
@@ -347,7 +353,10 @@ outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 part0.o: par_mod.o
 partdep.o: par_mod.o
+partpos_average.o: com_mod.o par_mod.o
 partoutput.o: com_mod.o par_mod.o
+partoutput_average.o: com_mod.o par_mod.o
+partoutput_average_mpi.o: com_mod.o par_mod.o mpi_mod.o
 partoutput_mpi.o: com_mod.o mpi_mod.o par_mod.o
 partoutput_short.o: com_mod.o par_mod.o
 partoutput_short_mpi.o: com_mod.o mpi_mod.o par_mod.o
