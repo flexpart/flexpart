@@ -1,5 +1,5 @@
 &SPECIES_PARAMS
- PSPECIES=""Ru-106",          ! Tracer name
+ PSPECIES="Ru-106",          ! Tracer name
  PDECAY=31536000.0,           ! Species half life
  PWETA_GAS=-0.9E-9,           ! Below-cloud scavenging (gases) - A (weta_gas)
  PWETB_GAS=-9.9,              ! Below-cloud scavenging (gases) - B (wetb_gas)
