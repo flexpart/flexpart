@@ -221,6 +221,8 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   elseif ((discipl.eq.2).and.(parCat.eq.0).and.(parNum.eq.0).and. &
        (typSurf.eq.1)) then ! LSM
     isec1(6)=172         ! indicatorOfParameter
+  elseif (parNum.eq.152) then 
+      isec1(6)=152         ! avoid warning for lnsp       
   else
     print*,'***WARNING: undefined GRiB2 message found!',discipl, &
          parCat,parNum,typSurf
