@@ -98,6 +98,11 @@ subroutine readspecies(id_spec,pos_spec)
   pohdconst=-9.9E-09
   pohnconst=2.0
   pweightmolar=-999.9
+  parea_dow=-999.9
+  parea_hour=-999.9
+  ppoint_dow=-999.9
+  ppoint_hour=-999.9
+
 
   do j=1,24           ! initialize everything to no variation
     parea_hour(j)=1.
