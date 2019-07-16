@@ -294,15 +294,15 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
           if (act_temp .le. 253.) then
             liq_frac=0
             ice_frac=1
-          else if (act_temp .ge. 273.15) then
+          else if (act_temp .ge. 273.) then
             liq_frac=1
             ice_frac=0
           else
 ! sec bugfix after FLEXPART paper review, liq_frac was 1-liq_frac
 ! IP bugfix v10.4, calculate ice_frac and liq_frac
             ice_frac= ((act_temp-273.)/(273.-253.))**2.
-            liq_frac = 1-ice_frac   !((act_temp-253.)/(273.-253.))**2.
-
+            !liq_frac = 1-ice_frac   !((act_temp-253.)/(273.-253.))**2.
+            liq_frac=max(0.,1.-ice_frac)
           end if
 ! ZHG: Calculate the aerosol partition based on cloud phase and Ai and Bi
 !         frac_act = liq_frac*ccn_aero(ks) +(1-liq_frac)*in_aero(ks)
