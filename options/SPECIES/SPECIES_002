@@ -8,8 +8,8 @@
  PCCN_AERO=-9.9,              ! In-cloud scavenging (particles) - CCNeff (ccn_aero)
  PIN_AERO=-9.9,               ! In-cloud scavenging (particles) - INeff (in_aero)
  PDENSITY=-0.9E+9,            ! Dry deposition (particles) - rho
- PDQUER=-9.9,                 ! Dry deposition (particles) - dquer
- PDSIGMA=-9.9,                ! Dry deposition (particles) - dsig
+ PDQUER=0.,                   ! Dry deposition (particles) - dquer
+ PDSIGMA=0.,                  ! Dry deposition (particles) - dsig
  PDRYVEL=-9.9,                ! Alternative: dry deposition velocity
  PRELDIFF=1.6,                ! Dry deposition (gases) - D
  PHENRY=1.0E-2,               ! Dry deposition (gases) - Henrys const.

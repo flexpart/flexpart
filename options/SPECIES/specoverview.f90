@@ -110,5 +110,6 @@ enddo
 write(*,*) '** unit [cm^3/molec/s] (in FLEXPART version 9.2 and below this had unit [cm3/s], note the unit is now changed!)'
 write(*,*) '*** no unit'
 
+ print*,'rho: density'
 
 end
