@@ -71,6 +71,7 @@ subroutine partdep(nc,density,fract,schmi,vset,ra,ustar,nyl,vdep)
   !*****************************************************************************
 
   use par_mod
+  use com_mod, only: debug_mode
 
   implicit none
 
@@ -109,8 +110,19 @@ subroutine partdep(nc,density,fract,schmi,vset,ra,ustar,nyl,vdep)
   !***********************************************************************
 
         vdep(ic)=vdep(ic)+vdepj*fract(ic,j)
+        
+        !print*, 'partdep:113: ic', ic, 'vdep', vdep
+        !stop
       end do
     endif
+
+
   end do
+
+  !if (debug_mode) then
+  !  print*, 'partdep:122:'
+  !  write(*,*) (vdep(ic), ic=1,nc)
+    !stop
+  !endif
 
 end subroutine partdep

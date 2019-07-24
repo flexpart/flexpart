@@ -761,6 +761,7 @@ module com_mod
   !********************
   ! Verbosity, testing flags, namelist I/O
   !********************   
+  logical :: debug_mode=.false.
   integer :: verbosity=0
   integer :: info_flag=0
   integer :: count_clock, count_clock0,  count_rate, count_max

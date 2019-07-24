@@ -61,7 +61,7 @@ program flexpart
 
   implicit none
 
-  integer :: i,j,ix,jy,inest
+  integer :: i,j,ix,jy,inest, iopt
   integer :: idummy = -320
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
   integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
@@ -79,7 +79,7 @@ program flexpart
 
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
-  flexversion='Version '//trim(flexversion_major)//'.4 (2019-07-16)'
+  flexversion='Version '//trim(flexversion_major)//'.4 (2019-07-23)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -108,15 +108,43 @@ program flexpart
   print*,'Welcome to FLEXPART ', trim(flexversion)
   print*,'FLEXPART is free software released under the GNU General Public License.'
  
+
+  ! Ingest inline options
+  !*******************************************************
   if (inline_options(1:1).eq.'-') then
-    if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
-       print*, 'Verbose mode 1: display detailed information during run'
-       verbosity=1
+    print*,'inline_options:',inline_options
+    !verbose mode
+    iopt=index(inline_options,'v') 
+    if (iopt.gt.0) then
+      verbosity=1
+      !print*, iopt, inline_options(iopt+1:iopt+1)
+      if  (trim(inline_options(iopt+1:iopt+1)).eq.'2') then
+        !print*, 'verbosity=2' 
+        print*, 'Verbose mode 2: display more detailed information during run'
+        verbosity=2
+      endif
     endif
-    if (trim(inline_options).eq.'-v2') then
-       print*, 'Verbose mode 2: display more detailed information during run'
-       verbosity=2
+
+    
+    !debug mode 
+    iopt=index(inline_options,'d')
+    if (iopt.gt.0) then
+      debug_mode=.true.
+      endif
     endif
+
+
+    
+!      stop
+!    if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
+!       print*, 'Verbose mode 1: display detailed information during run'
+!       verbosity=1
+!    endif
+!    if (trim(inline_options).eq.'-v2') then
+!       print*, 'Verbose mode 2: display more detailed information during run'
+!       verbosity=2
+!    endif
+
     if (trim(inline_options).eq.'-i') then
        print*, 'Info mode: provide detailed run specific information and stop'
        verbosity=1
@@ -134,6 +162,9 @@ program flexpart
     print*, 'nymax=',nymax
     print*, 'nzmax=',nzmax
     print*,'nxshift=',nxshift 
+  endif
+  
+  if (verbosity.gt.0) then
     write(*,*) 'call readpaths'
   endif 
   call readpaths
@@ -192,6 +223,9 @@ program flexpart
 
   ! Detect metdata format
   !**********************
+  if (verbosity.gt.0) then
+    write(*,*) 'call detectformat'
+  endif
 
   metdata_format = detectformat()
 

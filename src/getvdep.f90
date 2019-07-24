@@ -169,9 +169,6 @@ subroutine getvdep(n,ix,jy,ust,temp,pa,L,gr,rh,rr,snow,vdepo)
         if (reldiff(i).gt.0.) then
           if ((ra+rb(i)+rc(i)).gt.0.) then
             vd=1./(ra+rb(i)+rc(i))
-  ! XXXXXXXXXXXXXXXXXXXXXXXXXX TEST
-  !         vd=1./rc(i)
-  ! XXXXXXXXXXXXXXXXXXXXXXXXXX TEST
           else
             vd=9.999
           endif
@@ -187,6 +184,10 @@ subroutine getvdep(n,ix,jy,ust,temp,pa,L,gr,rh,rr,snow,vdepo)
 
   call partdep(nspec,density,fract,schmi,vset,raquer,ust,nyl,vdepo)
 
+  !if (debug_mode) then
+  !  print*,'getvdep:188: vdepo=', vdepo
+    !stop
+  !endif
 
   ! 7. If no detailed parameterization available, take constant deposition
   !    velocity if that is available
