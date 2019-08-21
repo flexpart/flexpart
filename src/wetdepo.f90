@@ -87,7 +87,7 @@ subroutine wetdepo(itime,ltsample,loutnext)
 !ZHG aerosol below-cloud scavenging removal polynomial constants for rain and snow
   real, parameter :: bclr(6) = (/274.35758, 332839.59273, 226656.57259, 58005.91340, 6588.38582, 0.244984/) !rain (Laakso et al 2003)
   real, parameter :: bcls(6) = (/22.7, 0.0, 0.0, 1321.0, 381.0, 0.0/) !now (Kyro et al 2009)
-  real :: frac_act, liq_frac, dquer_m
+  real :: frac_act, liq_frac, ice_frac, dquer_m
 
   integer :: blc_count, inc_count
   real    :: Si_dummy, wetscav_dummy
