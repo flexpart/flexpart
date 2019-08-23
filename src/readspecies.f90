@@ -350,7 +350,7 @@ subroutine readspecies(id_spec,pos_spec)
   end if
 
   !  if (dsigma(i).eq.0.) dsigma(i)=1.0001   ! avoid floating exception
-  if (dsigma(i).le.1.) then !dsigma(i)=1.0001   ! avoid floating exception
+  if (dquer(i).gt.0 .and. dsigma(i).le.1.) then !dsigma(i)=1.0001   ! avoid floating exception
     !write(*,*) '#### FLEXPART MODEL ERROR!                      ####'
     write(*,*) '#### FLEXPART MODEL WARNING                     ####'
     write(*,*) '#### in SPECIES_',aspecnumb, '                             ####'
