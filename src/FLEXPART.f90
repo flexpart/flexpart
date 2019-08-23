@@ -119,32 +119,15 @@ program flexpart
       verbosity=1
       !print*, iopt, inline_options(iopt+1:iopt+1)
       if  (trim(inline_options(iopt+1:iopt+1)).eq.'2') then
-        !print*, 'verbosity=2' 
         print*, 'Verbose mode 2: display more detailed information during run'
         verbosity=2
       endif
     endif
-
-    
     !debug mode 
     iopt=index(inline_options,'d')
     if (iopt.gt.0) then
       debug_mode=.true.
-      endif
     endif
-
-
-    
-!      stop
-!    if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
-!       print*, 'Verbose mode 1: display detailed information during run'
-!       verbosity=1
-!    endif
-!    if (trim(inline_options).eq.'-v2') then
-!       print*, 'Verbose mode 2: display more detailed information during run'
-!       verbosity=2
-!    endif
-
     if (trim(inline_options).eq.'-i') then
        print*, 'Info mode: provide detailed run specific information and stop'
        verbosity=1
