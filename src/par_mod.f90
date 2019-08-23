@@ -92,8 +92,9 @@ module par_mod
   ! r_water                 specific gas constant for water vapor [J/kg/K]
 
   real,parameter :: karman=0.40, href=15., convke=2.0
-  real,parameter :: hmixmin=100., hmixmax=4500., turbmesoscale=0.16
-  real,parameter :: d_trop=50., d_strat=0.1
+  real,parameter :: hmixmin=100., hmixmax=4500. !, turbmesoscale=0.16
+  !real,parameter :: d_trop=50., d_strat=0.1
+  real :: d_trop=50., d_strat=0.1, turbmesoscale=0.16 ! turbulence factors can change for different runs
   real,parameter :: rho_water=1000. !ZHG 2015 [kg/m3]
   !ZHG MAR2016
   real,parameter :: incloud_ratio=6.2
@@ -156,7 +157,7 @@ module par_mod
 
 ! GFS
    integer,parameter :: nxmax=361,nymax=181,nuvzmax=138,nwzmax=138,nzmax=138
-   integer :: nxshift=0
+   integer :: nxshift=0 ! shift not fixed for the executable 
 
 
   !*********************************************

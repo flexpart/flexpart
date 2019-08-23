@@ -114,7 +114,9 @@ subroutine readcommand
   surf_only, &
   cblflag, &
   linversionout, &
-  ohfields_path
+  ohfields_path, &
+  d_trop, &
+  d_strat
 
   ! Presetting namelist command
   ldirect=0
