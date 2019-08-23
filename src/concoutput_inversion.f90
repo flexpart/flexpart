@@ -354,7 +354,8 @@ subroutine concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc, &
             open(unit=unitrelnames, file=path(2)(1:length(2))//'releases_out',form='formatted', &
                  & access='APPEND', iostat=ierr)
             write(unitrelnames,'(a)') areldate//areltime//'_'//anspec
-            call flush(unit=unitrelnames)
+            !call flush(unit=unitrelnames)
+            flush(unit=unitrelnames)
             close(unitrelnames)
           endif
         endif
