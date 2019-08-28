@@ -24,7 +24,7 @@
  Z1      =         50.000, ! Lower height of release box meters/hPa above reference level
  Z2      =         50.000, ! Upper height of release box meters/hPa above reference level
  ZKIND   =              1, ! Reference level 1=above ground, 2=above sea level, 3 for pressure in hPa
- MASS    =       1.0000E8, ! Total mass emitted, only relevant for fwd simulations
+ MASS    =       1.0000E0, ! Total mass emitted, only relevant for fwd simulations
  PARTS   =          10000, ! Total number of particles to be released
  COMMENT =    "RELEASE 1", ! Comment, written in the outputfile
  /
