@@ -250,8 +250,6 @@ cleanall:
 .SUFFIXES = $(SUFFIXES) .f90
 
 ## DEPENDENCIES
-get_vdep_prob.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
-	point_mod.o random_mod.o
 advance.o: cmapf_mod.o com_mod.o hanna_mod.o interpol_mod.o par_mod.o \
 	point_mod.o random_mod.o
 assignland.o: com_mod.o par_mod.o
@@ -259,8 +257,8 @@ boundcond_domainfill.o: com_mod.o par_mod.o point_mod.o random_mod.o
 boundcond_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o
 calcfluxes.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
-calcmatrix.o: com_mod.o conv_mod.o par_mod.o class_gribfile_mod.o
-calcpar.o: com_mod.o par_mod.o class_gribfile_mod.o
+calcmatrix.o: com_mod.o conv_mod.o par_mod.o
+calcpar.o: com_mod.o par_mod.o
 calcpar_nests.o: com_mod.o par_mod.o
 calcpv.o: com_mod.o par_mod.o
 calcpv_nests.o: com_mod.o par_mod.o
@@ -272,59 +270,63 @@ cmapf_mod.o: par_mod.o
 com_mod.o: par_mod.o
 conccalc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 conccalc_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o unc_mod.o
-concoutput.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o mean_mod.o
-concoutput_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_inversion_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o mean_mod.o
-concoutput_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_surf_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o point_mod.o \
-	unc_mod.o mean_mod.o
-concoutput_surf_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-concoutput_surf_nest_mpi.o: com_mod.o mpi_mod.o outg_mod.o par_mod.o \
-	point_mod.o unc_mod.o mean_mod.o
+concoutput.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+concoutput_inversion.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+concoutput_inversion_nest.o: com_mod.o mean_mod.o outg_mod.o par_mod.o \
+	point_mod.o unc_mod.o
+concoutput_mpi.o: com_mod.o mean_mod.o mpi_mod.o outg_mod.o par_mod.o \
+	point_mod.o unc_mod.o
+concoutput_nest.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+concoutput_nest_mpi.o: com_mod.o mean_mod.o mpi_mod.o outg_mod.o par_mod.o \
+	point_mod.o unc_mod.o
+concoutput_surf.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+concoutput_surf_mpi.o: com_mod.o mean_mod.o mpi_mod.o outg_mod.o par_mod.o \
+	point_mod.o unc_mod.o
+concoutput_surf_nest.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+concoutput_surf_nest_mpi.o: com_mod.o mean_mod.o mpi_mod.o outg_mod.o \
+	par_mod.o point_mod.o unc_mod.o
 conv_mod.o: par_mod.o
 convect43c.o: conv_mod.o par_mod.o
-convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o class_gribfile_mod.o
+convmix.o: com_mod.o conv_mod.o flux_mod.o par_mod.o
 coordtrafo.o: com_mod.o par_mod.o point_mod.o
-detectformat.o: com_mod.o par_mod.o class_gribfile_mod.o
+detectformat.o: com_mod.o par_mod.o
 distance.o: par_mod.o
 distance2.o: par_mod.o
 drydepokernel.o: com_mod.o par_mod.o unc_mod.o
 drydepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 erf.o: par_mod.o
-FLEXPART.o: com_mod.o conv_mod.o par_mod.o point_mod.o random_mod.o netcdf_output_mod.o class_gribfile_mod.o
-FLEXPART_MPI.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o point_mod.o \
-	random_mod.o netcdf_output_mod.o class_gribfile_mod.o
+FLEXPART.o: com_mod.o conv_mod.o netcdf_output_mod.o par_mod.o point_mod.o \
+	random_mod.o
+FLEXPART_MPI.o: com_mod.o conv_mod.o mpi_mod.o netcdf_output_mod.o par_mod.o \
+	point_mod.o random_mod.o
 fluxoutput.o: com_mod.o flux_mod.o outg_mod.o par_mod.o
 get_settling.o: com_mod.o par_mod.o
-getfields.o: com_mod.o par_mod.o class_gribfile_mod.o
-getfields_mpi.o: com_mod.o par_mod.o mpi_mod.o class_gribfile_mod.o
+get_vdep_prob.o: com_mod.o interpol_mod.o par_mod.o point_mod.o
+get_wetscav.o: com_mod.o par_mod.o point_mod.o
+getfields.o: com_mod.o par_mod.o
+getfields_mpi.o: com_mod.o mpi_mod.o par_mod.o
 gethourlyOH.o: com_mod.o oh_mod.o par_mod.o
 getrb.o: par_mod.o
 getrc.o: com_mod.o par_mod.o
 getvdep.o: com_mod.o par_mod.o
 getvdep_nests.o: com_mod.o par_mod.o
+grib2check.o: com_mod.o par_mod.o
 gridcheck_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
-gridcheck_emos.o: com_mod.o conv_mod.o par_mod.o
-gridcheck_fnl.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
 gridcheck_gfs.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
-gridcheck_gfs_emos.o: com_mod.o conv_mod.o par_mod.o
 gridcheck_nests.o: com_mod.o par_mod.o
-gridcheck_nests_emos.o: com_mod.o par_mod.o
-gridcheck_orig_ecmwf.o: cmapf_mod.o com_mod.o conv_mod.o par_mod.o
 hanna.o: com_mod.o hanna_mod.o par_mod.o
 hanna1.o: com_mod.o hanna_mod.o par_mod.o
 hanna_short.o: com_mod.o hanna_mod.o par_mod.o
 init_domainfill.o: com_mod.o par_mod.o point_mod.o random_mod.o
-init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
-	random_mod.o
+init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o random_mod.o
 initial_cond_calc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 initial_cond_output.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
-initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
 initialize.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o random_mod.o
 initialize_cbl_vel.o: com_mod.o par_mod.o random_mod.o
 interpol_all.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o
@@ -343,8 +345,9 @@ interpol_wind_short_nests.o: com_mod.o interpol_mod.o par_mod.o
 juldate.o: par_mod.o
 mean_mod.o: par_mod.o
 mpi_mod.o: com_mod.o par_mod.o unc_mod.o
-netcdf_output_mod.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mean_mod.o
-obukhov.o: par_mod.o class_gribfile_mod.o
+netcdf_output_mod.o: com_mod.o mean_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+obukhov.o: par_mod.o
 ohreaction.o: com_mod.o oh_mod.o par_mod.o
 openouttraj.o: com_mod.o par_mod.o point_mod.o
 openreceptors.o: com_mod.o par_mod.o
@@ -352,16 +355,16 @@ outg_mod.o: par_mod.o
 outgrid_init.o: com_mod.o flux_mod.o oh_mod.o outg_mod.o par_mod.o unc_mod.o
 outgrid_init_nest.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 part0.o: par_mod.o
-partdep.o: par_mod.o
-partpos_average.o: com_mod.o par_mod.o
+partdep.o: com_mod.o par_mod.o
 partoutput.o: com_mod.o par_mod.o
 partoutput_average.o: com_mod.o par_mod.o
-partoutput_average_mpi.o: com_mod.o par_mod.o mpi_mod.o
+partoutput_average_mpi.o: com_mod.o mpi_mod.o par_mod.o
 partoutput_mpi.o: com_mod.o mpi_mod.o par_mod.o
 partoutput_short.o: com_mod.o par_mod.o
 partoutput_short_mpi.o: com_mod.o mpi_mod.o par_mod.o
+partpos_average.o: com_mod.o par_mod.o
 pbl_profile.o: par_mod.o
-plumetraj.o: com_mod.o par_mod.o point_mod.o mean_mod.o
+plumetraj.o: com_mod.o mean_mod.o par_mod.o point_mod.o
 psih.o: par_mod.o
 psim.o: par_mod.o
 raerod.o: par_mod.o
@@ -371,7 +374,6 @@ readavailable.o: com_mod.o par_mod.o
 readcommand.o: com_mod.o par_mod.o
 readdepo.o: com_mod.o par_mod.o
 readlanduse.o: com_mod.o par_mod.o
-#readlanduse_int1.o: com_mod.o par_mod.o
 readOHfield.o: com_mod.o oh_mod.o par_mod.o
 readoutgrid.o: com_mod.o outg_mod.o par_mod.o
 readoutgrid_nest.o: com_mod.o outg_mod.o par_mod.o
@@ -382,38 +384,34 @@ readreceptors.o: com_mod.o par_mod.o
 readreleases.o: com_mod.o par_mod.o point_mod.o xmass_mod.o
 readspecies.o: com_mod.o par_mod.o
 readwind_ecmwf.o: com_mod.o par_mod.o
+readwind_ecmwf_mpi.o: com_mod.o mpi_mod.o par_mod.o
 readwind_emos.o: com_mod.o par_mod.o
 readwind_gfs.o: com_mod.o par_mod.o
-readwind_gfs_emos.o: com_mod.o par_mod.o
-readwind_ecmwf_mpi.o: com_mod.o mpi_mod.o par_mod.o
 readwind_nests.o: com_mod.o par_mod.o
-readwind_nests_emos.o: com_mod.o par_mod.o
 redist.o: com_mod.o conv_mod.o par_mod.o random_mod.o
 redist_mpi.o: com_mod.o conv_mod.o mpi_mod.o par_mod.o random_mod.o
-releaseparticles.o: com_mod.o par_mod.o point_mod.o random_mod.o \
-	xmass_mod.o
+releaseparticles.o: com_mod.o par_mod.o point_mod.o random_mod.o xmass_mod.o
 releaseparticles_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o \
 	random_mod.o xmass_mod.o
-richardson.o: par_mod.o class_gribfile_mod.o
+richardson.o: par_mod.o
 scalev.o: par_mod.o
 shift_field.o: par_mod.o
 shift_field_0.o: par_mod.o
 timemanager.o: com_mod.o flux_mod.o netcdf_output_mod.o oh_mod.o outg_mod.o \
 	par_mod.o point_mod.o unc_mod.o xmass_mod.o
-timemanager_mpi.o: com_mod.o flux_mod.o mpi_mod.o oh_mod.o outg_mod.o \
-	par_mod.o point_mod.o unc_mod.o xmass_mod.o netcdf_output_mod.o	
+timemanager_mpi.o: com_mod.o flux_mod.o mpi_mod.o netcdf_output_mod.o \
+	oh_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o xmass_mod.o
 unc_mod.o: par_mod.o
-verttransform_ecmwf.o: cmapf_mod.o com_mod.o par_mod.o 
+verttransform_ecmwf.o: cmapf_mod.o com_mod.o par_mod.o
 verttransform_gfs.o: cmapf_mod.o com_mod.o par_mod.o
 verttransform_nests.o: com_mod.o par_mod.o
-get_wetscav.o: com_mod.o par_mod.o point_mod.o
 wetdepo.o: com_mod.o par_mod.o point_mod.o
 wetdepokernel.o: com_mod.o par_mod.o unc_mod.o
 wetdepokernel_nest.o: com_mod.o par_mod.o unc_mod.o
 writeheader.o: com_mod.o outg_mod.o par_mod.o point_mod.o
-writeprecip.o: com_mod.o par_mod.o point_mod.o
 writeheader_nest.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_nest_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_surf.o: com_mod.o outg_mod.o par_mod.o point_mod.o
 writeheader_txt.o: com_mod.o outg_mod.o par_mod.o point_mod.o
+writeprecip.o: com_mod.o par_mod.o point_mod.o
 zenithangle.o: par_mod.o
