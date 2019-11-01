@@ -343,7 +343,7 @@ subroutine gridcheck_ecmwf
     endif
     nxmin1=nx-1
     nymin1=ny-1
-    if (xlon0.gt.180.) xlon0=xlon0-360.
+    if (xlon0.ge.180.) xlon0=xlon0-360.
     xauxa=abs(yaux1+90.)
     if (xglobal.and.xauxa.lt.0.001) then
       sglobal=.true.               ! field contains south pole
