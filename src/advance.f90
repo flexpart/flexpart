@@ -122,7 +122,7 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   !real rhoprof(nzmax),rhogradprof(nzmax)
   real :: rhoa,rhograd,delz,dtf,rhoaux,dtftlw,uxscale,wpscale
   integer(kind=2) :: icbt
-  real,parameter :: eps=nxmax/3.e5,eps2=1.e-9
+  real,parameter :: eps=nxmax/3.e5,eps2=1.e-9,eps3=tiny(1.0)
   real :: ptot_lhh,Q_lhh,phi_lhh,ath,bth !modified by mc 
   real :: old_wp_buf,dcas,dcas1,del_test !added by mc
   integer :: i_well,jj,flagrein !test well mixed: modified by mc
@@ -536,12 +536,10 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
       if (mdomainfill.eq.0) then
         if (lsettling) then
           do nsp=1,nspec
-            if (xmass(nrelpoint,nsp).gt.eps2) exit
+            if (xmass(nrelpoint,nsp).gt.eps3) exit
           end do
           if (nsp.gt.nspec) then
-  ! This should never happen          
-            write(*,*) 'advance.f90: ERROR: could not find releasepoint'
-            stop
+            nsp=nspec
           end if
           if (density(nsp).gt.0.) then
             call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
@@ -706,12 +704,10 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   if (mdomainfill.eq.0) then
     if (lsettling) then
       do nsp=1,nspec
-        if (xmass(nrelpoint,nsp).gt.eps2) exit
+        if (xmass(nrelpoint,nsp).gt.eps3) exit
       end do
       if (nsp.gt.nspec) then
-  ! This should never happen          
-        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
-        stop
+        nsp=nspec
       end if
       if (density(nsp).gt.0.) then
         call get_settling(itime,real(xt),real(yt),zt,nsp,settling)  !bugfix
@@ -916,12 +912,10 @@ subroutine advance(itime,nrelpoint,ldt,up,vp,wp, &
   if (mdomainfill.eq.0) then
     if (lsettling) then
       do nsp=1,nspec
-        if (xmass(nrelpoint,nsp).gt.eps2) exit
+        if (xmass(nrelpoint,nsp).gt.eps3) exit
       end do
       if (nsp.gt.nspec) then
-  ! This should never happen          
-        write(*,*) 'advance.f90: ERROR: could not find releasepoint'
-        stop
+        nsp=nspec
       end if
       if (density(nsp).gt.0.) then
         call get_settling(itime+ldt,real(xt),real(yt),zt,nsp,settling) !bugfix
