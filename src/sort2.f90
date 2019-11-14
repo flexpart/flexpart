@@ -1,6 +1,3 @@
-! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
-! SPDX-License-Identifier: GPL-3.0-or-later
-
 ! From numerical recipes
 ! Change by A. Stohl: Use of integer instead of real values
 
