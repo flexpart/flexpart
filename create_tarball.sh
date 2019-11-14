@@ -182,7 +182,7 @@ mkdir $tarball_tmp/tests
 echo ----------------- examples -------------------
 
 mkdir $tarball_tmp/tests/examples
-cp -r ../flex_tests_examples/examples3/* $tarball_tmp/tests/examples/
+cp -r ../flex_tests_examples/examples/* $tarball_tmp/tests/examples/
 
 echo ----------------- examples_reference -------------------
 cp -r ./tests/examples_reference $tarball_tmp/tests/
