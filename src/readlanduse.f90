@@ -29,17 +29,17 @@ subroutine readlanduse
   !                                                                            *
   ! LANDUSE CATEGORIES:                                                        *
   !                                                                            *
-  ! 1	Urban land                                                             *
-  ! 2	Agricultural land					               *
-  ! 3	Range land					                       *
-  ! 4	Deciduous forest			                               *
-  ! 5	Coniferous forest		                                       *
-  ! 6	Mixed forest including wetland                                         *
-  ! 7	water, both salt and fresh                                             *
-  ! 8	barren land mostly desert                                              *
-  ! 9	nonforested wetland	                                               *
-  ! 10 	mixed agricultural and range land		                       *
-  ! 11 	rocky open areas with low growing shrubs                               *
+  ! 1   Urban land                                                             *
+  ! 2   Agricultural land                                  *
+  ! 3   Range land                                         *
+  ! 4   Deciduous forest                                           *
+  ! 5   Coniferous forest                                              *
+  ! 6   Mixed forest including wetland                                         *
+  ! 7   water, both salt and fresh                                             *
+  ! 8   barren land mostly desert                                              *
+  ! 9   nonforested wetland                                                *
+  ! 10  mixed agricultural and range land                              *
+  ! 11  rocky open areas with low growing shrubs                               *
   ! 12  ice                                                                    *
   ! 13  rainforest                                                             *
   !                                                                            *

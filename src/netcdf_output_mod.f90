@@ -179,7 +179,7 @@ subroutine writemetadata(ncid,lnest)
      call nf90_err(nf90_put_att(ncid, nf90_global, 'dxout', dxout))
      call nf90_err(nf90_put_att(ncid, nf90_global, 'dyout', dyout))
   endif
-!	vertical levels stored in grid structure
+!   vertical levels stored in grid structure
 
   ! COMMAND file settings
   call nf90_err(nf90_put_att(ncid, nf90_global, 'ldirect', ldirect))

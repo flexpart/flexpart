@@ -71,7 +71,7 @@ subroutine re_initialize_particle(zp,ust,wst,h,sigmaw,wp,nrand,ol)
 
 
 
-  if ((sign(1.,wp)*timedir).gt.0) then !updraft	  
+  if ((sign(1.,wp)*timedir).gt.0) then !updraft   
 100 wp=(dcas1*sigmawa+wa)
     if (wp.lt.0)  then
       nrand=nrand+1
@@ -79,7 +79,7 @@ subroutine re_initialize_particle(zp,ust,wst,h,sigmaw,wp,nrand,ol)
       goto 100
     end if
     wp=wp*timedir
-  else if ((sign(1.,wp)*timedir).lt.0) then !downdraft	  
+  else if ((sign(1.,wp)*timedir).lt.0) then !downdraft    
 101 wp=(dcas1*sigmawb-wb)
     if (wp.gt.0)  then 
       nrand=nrand+1

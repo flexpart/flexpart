@@ -231,7 +231,7 @@ real function cgszll (strcmp, xlat,xlong)
   ymerc = log((1. + slat) / (1. - slat))/2.
   !efact = exp(ymerc)
   !cgszll = 2. * strcmp(7) * exp (strcmp(1) * ymerc)
-  !c			 / (efact + 1./efact)
+  !c             / (efact + 1./efact)
   endif
   cgszll = strcmp(7) * cos(radpdg * xlat) * exp(strcmp(1) *ymerc)
   return
