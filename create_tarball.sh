@@ -79,6 +79,9 @@ cp -r src/gributils $tarball_tmp/src
 cp src/makefile $tarball_tmp/src
 echo ---------------------------------------------------------
 
+cp LICENSE $tarball_tmp/LICENSE_GPLv3
+cp src/flexpart_license.txt  $tarball_tmp/src
+
 echo
 
 # options dir
