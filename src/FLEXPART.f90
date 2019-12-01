@@ -1,24 +1,3 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
 program flexpart
 
   !*****************************************************************************
@@ -61,7 +40,7 @@ program flexpart
 
   implicit none
 
-  integer :: i,j,ix,jy,inest
+  integer :: i,j,ix,jy,inest, iopt
   integer :: idummy = -320
   character(len=256) :: inline_options  !pathfile, flexversion, arg2
   integer :: metdata_format = GRIBFILE_CENTRE_UNKNOWN
@@ -79,7 +58,7 @@ program flexpart
 
   ! FLEXPART version string
   flexversion_major = '10' ! Major version number, also used for species file names
-  flexversion='Version '//trim(flexversion_major)//'.2beta (2017-08-01)'
+  flexversion='Version '//trim(flexversion_major)//'.4 (2019-11-12)'
   verbosity=0
 
   ! Read the pathnames where input/output files are stored
@@ -108,14 +87,25 @@ program flexpart
   print*,'Welcome to FLEXPART ', trim(flexversion)
   print*,'FLEXPART is free software released under the GNU General Public License.'
  
+
+  ! Ingest inline options
+  !*******************************************************
   if (inline_options(1:1).eq.'-') then
-    if (trim(inline_options).eq.'-v'.or.trim(inline_options).eq.'-v1') then
-       print*, 'Verbose mode 1: display detailed information during run'
-       verbosity=1
+    print*,'inline_options:',inline_options
+    !verbose mode
+    iopt=index(inline_options,'v') 
+    if (iopt.gt.0) then
+      verbosity=1
+      !print*, iopt, inline_options(iopt+1:iopt+1)
+      if  (trim(inline_options(iopt+1:iopt+1)).eq.'2') then
+        print*, 'Verbose mode 2: display more detailed information during run'
+        verbosity=2
+      endif
     endif
-    if (trim(inline_options).eq.'-v2') then
-       print*, 'Verbose mode 2: display more detailed information during run'
-       verbosity=2
+    !debug mode 
+    iopt=index(inline_options,'d')
+    if (iopt.gt.0) then
+      debug_mode=.true.
     endif
     if (trim(inline_options).eq.'-i') then
        print*, 'Info mode: provide detailed run specific information and stop'
@@ -134,6 +124,9 @@ program flexpart
     print*, 'nymax=',nymax
     print*, 'nzmax=',nzmax
     print*,'nxshift=',nxshift 
+  endif
+  
+  if (verbosity.gt.0) then
     write(*,*) 'call readpaths'
   endif 
   call readpaths
@@ -192,6 +185,9 @@ program flexpart
 
   ! Detect metdata format
   !**********************
+  if (verbosity.gt.0) then
+    write(*,*) 'call detectformat'
+  endif
 
   metdata_format = detectformat()
 

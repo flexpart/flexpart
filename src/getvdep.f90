@@ -1,24 +1,3 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
 subroutine getvdep(n,ix,jy,ust,temp,pa,L,gr,rh,rr,snow,vdepo)
   !                   i i  i   i   i   i  i i  i  i    i o
   !*****************************************************************************
@@ -169,9 +148,6 @@ subroutine getvdep(n,ix,jy,ust,temp,pa,L,gr,rh,rr,snow,vdepo)
         if (reldiff(i).gt.0.) then
           if ((ra+rb(i)+rc(i)).gt.0.) then
             vd=1./(ra+rb(i)+rc(i))
-  ! XXXXXXXXXXXXXXXXXXXXXXXXXX TEST
-  !         vd=1./rc(i)
-  ! XXXXXXXXXXXXXXXXXXXXXXXXXX TEST
           else
             vd=9.999
           endif
@@ -187,6 +163,10 @@ subroutine getvdep(n,ix,jy,ust,temp,pa,L,gr,rh,rr,snow,vdepo)
 
   call partdep(nspec,density,fract,schmi,vset,raquer,ust,nyl,vdepo)
 
+  !if (debug_mode) then
+  !  print*,'getvdep:188: vdepo=', vdepo
+    !stop
+  !endif
 
   ! 7. If no detailed parameterization available, take constant deposition
   !    velocity if that is available

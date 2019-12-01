@@ -1,24 +1,3 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
 subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc_count,wetscav)
 !                          i      i        i     i   i    o           o          o       o
 !*****************************************************************************
@@ -87,7 +66,7 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !ZHG aerosol below-cloud scavenging removal polynomial constants for rain and snow
   real, parameter :: bclr(6) = (/274.35758, 332839.59273, 226656.57259, 58005.91340, 6588.38582, 0.244984/) !rain (Laakso et al 2003)
   real, parameter :: bcls(6) = (/22.7, 0.0, 0.0, 1321.0, 381.0, 0.0/) !now (Kyro et al 2009)
-  real :: frac_act, liq_frac, dquer_m
+  real :: frac_act, liq_frac, ice_frac, dquer_m
 
   real    :: Si_dummy, wetscav_dummy
   logical :: readclouds_this_nest
@@ -293,13 +272,21 @@ subroutine get_wetscav(itime,ltsample,loutnext,jpart,ks,grfraction,inc_count,blc
 !ZHG: Calculate the partition between liquid and water phase water. 
           if (act_temp .le. 253.) then
             liq_frac=0
+            ice_frac=1
           else if (act_temp .ge. 273.) then
             liq_frac=1
+            ice_frac=0
           else
-            liq_frac =((act_temp-273.)/(273.-253.))**2.
+! sec bugfix after FLEXPART paper review, liq_frac was 1-liq_frac
+! IP bugfix v10.4, calculate ice_frac and liq_frac
+            ice_frac= ((act_temp-273.)/(273.-253.))**2.
+            !liq_frac = 1-ice_frac   !((act_temp-253.)/(273.-253.))**2.
+            liq_frac=max(0.,1.-ice_frac)
           end if
 ! ZHG: Calculate the aerosol partition based on cloud phase and Ai and Bi
-          frac_act = liq_frac*ccn_aero(ks) +(1-liq_frac)*in_aero(ks)
+!         frac_act = liq_frac*ccn_aero(ks) +(1-liq_frac)*in_aero(ks)
+! IP, use ice_frac and liq_frac 
+          frac_act = liq_frac*ccn_aero(ks) + ice_frac*in_aero(ks)
 
 !ZHG Use the activated fraction and the liqid water to calculate the washout
 

@@ -1,24 +1,3 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
 subroutine readspecies(id_spec,pos_spec)
 
   !*****************************************************************************
@@ -98,6 +77,11 @@ subroutine readspecies(id_spec,pos_spec)
   pohdconst=-9.9E-09
   pohnconst=2.0
   pweightmolar=-999.9
+  parea_dow=-999.9
+  parea_hour=-999.9
+  ppoint_dow=-999.9
+  ppoint_hour=-999.9
+
 
   do j=1,24           ! initialize everything to no variation
     parea_hour(j)=1.
@@ -290,7 +274,13 @@ subroutine readspecies(id_spec,pos_spec)
       end if
       if (density(pos_spec) .gt. 0) then
         write(*,'(a)') '  Dry deposition is turned         :   ON'
+        if (reldiff(pos_spec).gt.0) then
+           stop 'density>0 (SPECIES is a particle) implies reldiff <=0  '
+        endif
       else
+        if (reldiff(pos_spec).le.0) then
+           stop 'density<=0 (SPECIES is a gas) implies reldiff >0  '
+        endif      
         write(*,'(a)') '  Dry deposition is (density<0)    :   OFF'
       end if
       if (crain_aero(pos_spec).gt.10.0 .or. csnow_aero(pos_spec).gt.10.0 .or. &
@@ -338,7 +328,21 @@ subroutine readspecies(id_spec,pos_spec)
     end if
   end if
 
-  if (dsigma(i).eq.0.) dsigma(i)=1.0001   ! avoid floating exception
+  !  if (dsigma(i).eq.0.) dsigma(i)=1.0001   ! avoid floating exception
+  if (dquer(i).gt.0 .and. dsigma(i).le.1.) then !dsigma(i)=1.0001   ! avoid floating exception
+    !write(*,*) '#### FLEXPART MODEL ERROR!                      ####'
+    write(*,*) '#### FLEXPART MODEL WARNING                     ####'
+    write(*,*) '#### in SPECIES_',aspecnumb, '                             ####'
+    write(*,*) '#### from v10.4 dsigma has to be larger than 1  ####'  
+    write(*,*) '#### to adapt older SPECIES files,              ####' 
+    write(*,*) '#### if dsigma was < 1                          ####' 
+    write(*,*) '#### use the reciprocal of the old dsigma       ####'  
+    if (.not.debug_mode) then 
+       stop
+    else
+       write(*,*) 'debug mode: continue'
+    endif
+  endif
 
   if ((reldiff(i).gt.0.).and.(density(i).gt.0.)) then
     write(*,*) '#### FLEXPART MODEL ERROR! FILE "SPECIES"    ####'

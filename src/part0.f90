@@ -1,24 +1,3 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
 subroutine part0(dquer,dsigma,density,fract,schmi,cun,vsh)
   !                  i      i       i      o     o    o   o
   !*****************************************************************************
@@ -102,19 +81,20 @@ subroutine part0(dquer,dsigma,density,fract,schmi,cun,vsh)
     d01=dquer*dsigma**(-3.+delta*real(i))
     x01=alog(d01/dquer)/xdummy
     x02=alog(d02/dquer)/xdummy
-
+    !print*,'part0:: d02=' , d02 , 'd01=', d01
 
   ! Area under Gauss-function is calculated and gives mass fraction of interval
   !****************************************************************************
 
     fract(i)=0.5*(erf(x01)-erf(x02))
-
+    !print*,'part0:: fract(',i,')', fract(i)
+    !print*,'part0:: fract', fract(i), x01, x02, erf(x01), erf(x02)
 
   ! Geometric mean diameter of interval in [m]
   !*******************************************
 
     dmean=1.E-6*exp(0.5*alog(d01*d02))
-
+    !print*,'part0:: dmean=', dmean
 
   ! Calculation of time independent parameters of each interval
   !************************************************************
@@ -131,6 +111,10 @@ subroutine part0(dquer,dsigma,density,fract,schmi,cun,vsh)
     schmi(i)=schmidt**(-2./3.)
     vsh(i)=ga*density*dmean*dmean*cun/(18.*myl)
 
+    !print*,'part0:: vsh(',i,')', vsh(i)
+
   end do
+
+  !stop 'part0' 
 
 end subroutine part0
