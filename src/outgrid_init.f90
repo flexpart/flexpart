@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 ! DJM - 2017-05-09 - added #ifdef USE_MPIINPLACE cpp directive to     *
 ! enable allocation of a gridunc0 array if required by MPI code in    *
 ! mpi_mod.f90                                                         *

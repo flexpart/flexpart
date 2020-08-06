@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine interpol_rain(yy1,yy2,yy3,nxmax,nymax,nzmax,nx, &
        ny,iwftouse,xt,yt,level,itime1,itime2,itime,yint1,yint2,yint3)
   !                          i   i   i    i    i     i   i

@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine clustering(xl,yl,zl,n,xclust,yclust,zclust,fclust,rms, &
        rmsclust,zrms)
   !                      i  i  i  i   o      o      o      o     o

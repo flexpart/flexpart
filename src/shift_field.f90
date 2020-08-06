@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine shift_field(field,nxf,nyf,nzfmax,nzf,nmax,n)
   !                        i/o   i   i    i     i   i   i
   !*****************************************************************************

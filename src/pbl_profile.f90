@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine pbl_profile(ps,td2m,zml1,t2m,tml1,u10m,uml1,stress,hf)
 
   !********************************************************************

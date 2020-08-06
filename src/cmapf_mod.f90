@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 ! Changes to the routines by A. Stohl
 ! xi,xi0,eta,eta0 are double precision variables to avoid problems
 ! at poles
@@ -228,7 +231,7 @@ real function cgszll (strcmp, xlat,xlong)
   ymerc = log((1. + slat) / (1. - slat))/2.
   !efact = exp(ymerc)
   !cgszll = 2. * strcmp(7) * exp (strcmp(1) * ymerc)
-  !c			 / (efact + 1./efact)
+  !c             / (efact + 1./efact)
   endif
   cgszll = strcmp(7) * cos(radpdg * xlat) * exp(strcmp(1) *ymerc)
   return

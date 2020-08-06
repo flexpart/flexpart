@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine initialize_cbl_vel(idum,zp,ust,wst,h,sigmaw,wp, ol)
 !                              i/o   i  i   i  i     i  o   i  
 
