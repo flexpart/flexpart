@@ -77,7 +77,7 @@ CONTAINS
         ! fills in attributes that can be accessed through methods in this
         ! module
 
-        USE grib_api
+        use grib_api 
 
         IMPLICIT NONE
 

@@ -36,7 +36,7 @@ subroutine gridcheck_nests
   !  CHANGE: 03/12/2008, Harald Sodemann, change to f90 grib_api               *
   !*****************************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
 

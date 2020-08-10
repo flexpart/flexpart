@@ -24,7 +24,7 @@ module com_mod
   ! Variables defining where FLEXPART input/output files are stored
   !****************************************************************
 
-  character :: path(numpath+2*maxnests)*120
+  character :: path(numpath+2*maxnests)*200
   integer :: length(numpath+2*maxnests)
   character(len=256) :: pathfile, flexversion, flexversion_major, arg1, arg2
   character(len=256) :: ohfields_path

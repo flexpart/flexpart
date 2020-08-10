@@ -111,7 +111,7 @@ subroutine timemanager(metdata_format)
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage,idummy
+  integer :: ix,jy,ldeltat,itage,nage,idummy,idummy2
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
   real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact,wetscav
   ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
@@ -598,7 +598,7 @@ subroutine timemanager(metdata_format)
        if (WETBKDEP) then 
        do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
-            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
+            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy2,wetscav)
             if (wetscav.gt.0) then
                 xscav_frac1(j,ks)=wetscav* &
                        (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
