@@ -1,23 +1,5 @@
-!**********************************************************************
-! Copyright 2013                                                      *
-! Dominik Brunner                                                     *
-!                                                                     *
-! This file is part of FLEXPART-COSMO                                 *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
-
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
 
   !*****************************************************************************
   !                                                                            *
@@ -197,7 +179,7 @@ subroutine writemetadata(ncid,lnest)
      call nf90_err(nf90_put_att(ncid, nf90_global, 'dxout', dxout))
      call nf90_err(nf90_put_att(ncid, nf90_global, 'dyout', dyout))
   endif
-!	vertical levels stored in grid structure
+!   vertical levels stored in grid structure
 
   ! COMMAND file settings
   call nf90_err(nf90_put_att(ncid, nf90_global, 'ldirect', ldirect))

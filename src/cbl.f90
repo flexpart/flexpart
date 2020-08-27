@@ -1,23 +1,5 @@
-!**********************************************************************
-! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
-! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
-! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
-!                                                                     *
-! This file is part of FLEXPART.                                      *
-!                                                                     *
-! FLEXPART is free software: you can redistribute it and/or modify    *
-! it under the terms of the GNU General Public License as published by*
-! the Free Software Foundation, either version 3 of the License, or   *
-! (at your option) any later version.                                 *
-!                                                                     *
-! FLEXPART is distributed in the hope that it will be useful,         *
-! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
-! GNU General Public License for more details.                        *
-!                                                                     *
-! You should have received a copy of the GNU General Public License   *
-! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
-!**********************************************************************
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
 
 subroutine cbl(wp,zp,ust,wst,h,rhoa,rhograd,sigmaw,dsigmawdz,tlw,ptot,Q,phi,ath,bth,ol,flagrein)
 !                i  i i  i   i  i    i     i       i         i   o   o   o   o    o  i    o
@@ -126,7 +108,7 @@ subroutine cbl(wp,zp,ust,wst,h,rhoa,rhograd,sigmaw,dsigmawdz,tlw,ptot,Q,phi,ath,
     radw2=w2**0.5
     dradw2=0.5*w2**(-0.5)*dw2
     !costluar4=0.66667  ! costante da LHH
-    fluarw=costluar4*(cuberoot(skew))	!skew**(1./3.)
+    fluarw=costluar4*(cuberoot(skew))   !skew**(1./3.)
     fluarw2=fluarw*fluarw
     
     if (skew.ne.0) then
@@ -204,7 +186,7 @@ subroutine cbl(wp,zp,ust,wst,h,rhoa,rhograd,sigmaw,dsigmawdz,tlw,ptot,Q,phi,ath,
 
            pa=(usurad2p*(1./sigmawa))*(exp(-(0.5*((deltawa/sigmawa)**2.))))
            pb=(usurad2p*(1./sigmawb))*(exp(-(0.5*((deltawb/sigmawb)**2.))))
-                            	    
+                                    
            ptot=dens*aluarw*pa+dens*bluarw*pb
                                
            aperfa=deltawa*usurad2/sigmawa
