@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 !*******************************************************************************
 !   Include file for calculation of particle trajectories (Program FLEXPART)   *
 !        This file contains the parameter statements used in FLEXPART          *

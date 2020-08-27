@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine get_vdep_prob(itime,xt,yt,zt,prob)
   !                    i     i  i  i  o
   !*****************************************************************************

@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine initialize(itime,ldt,up,vp,wp, &
        usigold,vsigold,wsigold,xt,yt,zt,icbt)
   !                        i    i   o  o  o
