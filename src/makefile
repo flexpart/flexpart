@@ -61,17 +61,16 @@ ifeq ($(gcc), 4.9)
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
 else 
-# Compiled libraries under user ~flexpart, gfortran v5.4
-#	ROOT_DIR = /homevip/flexpart/
-
+# Using system installed libraries at njord.nilu.no
 	F90	  = /usr/bin/gfortran
 	MPIF90    = /usr/bin/mpifort
-
-# INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
-# INCPATH2  = /usr/include
-# LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
-	INCPATH1  = /usr/include	
+	LIBPATH1 = /opt/eccodes/lib
+	INCPATH1  = /opt/eccodes/include
 	INCPATH2  = /usr/include
+
+
+# INCPATH1  = /usr/include	
+# INCPATH2  = /usr/include
 endif
 
 
@@ -89,7 +88,7 @@ VPATH = gributils/
 
 
 ## OPTIMIZATION LEVEL
-O_LEV = 0 # [0,1,2,3,g,s,fast]
+O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
