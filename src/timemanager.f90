@@ -107,11 +107,12 @@ subroutine timemanager(metdata_format)
 
   implicit none
 
+  integer(selected_int_kind(16)) :: idummy,idummy2
   integer :: metdata_format
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1
 ! integer :: ksp
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage,idummy,idummy2
+  integer :: ix,jy,ldeltat,itage,nage
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
   real :: outnum,weight,prob_rec(maxspec),prob(maxspec),decfact,wetscav
   ! real :: uap(maxpart),ucp(maxpart),uzp(maxpart)
@@ -396,11 +397,11 @@ subroutine timemanager(metdata_format)
             else 
               call concoutput(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
             endif
-          else  
+          else ! surf only  
             if (verbosity.eq.1) then
-             print*,'call concoutput_surf '
-             call system_clock(count_clock)
-             write(*,*) 'system clock',count_clock - count_clock0   
+              print*,'call concoutput_surf '
+              call system_clock(count_clock)
+              write(*,*) 'system clock',count_clock - count_clock0   
             endif
             if (lnetcdfout.eq.1) then
 #ifdef USE_NCF
@@ -415,7 +416,7 @@ subroutine timemanager(metdata_format)
                   write(*,*) 'system clock',count_clock - count_clock0 
                 endif
               else
-              call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
               endif
               if (verbosity.eq.1) then
                 print*,'called concoutput_surf '
@@ -433,8 +434,8 @@ subroutine timemanager(metdata_format)
                 if(linversionout.eq.1) then
                   call concoutput_inversion_nest(itime,outnum)
                 else 
-                call concoutput_surf_nest(itime,outnum)
-              endif
+                  call concoutput_surf_nest(itime,outnum)
+                endif
               endif
             else
 #ifdef USE_NCF

@@ -605,7 +605,6 @@ subroutine concoutput_nest(itime,outnum)
   write(unitoutfactor) (sparse_dump_r(i),i=1,sp_count_r)
   close(unitoutfactor)
 
-
   ! Reinitialization of grid
   !*************************
 

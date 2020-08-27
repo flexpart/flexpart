@@ -314,6 +314,14 @@ subroutine outgrid_init
     allocate(init_cond(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
          maxpointspec_act),stat=stat)
     if (stat.ne.0) write(*,*)'ERROR: could not allocate init_cond'
+    if (mpi_mode.gt.0) then
+      if (lroot) then
+        allocate(init_cond0(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec, &
+             maxpointspec_act),stat=stat)
+      else
+        allocate(init_cond0(1,1,1,1,1))
+      end if
+    end if
   endif
 
   !************************

@@ -52,5 +52,6 @@ module unc_mod
   real(dep_prec),allocatable, dimension (:,:,:,:,:,:) :: wetgriduncn0
 
   real,allocatable, dimension (:,:,:,:,:) :: init_cond
+  real,allocatable, dimension (:,:,:,:,:) :: init_cond0 ! for MPI
 
 end module unc_mod

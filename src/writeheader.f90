@@ -99,8 +99,6 @@ subroutine writeheader
   ! concentration fields
   !*****************************************************************************
 
-  write(*,*) "writeheader/nspec", nspec
-  
   write(unitheader) 3*nspec,maxpointspec_act
   do i=1,nspec
     write(unitheader) 1,'WD_'//species(i)(1:7)
