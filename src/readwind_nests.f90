@@ -21,7 +21,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !  CHANGE: 03/12/2008, Harald Sodemann, update to f90 with ECMWF grib_api    *
   !*****************************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
 

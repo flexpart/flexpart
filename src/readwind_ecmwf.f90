@@ -47,7 +47,7 @@ subroutine readwind_ecmwf(indj,n,uuh,vvh,wwh)
 !                                                                     *
 !**********************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
 

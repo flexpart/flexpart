@@ -54,7 +54,7 @@ subroutine gridcheck_ecmwf
   !                                                                     *
   !**********************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
   use conv_mod

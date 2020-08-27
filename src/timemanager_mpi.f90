@@ -90,13 +90,14 @@ subroutine timemanager(metdata_format)
 
   implicit none
 
+  integer(selected_int_kind(16)) :: idummy,idummy2
   integer :: metdata_format
   logical :: reqv_state=.false. ! .true. if waiting for a MPI_Irecv to complete
   integer :: j,ks,kp,l,n,itime=0,nstop,nstop1,memstat=0
 ! integer :: ksp
   integer :: ip,irec
   integer :: loutnext,loutstart,loutend
-  integer :: ix,jy,ldeltat,itage,nage,idummy
+  integer :: ix,jy,ldeltat,itage,nage
   integer :: i_nan=0,ii_nan,total_nan_intl=0  !added by mc to check instability in CBL scheme 
   integer :: numpart_tot_mpi ! for summing particles on all processes
   real :: outnum,weight,prob(maxspec), prob_rec(maxspec), decfact,wetscav
@@ -158,7 +159,7 @@ subroutine timemanager(metdata_format)
 ! changed by Petra Seibert 9/02
 !********************************************************************
 
-    if (mp_dbg_mode) write(*,*) 'myid, itime: ',mp_pid,itime
+!    if (mp_dbg_mode) write(*,*) 'myid, itime: ',mp_pid,itime
     
     if (WETDEP .and. itime .ne. 0 .and. numpart .gt. 0) then
       if (verbosity.gt.0) then
@@ -279,7 +280,7 @@ subroutine timemanager(metdata_format)
 !*********************************************************************
 
     if (lmpreader.and.lmp_use_reader) then
-      if (itime.lt.ideltas*ldirect) then
+      if (abs(itime).lt.ideltas*ldirect) then
         cycle
       else
         goto 999
@@ -479,7 +480,7 @@ subroutine timemanager(metdata_format)
               gridunc(:,:,:,:,:,:,:)=0.
               creceptor(:,:)=0.
             end if
-          else 
+          else ! surf only 
             if (lroot) then
               if (lnetcdfout.eq.1) then
 #ifdef USE_NCF
@@ -487,7 +488,11 @@ subroutine timemanager(metdata_format)
                      &drygridtotalunc)
 #endif
               else
-                call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                if (linversionout.eq.1) then
+                  call concoutput_inversion(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                else
+                  call concoutput_surf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridtotalunc)
+                end if
               end if
             else
 ! zero arrays on non-root processes
@@ -515,7 +520,19 @@ subroutine timemanager(metdata_format)
                 end if
 
               else
-                call concoutput_surf_nest(itime,outnum)
+                if(linversionout.eq.1) then
+                  if (lroot) then
+                    call concoutput_inversion_nest(itime,outnum)
+                  else
+                    griduncn(:,:,:,:,:,:,:)=0.
+                  end if
+                else
+                  if (lroot) then
+                    call concoutput_surf_nest(itime,outnum)
+                  else
+                    griduncn(:,:,:,:,:,:,:)=0.
+                  end if
+                end if
               end if
             else
 #ifdef USE_NCF
@@ -723,7 +740,7 @@ subroutine timemanager(metdata_format)
        if (WETBKDEP) then 
        do ks=1,nspec
          if  ((xscav_frac1(j,ks).lt.0)) then
-            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy,wetscav)
+            call get_wetscav(itime,lsynctime,loutnext,j,ks,grfraction,idummy,idummy2,wetscav)
             if (wetscav.gt.0) then
                 xscav_frac1(j,ks)=wetscav* &
                        (zpoint2(npoint(j))-zpoint1(npoint(j)))*grfraction(1)
@@ -876,15 +893,13 @@ subroutine timemanager(metdata_format)
 ! Complete the calculation of initial conditions for particles not yet terminated
 !*****************************************************************************
 
-! eso :TODO: this not implemented yet (transfer particles to PID 0 or rewrite)
-! the tools to do this are already in mpi_mod.f90
-  if (lroot) then 
-    do j=1,numpart
-      if (linit_cond.ge.1) call initial_cond_calc(itime,j)
-    end do
-  end if
+  do j=1,numpart
+    if (linit_cond.ge.1) call initial_cond_calc(itime,j)
+  end do
 
-
+! Transfer sum of init_cond field to root process, for output
+  call mpif_tm_reduce_initcond
+    
   if (ipout.eq.2) then
 ! MPI process 0 creates the file, the other processes append to it
     do ip=0, mp_partgroup_np-1
@@ -896,8 +911,14 @@ subroutine timemanager(metdata_format)
     end do
   end if
 
-! eso :TODO: MPI
-  if (linit_cond.ge.1.and.lroot) call initial_cond_output(itime)   ! dump initial cond. field
+  
+  if (linit_cond.ge.1.and.lroot) then
+    if(linversionout.eq.1) then
+      call initial_cond_output_inversion(itime)   ! dump initial cond. field
+    else
+      call initial_cond_output(itime)   ! dump initial cond. fielf
+    endif
+  endif
 
 
 ! De-allocate memory and end

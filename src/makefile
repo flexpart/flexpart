@@ -61,15 +61,16 @@ ifeq ($(gcc), 4.9)
 	INCPATH2  = ${ROOT_DIR}/include
 	LIBPATH1 = ${ROOT_DIR}/lib
 else 
-# Compiled libraries under user ~flexpart, gfortran v5.4
-	ROOT_DIR = /homevip/flexpart/
-
+# Using system installed libraries at njord.nilu.no
 	F90	  = /usr/bin/gfortran
 	MPIF90    = /usr/bin/mpifort
-
-	INCPATH1  = ${ROOT_DIR}/gcc-5.4.0/include	
+	LIBPATH1 = /opt/eccodes/lib
+	INCPATH1  = /opt/eccodes/include
 	INCPATH2  = /usr/include
-	LIBPATH1 = ${ROOT_DIR}/gcc-5.4.0/lib
+
+
+# INCPATH1  = /usr/include	
+# INCPATH2  = /usr/include
 endif
 
 
@@ -87,12 +88,11 @@ VPATH = gributils/
 
 
 ## OPTIMIZATION LEVEL
-O_LEV = 0 # [0,1,2,3,g,s,fast]
+O_LEV = 2 # [0,1,2,3,g,s,fast]
 O_LEV_DBG = g # [0,g]
 
 ## LIBRARIES
-#LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper -lnetcdff
-LIBS = -lgrib_api_f90 -lgrib_api -lm -ljasper $(NCOPT)
+LIBS = -leccodes -leccodes_f90 -lm  $(NCOPT)
 
 FFLAGS   = -I$(INCPATH1) -I$(INCPATH2) -O$(O_LEV) -g -cpp -m64 -mcmodel=medium -fconvert=little-endian -frecord-marker=4 -fmessage-length=0 -flto=jobserver -O$(O_LEV) $(NCOPT) $(FUSER)  #-Warray-bounds -fcheck=all # -march=native
 
@@ -127,10 +127,10 @@ OBJECTS_SERIAL = \
 	boundcond_domainfill.o	\
 	redist.o		\
 	concoutput_surf.o	concoutput_surf_nest.o	\
-	concoutput_inversion_nest.o 	\
-	concoutput_inversion.o \
 	getfields.o \
-        readwind_ecmwf.o
+        readwind_ecmwf.o \
+	initial_cond_output.o \
+	initial_cond_output_inversion.o
 
 ## For MPI version 
 OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
@@ -144,11 +144,14 @@ OBJECTS_MPI = releaseparticles_mpi.o partoutput_mpi.o \
 	redist_mpi.o		\
 	concoutput_surf_mpi.o	concoutput_surf_nest_mpi.o	\
 	getfields_mpi.o \
-        readwind_ecmwf_mpi.o 
+        readwind_ecmwf_mpi.o \
+	initial_cond_output_mpi.o \
+	initial_cond_output_inversion_mpi.o
 
 OBJECTS_NCF = netcdf_output_mod.o
 
 OBJECTS = \
+initial_cond_calc.o \
 advance.o		initialize.o		\
 writeheader.o		writeheader_txt.o  	\
 partpos_average.o	writeprecip.o \
@@ -201,10 +204,12 @@ writeheader_nest.o writeheader_nest_surf.o \
 wetdepokernel_nest.o \
 drydepokernel_nest.o    zenithangle.o \
 ohreaction.o            getvdep_nests.o \
-initial_cond_calc.o     initial_cond_output.o initial_cond_output_inversion.o \
 dynamic_viscosity.o     get_settling.o	\
 initialize_cbl_vel.o	re_initialize_particle.o \
-cbl.o
+cbl.o \
+concoutput_inversion_nest.o 	\
+concoutput_inversion.o \
+
 
 ifeq ($(ncf), yes)
 	OBJECTS	:= $(OBJECTS) $(OBJECTS_NCF)
@@ -324,8 +329,12 @@ hanna_short.o: com_mod.o hanna_mod.o par_mod.o
 init_domainfill.o: com_mod.o par_mod.o point_mod.o random_mod.o
 init_domainfill_mpi.o: com_mod.o mpi_mod.o par_mod.o point_mod.o random_mod.o
 initial_cond_calc.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
+initial_cond_calc_mpi.o: com_mod.o outg_mod.o par_mod.o unc_mod.o
 initial_cond_output.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o
+initial_cond_output_mpi.o: com_mod.o outg_mod.o par_mod.o point_mod.o unc_mod.o mpi_mod.o
 initial_cond_output_inversion.o: com_mod.o outg_mod.o par_mod.o point_mod.o \
+	unc_mod.o
+initial_cond_output_inversion_mpi.o: com_mod.o outg_mod.o par_mod.o point_mod.o \
 	unc_mod.o
 initialize.o: com_mod.o hanna_mod.o interpol_mod.o par_mod.o random_mod.o
 initialize_cbl_vel.o: com_mod.o par_mod.o random_mod.o

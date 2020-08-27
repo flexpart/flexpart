@@ -2579,6 +2579,58 @@ contains
 601 end subroutine mpif_tm_reduce_grid_nest
 
 
+  subroutine mpif_tm_reduce_initcond
+!***********************************************************************
+! Collect init_cond to PID 0, adding from all processes.
+!
+!
+!***********************************************************************
+    use com_mod
+    use unc_mod
+    use par_mod
+
+    implicit none
+
+    integer :: grid_size
+
+!**********************************************************************
+
+    grid_size=numxgrid*numygrid*numzgrid*maxspec* &
+         & maxpointspec_act
+
+! Time for MPI communications
+    if (mp_measure_time) call mpif_mtime('commtime',0)
+
+
+#ifdef USE_MPIINPLACE
+! Using in-place reduction
+    if (lroot) then
+      call MPI_Reduce(MPI_IN_PLACE, init_cond, grid_size, mp_sp, MPI_SUM, id_root, &
+           & mp_comm_used, mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    else
+      call MPI_Reduce(init_cond, 0, grid_size, mp_sp, MPI_SUM, id_root, &
+           & mp_comm_used, mp_ierr)
+      if (mp_ierr /= 0) goto 600
+    end if
+
+#else
+    call MPI_Reduce(init_cond, init_cond0, grid_size, mp_sp, MPI_SUM, id_root, &
+         & mp_comm_used, mp_ierr)
+    if (mp_ierr /= 0) goto 600
+!    if (lroot) init_cond = init_cond0
+#endif
+
+    if (mp_measure_time) call mpif_mtime('commtime',1)
+
+    goto 601
+
+600 write(*,*) "mpi_mod> mp_ierr \= 0", mp_ierr
+    stop
+
+601 end subroutine mpif_tm_reduce_initcond
+    
+
   subroutine mpif_mtime(ident,imode)
 !***********************************************************************
 ! Measure CPU/Wall time in various parts of the code
