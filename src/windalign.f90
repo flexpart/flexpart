@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine windalign(u,v,ffap,ffcp,ux,vy)
   !                     i i  i    i   o  o
   !*****************************************************************************

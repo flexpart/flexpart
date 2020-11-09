@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !                           i   i  o    o    o
   !*****************************************************************************
@@ -18,7 +21,7 @@ subroutine readwind_nests(indj,n,uuhn,vvhn,wwhn)
   !  CHANGE: 03/12/2008, Harald Sodemann, update to f90 with ECMWF grib_api    *
   !*****************************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
 

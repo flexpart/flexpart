@@ -18,44 +18,44 @@ WET DEPOSITION
 
 Below-cloud scavenging
 - Gases:
-	A and B are the parameters for below-cloud scavenging defined by Eq. scavenging coefficient = A x precipitation-rate^B
+    A and B are the parameters for below-cloud scavenging defined by Eq. scavenging coefficient = A x precipitation-rate^B
         If you migrate from FLEXPART version 9.2 and below this is equal to A and B as it was.
 - Particles: 
-	A "rain collection efficiency"  
-	B "snow collection efficiency" are both defined by Equations 46-47.
-	Suggested values for particle scavenging are A=1.0,B=1.0.
-	Using values A=0.2 and B=0.2 will give results close to the old scavenging scheme of FLEXPART version 9.2 and below.
+    A "rain collection efficiency"  
+    B "snow collection efficiency" are both defined by Equations 46-47.
+    Suggested values for particle scavenging are A=1.0,B=1.0.
+    Using values A=0.2 and B=0.2 will give results close to the old scavenging scheme of FLEXPART version 9.2 and below.
 
 In-cloud scavenging
 - Gases:
     Is switched on if Ai or Bi are given greater than 0
     If you migrate from FLEXPART version 9.2 and below this is equal to Ai and Bi should be set to 1
 - Particles:
-	Ai ("Cloud Condensation Nuclei (CCN) efficiency") 
-	Bi ("Ice Nuclei (IN) efficiency")                  are both from Eq. 51. 	
-	Suggested values for particle scavenging are  Ai=0.9 and Bi=0.1.
-	Using values Ai=0.9 and Bi=0.9 should give results cto the old scavenging scheme of FLEXPART version 9.2 and below.
+    Ai ("Cloud Condensation Nuclei (CCN) efficiency") 
+    Bi ("Ice Nuclei (IN) efficiency")                  are both from Eq. 51.    
+    Suggested values for particle scavenging are  Ai=0.9 and Bi=0.1.
+    Using values Ai=0.9 and Bi=0.9 should give results cto the old scavenging scheme of FLEXPART version 9.2 and below.
 ---------------------------------------------------------------------------------------------------------------------------
 DRY DEPOSITION
 - Gases: 
-	D is the diffusivity of water vapor and 
-	D_i is the diffusivity of the species, 
-	H is the effective Henry’s constant, 
-	f0 varies between 0 and 1 and gives the reactivity of a species relative to that of ozone. For non-reactive species f0 is 0, for slightly reactive it is 0.1 and for highly reactive it is 1. 
-	Dry deposition of gases is switched off by negative D. 
+    D is the diffusivity of water vapor and 
+    D_i is the diffusivity of the species, 
+    H is the effective Henry’s constant, 
+    f0 varies between 0 and 1 and gives the reactivity of a species relative to that of ozone. For non-reactive species f0 is 0, for slightly reactive it is 0.1 and for highly reactive it is 1. 
+    Dry deposition of gases is switched off by negative D. 
 - Particles:
-	rho specifies the density of the substance, 
-	dquer its mean diameter 
-	dsig the measure of variation.
-	If no detailed information for deposition velocity calculation is available, a constant deposition velocity vd [cm s-1] can be used. 
-	Dry deposition of particles is switched off by negative rho.
+    rho specifies the density of the substance, 
+    dquer its mean diameter 
+    dsig the measure of variation.
+    If no detailed information for deposition velocity calculation is available, a constant deposition velocity vd [cm s-1] can be used. 
+    Dry deposition of particles is switched off by negative rho.
 ---------------------------------------------------------------------------------------------------------------------------
 OH REACTION:
-	can be turned on by giving parameter C [cm^3/molecule/sec]], D [K] and N [no unit] positive values, defined by Eq. 39.
-	OH reaction is switched off by negative C.
+    can be turned on by giving parameter C [cm^3/molecule/sec]], D [K] and N [no unit] positive values, defined by Eq. 39.
+    OH reaction is switched off by negative C.
 ---------------------------------------------------------------------------------------------------------------------------
 Optionally  emission variation information 
-	can be added at the end of the file, defined as following: Since FLEXPART version 6.0, emission factors can be defined that change the temporal variation of particle releases. This is useful, for instance,
+    can be added at the end of the file, defined as following: Since FLEXPART version 6.0, emission factors can be defined that change the temporal variation of particle releases. This is useful, for instance,
 to simulate the typical daily and weekly cycle of anthropogenic emissions. The emission factors are given in the file of the
 corresponding species SPECIES_nnn, where nnn is the species number defined in file RELEASES. If no emission variation
 information is given, emission rates for species nnn are taken as constant. Release rates can vary with the hour of the day

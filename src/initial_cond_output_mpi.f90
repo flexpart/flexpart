@@ -1,5 +1,23 @@
-! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
-! SPDX-License-Identifier: GPL-3.0-or-later
+!**********************************************************************
+! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
+! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
+! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
+!                                                                     *
+! This file is part of FLEXPART.                                      *
+!                                                                     *
+! FLEXPART is free software: you can redistribute it and/or modify    *
+! it under the terms of the GNU General Public License as published by*
+! the Free Software Foundation, either version 3 of the License, or   *
+! (at your option) any later version.                                 *
+!                                                                     *
+! FLEXPART is distributed in the hope that it will be useful,         *
+! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+! GNU General Public License for more details.                        *
+!                                                                     *
+! You should have received a copy of the GNU General Public License   *
+! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
+!**********************************************************************
 
 subroutine initial_cond_output(itime)
   !                                 i
@@ -100,7 +118,7 @@ subroutine initial_cond_output(itime)
       do kz=1,numzgrid
         do jy=0,numygrid-1
           do ix=0,numxgrid-1
-            if (init_cond(ix,jy,kz,ks,kp).gt.smallnum) then
+            if (init_cond0(ix,jy,kz,ks,kp).gt.smallnum) then
               if (sp_zer.eqv..true.) then ! first non zero value
                 sp_count_i=sp_count_i+1
                 sparse_dump_i(sp_count_i)= &
@@ -110,7 +128,7 @@ subroutine initial_cond_output(itime)
               endif
               sp_count_r=sp_count_r+1
               sparse_dump_r(sp_count_r)=sp_fact* &
-                   init_cond(ix,jy,kz,ks,kp)/xmass(kp,ks)*fact_recept
+                   init_cond0(ix,jy,kz,ks,kp)/xmass(kp,ks)*fact_recept
             else ! concentration is zero
               sp_zer=.true.
             endif

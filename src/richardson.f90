@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine richardson(psurf,ust,ttlev,qvlev,ulev,vlev,nuvz, &
        akz,bkz,hf,tt2,td2,h,wst,hmixplus,metdata_format)
   !                        i    i    i     i    i    i    i

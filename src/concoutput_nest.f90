@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine concoutput_nest(itime,outnum)
   !                        i     i
   !*****************************************************************************
@@ -583,7 +586,6 @@ subroutine concoutput_nest(itime,outnum)
   write(unitoutfactor) sp_count_r
   write(unitoutfactor) (sparse_dump_r(i),i=1,sp_count_r)
   close(unitoutfactor)
-
 
   ! Reinitialization of grid
   !*************************

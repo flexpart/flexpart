@@ -77,7 +77,7 @@ CONTAINS
         ! fills in attributes that can be accessed through methods in this
         ! module
 
-        USE grib_api
+        use eccodes
 
         IMPLICIT NONE
 
@@ -130,7 +130,7 @@ CONTAINS
         ! module.
 
 
-        USE grib_api
+        use eccodes
 
         IMPLICIT NONE
 
@@ -177,7 +177,7 @@ CONTAINS
         ! determine if it is hybrid or not
         !
 
-        USE grib_api
+        use eccodes
         IMPLICIT NONE
         CHARACTER(LEN=*), INTENT(IN) :: filepath  ! full path to GRIB file
         INTEGER, INTENT(OUT) :: grib_centre, gribfile_type
@@ -254,7 +254,7 @@ CONTAINS
     SUBROUTINE get_3d_u_dims(filepath, gribfile_type, xlon, ylat, zlev)
 
         ! Looks at the 3d u fields in the GRIBFILE to get x and y dims, as well as number of levels
-        USE grib_api
+        use eccodes
 
         IMPLICIT NONE
 

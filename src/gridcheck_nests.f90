@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine gridcheck_nests
 
   !*****************************************************************************
@@ -15,7 +18,7 @@ subroutine gridcheck_nests
   !  CHANGE: 03/12/2008, Harald Sodemann, change to f90 grib_api               *
   !*****************************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
 

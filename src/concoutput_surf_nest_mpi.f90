@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine concoutput_surf_nest(itime,outnum)
   !                        i     i
   !*****************************************************************************
@@ -629,22 +632,22 @@ subroutine concoutput_surf_nest(itime,outnum)
   !*************************
 
   do ks=1,nspec
-  do kp=1,maxpointspec_act
-    do i=1,numreceptor
-      creceptor(i,ks)=0.
-    end do
-    do jy=0,numygridn-1
-      do ix=0,numxgridn-1
-        do l=1,nclassunc
-          do nage=1,nageclass
-            do kz=1,numzgrid
-              griduncn(ix,jy,kz,ks,kp,l,nage)=0.
+    do kp=1,maxpointspec_act
+      do i=1,numreceptor
+        creceptor(i,ks)=0.
+      end do
+      do jy=0,numygridn-1
+        do ix=0,numxgridn-1
+          do l=1,nclassunc
+            do nage=1,nageclass
+              do kz=1,numzgrid
+                griduncn(ix,jy,kz,ks,kp,l,nage)=0.
+              end do
             end do
           end do
         end do
       end do
     end do
-  end do
   end do
 
   if (mp_measure_time) call mpif_mtime('iotime',1)

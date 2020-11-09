@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
      drygridtotalunc)
 !                        i     i          o             o
@@ -55,6 +58,9 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
   integer :: sp_count_i,sp_count_r
   real :: sp_fact
   real :: outnum,densityoutrecept(maxreceptor),xl,yl
+! RLT
+  real :: densitydryrecept(maxreceptor)
+  real :: factor_dryrecept(maxreceptor)
 
 !real densityoutgrid(0:numxgrid-1,0:numygrid-1,numzgrid),
 !    +grid(0:numxgrid-1,0:numygrid-1,numzgrid,maxspec,maxpointspec_act,
@@ -89,6 +95,7 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 ! mind        eso: added to ensure identical results between 2&3-fields versions
   character(LEN=8),save :: file_stat='REPLACE'
   logical :: ldates_file
+  logical :: lexist
   integer :: ierr
   character(LEN=100) :: dates_char
 
@@ -190,6 +197,9 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
         !      rho(iix,jjy,kzz-1,2)*dz2)/dz
         densityoutgrid(ix,jy,kz)=(rho(iix,jjy,kzz,mind)*dz1+ &
              rho(iix,jjy,kzz-1,mind)*dz2)/dz
+! RLT
+        densitydrygrid(ix,jy,kz)=(rho_dry(iix,jjy,kzz,mind)*dz1+ &
+             rho_dry(iix,jjy,kzz-1,mind)*dz2)/dz  
       end do
     end do
   end do
@@ -201,8 +211,14 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
     jjy=max(min(nint(yl),nymin1),0)
     !densityoutrecept(i)=rho(iix,jjy,1,2)
     densityoutrecept(i)=rho(iix,jjy,1,mind)
+! RLT
+    densitydryrecept(i)=rho_dry(iix,jjy,1,mind)
   end do
 
+! RLT
+! conversion factor for output relative to dry air
+  factor_drygrid=densityoutgrid/densitydrygrid
+  factor_dryrecept=densityoutrecept/densitydryrecept
 
 ! Output is different for forward and backward simulations
   do kz=1,numzgrid
@@ -255,11 +271,9 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
         endif
         write(unitoutgrid) itime
       endif
-
       if ((iout.eq.2).or.(iout.eq.3)) then      ! mixing ratio
         open(unitoutgridppt,file=path(2)(1:length(2))//'grid_pptv_'//adate// &
              atime//'_'//anspec,form='unformatted')
-
         write(unitoutgridppt) itime
       endif
     endif ! if deposition output
@@ -603,6 +617,49 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
 
   end do
 
+! RLT Aug 2017
+! Write out conversion factor for dry air
+  inquire(file=path(2)(1:length(2))//'factor_drygrid',exist=lexist)
+  if (lexist) then
+    ! open and append
+    open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid',form='unformatted',&
+            status='old',action='write',access='append')
+  else
+    ! create new
+    open(unitoutfactor,file=path(2)(1:length(2))//'factor_drygrid',form='unformatted',&
+            status='new',action='write')
+  endif
+  sp_count_i=0
+  sp_count_r=0
+  sp_fact=-1.
+  sp_zer=.true.
+  do kz=1,numzgrid
+    do jy=0,numygrid-1
+      do ix=0,numxgrid-1
+        if (factor_drygrid(ix,jy,kz).gt.(1.+smallnum).or.factor_drygrid(ix,jy,kz).lt.(1.-smallnum)) then
+          if (sp_zer.eqv..true.) then ! first value not equal to one
+            sp_count_i=sp_count_i+1
+            sparse_dump_i(sp_count_i)= &
+                  ix+jy*numxgrid+kz*numxgrid*numygrid
+            sp_zer=.false.
+            sp_fact=sp_fact*(-1.)
+          endif
+          sp_count_r=sp_count_r+1
+          sparse_dump_r(sp_count_r)= &
+               sp_fact*factor_drygrid(ix,jy,kz)
+        else ! factor is one
+          sp_zer=.true.
+        endif
+      end do
+    end do
+  end do
+  write(unitoutfactor) sp_count_i
+  write(unitoutfactor) (sparse_dump_i(i),i=1,sp_count_i)
+  write(unitoutfactor) sp_count_r
+  write(unitoutfactor) (sparse_dump_r(i),i=1,sp_count_r)
+  close(unitoutfactor)
+
+
   if (gridtotal.gt.0.) gridtotalunc=gridsigmatotal/gridtotal
   if (wetgridtotal.gt.0.) wetgridtotalunc=wetgridsigmatotal/ &
        wetgridtotal
@@ -629,7 +686,23 @@ subroutine concoutput(itime,outnum,gridtotalunc,wetgridtotalunc, &
     end do
   endif
 
-
+! RLT Aug 2017
+! Write out conversion factor for dry air
+  if (numreceptor.gt.0) then
+    inquire(file=path(2)(1:length(2))//'factor_dryreceptor',exist=lexist)
+     if (lexist) then
+     ! open and append
+      open(unitoutfactor,file=path(2)(1:length(2))//'factor_dryreceptor',form='unformatted',&
+              status='old',action='write',access='append')
+    else
+      ! create new
+      open(unitoutfactor,file=path(2)(1:length(2))//'factor_dryreceptor',form='unformatted',&
+              status='new',action='write')
+    endif
+    write(unitoutfactor) itime
+    write(unitoutfactor) (factor_dryrecept(i),i=1,numreceptor)
+    close(unitoutfactor)
+  endif
 
 ! Reinitialization of grid
 !*************************

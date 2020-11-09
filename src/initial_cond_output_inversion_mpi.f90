@@ -1,7 +1,25 @@
-! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
-! SPDX-License-Identifier: GPL-3.0-or-later
+!**********************************************************************
+! Copyright 1998,1999,2000,2001,2002,2005,2007,2008,2009,2010         *
+! Andreas Stohl, Petra Seibert, A. Frank, Gerhard Wotawa,             *
+! Caroline Forster, Sabine Eckhardt, John Burkhart, Harald Sodemann   *
+!                                                                     *
+! This file is part of FLEXPART.                                      *
+!                                                                     *
+! FLEXPART is free software: you can redistribute it and/or modify    *
+! it under the terms of the GNU General Public License as published by*
+! the Free Software Foundation, either version 3 of the License, or   *
+! (at your option) any later version.                                 *
+!                                                                     *
+! FLEXPART is distributed in the hope that it will be useful,         *
+! but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the       *
+! GNU General Public License for more details.                        *
+!                                                                     *
+! You should have received a copy of the GNU General Public License   *
+! along with FLEXPART.  If not, see <http://www.gnu.org/licenses/>.   *
+!**********************************************************************
 
-subroutine initial_cond_output(itime)
+subroutine initial_cond_output_inversion(itime)
   !                                 i
   !*****************************************************************************
   !                                                                            *
@@ -44,11 +62,22 @@ subroutine initial_cond_output(itime)
   implicit none
 
   integer :: itime,i,ix,jy,kz,ks,kp,sp_count_i,sp_count_r
+  integer :: jjjjmmdd, ihmmss
+  real(kind=dp) :: jul
   real :: sp_fact,fact_recept
   real,parameter :: smallnum = tiny(0.0) ! smallest number that can be handled
-  logical :: sp_zer
+  logical :: sp_zer,lexist
+  logical,save :: listart=.true.
+  logical,save,allocatable,dimension(:) :: listartrel
+  character :: adate*8,atime*6
+  character :: areldate*8,areltime*6
   character(len=3) :: anspec
 
+  if(listart) then
+    allocate(listartrel(maxpointspec_act))
+    listartrel(:)=.true.
+  endif
+  print*, 'listartrel = ',listartrel
 
   !*********************************************************************
   ! Determine the standard deviation of the mean concentration or mixing
@@ -58,11 +87,38 @@ subroutine initial_cond_output(itime)
   do ks=1,nspec
 
     write(anspec,'(i3.3)') ks
-    open(97,file=path(2)(1:length(2))//'grid_initial'// &
-         '_'//anspec,form='unformatted')
-    write(97) itime
 
     do kp=1,maxpointspec_act
+
+      ! calculate date of release
+      jul=bdate+real(ireleasestart(kp),kind=dp)/86400._dp    ! this is the current day
+      call caldate(jul,jjjjmmdd,ihmmss)
+      write(areldate,'(i8.8)') jjjjmmdd
+      write(areltime,'(i6.6)') ihmmss
+      print*, areldate//areltime
+
+      ! calculate date of field
+      jul=bdate+real(itime,kind=dp)/86400._dp
+      call caldate(jul,jjjjmmdd,ihmmss)
+      write(adate,'(i8.8)') jjjjmmdd
+      write(atime,'(i6.6)') ihmmss
+      print*, adate//atime
+
+      inquire(file=path(2)(1:length(2))//'grid_initial_'//areldate// &
+         areltime//'_'//anspec,exist=lexist)
+      if(lexist.and..not.listartrel(kp)) then
+        ! open and append to existing file
+        open(97,file=path(2)(1:length(2))//'grid_initial_'//areldate// &
+             areltime//'_'//anspec,form='unformatted',status='old',action='write',access='append') 
+      else
+        ! open new file
+        open(97,file=path(2)(1:length(2))//'grid_initial_'//areldate// &
+             areltime//'_'//anspec,form='unformatted',status='replace',action='write')
+      endif
+      write(97) jjjjmmdd
+      write(97) ihmmss
+
+      listartrel(kp)=.false.
 
       if (ind_rel.eq.1) then
         fact_recept=rho_rel(kp)
@@ -80,16 +136,16 @@ subroutine initial_cond_output(itime)
 
   ! Write out dummy "wet and dry deposition" fields, to keep same format
   ! as for concentration output
-      sp_count_i=0
-      sp_count_r=0
-      write(97) sp_count_i
-      write(97) (sparse_dump_i(i),i=1,sp_count_i)
-      write(97) sp_count_r
-      write(97) (sparse_dump_r(i),i=1,sp_count_r)
-      write(97) sp_count_i
-      write(97) (sparse_dump_i(i),i=1,sp_count_i)
-      write(97) sp_count_r
-      write(97) (sparse_dump_r(i),i=1,sp_count_r)
+!      sp_count_i=0
+!      sp_count_r=0
+!      write(97) sp_count_i
+!      write(97) (sparse_dump_i(i),i=1,sp_count_i)
+!      write(97) sp_count_r
+!      write(97) (sparse_dump_r(i),i=1,sp_count_r)
+!      write(97) sp_count_i
+!      write(97) (sparse_dump_i(i),i=1,sp_count_i)
+!      write(97) sp_count_r
+!      write(97) (sparse_dump_r(i),i=1,sp_count_r)
 
 
   ! Write out sensitivity to initial conditions
@@ -100,7 +156,7 @@ subroutine initial_cond_output(itime)
       do kz=1,numzgrid
         do jy=0,numygrid-1
           do ix=0,numxgrid-1
-            if (init_cond(ix,jy,kz,ks,kp).gt.smallnum) then
+            if (init_cond0(ix,jy,kz,ks,kp).gt.smallnum) then
               if (sp_zer.eqv..true.) then ! first non zero value
                 sp_count_i=sp_count_i+1
                 sparse_dump_i(sp_count_i)= &
@@ -110,7 +166,7 @@ subroutine initial_cond_output(itime)
               endif
               sp_count_r=sp_count_r+1
               sparse_dump_r(sp_count_r)=sp_fact* &
-                   init_cond(ix,jy,kz,ks,kp)/xmass(kp,ks)*fact_recept
+                   init_cond0(ix,jy,kz,ks,kp)/xmass(kp,ks)*fact_recept
             else ! concentration is zero
               sp_zer=.true.
             endif
@@ -122,12 +178,15 @@ subroutine initial_cond_output(itime)
       write(97) sp_count_r
       write(97) (sparse_dump_r(i),i=1,sp_count_r)
 
+      close(97)
 
     end do
 
-    close(97)
-
   end do
 
+  ! reset listart
+  if (listart) then
+    listart=.false.
+  endif
 
-end subroutine initial_cond_output
+end subroutine initial_cond_output_inversion

@@ -1,3 +1,6 @@
+! SPDX-FileCopyrightText: FLEXPART 1998-2019, see flexpart_license.txt
+! SPDX-License-Identifier: GPL-3.0-or-later
+
 subroutine gridcheck_ecmwf
 
   !**********************************************************************
@@ -51,7 +54,7 @@ subroutine gridcheck_ecmwf
   !                                                                     *
   !**********************************************************************
 
-  use grib_api
+  use eccodes
   use par_mod
   use com_mod
   use conv_mod
