@@ -212,7 +212,7 @@ subroutine plumetraj(itime)
   ! Write out results in trajectory data file
   !******************************************
 
-      write(unitouttraj,'(i5,i8,2f9.4,4f8.1,f8.2,4f8.1,3f6.1,&
+      write(unitouttraj,'(i5,1x,i8,2f9.4,4f8.1,f8.2,4f8.1,3f6.1,&
            &5(2f8.3,f7.0,f6.1,f8.1))')&
            &j,itime-(ireleasestart(j)+ireleaseend(j))/2, &
            xcenter,ycenter,zcenter,topocenter,hmixcenter,tropocenter, &
