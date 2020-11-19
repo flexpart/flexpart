@@ -893,12 +893,14 @@ subroutine timemanager(metdata_format)
 ! Complete the calculation of initial conditions for particles not yet terminated
 !*****************************************************************************
 
-  do j=1,numpart
-    if (linit_cond.ge.1) call initial_cond_calc(itime,j)
-  end do
+  if (linit_cond.ge.1) then
+    do j=1,numpart
+      call initial_cond_calc(itime,j)
+    end do
 
 ! Transfer sum of init_cond field to root process, for output
-  call mpif_tm_reduce_initcond
+    call mpif_tm_reduce_initcond
+  end if
     
   if (ipout.eq.2) then
 ! MPI process 0 creates the file, the other processes append to it
