@@ -209,6 +209,13 @@ subroutine readoutgrid
   if (stat.ne.0) write(*,*)'ERROR: could not allocate areaeast'
   allocate(areanorth(0:numxgrid-1,0:numygrid-1,numzgrid),stat=stat)
   if (stat.ne.0) write(*,*)'ERROR: could not allocate areanorth'
+! ESO: surface pressure/temperature
+  if (write_p0t0) then
+     allocate(t0out(0:numxgrid-1,0:numygrid-1),stat=stat)
+     allocate(p0out(0:numxgrid-1,0:numygrid-1),stat=stat)
+  end if
+
+
   return
 
 

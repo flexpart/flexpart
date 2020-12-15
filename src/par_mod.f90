@@ -32,6 +32,13 @@ module par_mod
 
   integer,parameter :: dep_prec=sp
 
+  !***********************************************************
+  ! Additional output of lowest level pressure and temperature
+  ! (for netcdf output)
+  !***********************************************************
+  logical,parameter :: write_p0t0 = .false.
+
+
   !****************************************************************
   ! Set to F to disable use of kernel for concentrations/deposition
   !****************************************************************

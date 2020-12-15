@@ -11,6 +11,8 @@ module outg_mod
   real,allocatable, dimension (:) :: outheighthalf
   real,allocatable, dimension (:,:) :: oroout
   real,allocatable, dimension (:,:) :: orooutn
+  real,allocatable, dimension (:,:) :: t0out
+  real,allocatable, dimension (:,:) :: p0out
   real,allocatable, dimension (:,:) :: area
   real,allocatable, dimension (:,:) :: arean
   real,allocatable, dimension (:,:,:) :: volume

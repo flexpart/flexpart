@@ -35,9 +35,10 @@ module netcdf_output_mod
                        xpoint1,ypoint1,xpoint2,ypoint2,zpoint1,zpoint2,npart,xmass
   use outg_mod,  only: outheight,oroout,densityoutgrid,factor3d,volume,&
                        wetgrid,wetgridsigma,drygrid,drygridsigma,grid,gridsigma,&
-                       area,arean,volumen, orooutn
+                       area,arean,volumen, orooutn, p0out, t0out
   use par_mod,   only: dep_prec, sp, dp, maxspec, maxreceptor, nclassunc,&
-                       unitoutrecept,unitoutreceptppt, nxmax,unittmp
+                       unitoutrecept,unitoutreceptppt, nxmax,unittmp, &
+                       write_p0t0
   use com_mod,   only: path,length,ldirect,ibdate,ibtime,iedate,ietime, &
                        loutstep,loutaver,loutsample,outlon0,outlat0,&
                        numxgrid,numygrid,dxout,dyout,numzgrid, height, &
@@ -56,7 +57,7 @@ module netcdf_output_mod
                        itsplit, lsynctime, ctl, ifine, lagespectra, ipin, &
                        ioutputforeachrelease, iflux, mdomainfill, mquasilag, & 
                        nested_output, ipout, surf_only, linit_cond, &
-                       flexversion,mpi_mode,DRYBKDEP,WETBKDEP
+                       flexversion,mpi_mode,DRYBKDEP,WETBKDEP, ps, tt2
 
   use mean_mod
 
@@ -80,6 +81,7 @@ module netcdf_output_mod
   ! netcdf dimension and variable IDs for main and nested output grid
   integer, dimension(maxspec) :: specID,specIDppt, wdspecID,ddspecID
   integer, dimension(maxspec) :: specIDn,specIDnppt, wdspecIDn,ddspecIDn
+  integer :: psID, tt2ID
   integer                     :: timeID, timeIDn
   integer, dimension(6)       :: dimids, dimidsn
   integer, dimension(5)       :: depdimids, depdimidsn
@@ -387,6 +389,14 @@ subroutine writeheader_netcdf(lnest)
   ! area 
   if (write_area) call nf90_err(nf90_def_var(ncid, 'area', nf90_float, &
        &(/ lonDimID, latDimID /), areaID))
+
+    ! surfarce pressure / temperature
+    if (write_p0t0) then
+       call nf90_err(nf90_def_var(ncid, 'pressure', nf90_float, &
+            &(/ lonDimID, latDimID, timeDimID /), psID))
+       call nf90_err(nf90_def_var(ncid, 'temperature', nf90_float, &
+            &(/ lonDimID, latDimID, timeDimID /), tt2ID))
+    end if
 
 
   if (write_releases.eqv..true.) then
@@ -760,6 +770,8 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
   ! real(sp)            :: gridtotal,gridsigmatotal
   ! real(sp)            :: wetgridtotal,wetgridsigmatotal
   ! real(sp)            :: drygridtotal,drygridsigmatotal
+    real :: ddx,ddy,p0h,t0h,p1,p2,p3,p4,rddx,rddy,xlon,xlat,ylat,xtn,ytn
+    integer :: i1,ixp,j1,jyp,j
 
   real, parameter     :: weightair=28.97
 
@@ -1039,6 +1051,87 @@ subroutine concoutput_netcdf(itime,outnum,gridtotalunc,wetgridtotalunc,drygridto
     end do
 
   end do
+
+
+    if (write_p0t0) then
+       ! Loop over all output grid cells
+       !********************************
+
+       do jjy=0,numygrid-1
+          do iix=0,numxgrid-1
+             p0h=0.
+             t0h=0.
+
+             ! Take 100 samples of the topography in every grid cell
+             !******************************************************
+
+             do j1=1,10
+                ylat=outlat0+(real(jjy)+real(j1)/10.-0.05)*dyout
+                yl=(ylat-ylat0)/dy
+                do i1=1,10
+                   xlon=outlon0+(real(iix)+real(i1)/10.-0.05)*dxout
+                   xl=(xlon-xlon0)/dx
+
+                   ! Determine the nest we are in
+                   !*****************************
+
+                   ngrid=0
+                   do j=numbnests,1,-1
+                      if ((xl.gt.xln(j)+eps).and.(xl.lt.xrn(j)-eps).and. &
+                           (yl.gt.yln(j)+eps).and.(yl.lt.yrn(j)-eps)) then
+                         ngrid=j
+                         goto 43
+                      endif
+                   end do
+43                 continue
+
+                   ! Determine (nested) grid coordinates and auxiliary parameters used for interpolation
+                   !*****************************************************************************
+
+                   if (ngrid.gt.0) then
+                      xtn=(xl-xln(ngrid))*xresoln(ngrid)
+                      ytn=(yl-yln(ngrid))*yresoln(ngrid)
+                      ix=int(xtn)
+                      jy=int(ytn)
+                      ddy=ytn-real(jy)
+                      ddx=xtn-real(ix)
+                   else
+                      ix=int(xl)
+                      jy=int(yl)
+                      ddy=yl-real(jy)
+                      ddx=xl-real(ix)
+                   endif
+                   ixp=ix+1
+                   jyp=jy+1
+                   rddx=1.-ddx
+                   rddy=1.-ddy
+                   p1=rddx*rddy
+                   p2=ddx*rddy
+                   p3=rddx*ddy
+                   p4=ddx*ddy
+
+                   p0h=p0h+p1*ps(ix ,jy,1,memind(1)) &
+                        + p2*ps(ixp,jy,1,memind(1)) &
+                        + p3*ps(ix ,jyp,1,memind(1)) &
+                        + p4*ps(ixp,jyp,1,memind(1))
+                   t0h=t0h+p1*tt2(ix ,jy,1,memind(1)) &
+                        + p2*tt2(ixp,jy,1,memind(1)) &
+                        + p3*tt2(ix ,jyp,1,memind(1)) &
+                        + p4*tt2(ixp,jyp,1,memind(1))
+                end do
+             end do
+
+             ! Divide by the number of samples taken
+             !**************************************
+             p0out(iix,jjy)=p0h/100.
+             t0out(iix,jjy)=t0h/100.
+          end do
+       end do
+
+       call nf90_err(nf90_put_var(ncid, psID, p0out, (/ 1,1,tpointer /), (/ numxgrid,numygrid,1 /)))
+       call nf90_err(nf90_put_var(ncid, tt2ID, t0out,(/ 1,1,tpointer /), (/ numxgrid,numygrid,1 /)))
+    end if
+
 
   ! Close netCDF file
   !**************************
